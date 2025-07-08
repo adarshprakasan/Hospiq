@@ -12,5 +12,6 @@ app.use(express.json());
 app.use("/api/auth", require("./routes/auth.routes"));
 app.use("/api/hospitals", require("./routes/hospital.routes"));
 app.use("/api/doctors", require("./routes/doctor.routes"));
+app.use("/api/tokens", require("./routes/token.routes"));
 
 module.exports = app;
