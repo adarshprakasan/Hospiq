@@ -1,0 +1,10 @@
+# Ignore node_modules in both frontend and backend
+client/node_modules/
+server/node_modules/
+
+# Ignore .env and logs
+server/.env
+*.log
+
+# Vite build output
+client/dist/
