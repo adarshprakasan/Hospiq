@@ -14,5 +14,7 @@ app.use("/api/hospitals", require("./routes/hospital.routes"));
 app.use("/api/doctors", require("./routes/doctor.routes"));
 app.use("/api/tokens", require("./routes/token.routes"));
 app.use("/api/records", require("./routes/record.routes"));
+app.use("/api/qr", require("./routes/qr.routes"));
+app.use("/api/profile", require("./routes/profile.routes"));
 
 module.exports = app;
