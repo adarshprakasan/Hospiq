@@ -72,15 +72,25 @@ exports.bookToken = async (req, res) => {
 exports.getDoctorTokens = async (req, res) => {
   try {
     const { doctorId } = req.params;
-    const today = new Date().toISOString().split("T")[0];
 
-    const tokens = await Token.find({ doctorId, date: today })
-      .sort({ tokenNumber: 1 })
+    const todayStart = new Date();
+    todayStart.setHours(0, 0, 0, 0);
+    const tomorrow = new Date(todayStart);
+    tomorrow.setDate(todayStart.getDate() + 1);
+
+    const tokens = await Token.find({
+      doctorId,
+      bookingDate: {
+        $gte: todayStart,
+        $lt: tomorrow,
+      },
+    })
+      .sort({ createdAt: 1 })
       .populate("patientId", "name email");
 
-    res.json(tokens);
-  } catch (err) {
-    res.status(500).json({ message: err.message });
+    res.status(200).json(tokens);
+  } catch (error) {
+    res.status(500).json({ message: "Failed to fetch tokens", error });
   }
 };
 
@@ -89,14 +99,46 @@ exports.updateTokenStatus = async (req, res) => {
     const { tokenId } = req.params;
     const { status } = req.body;
 
-    const updated = await Token.findByIdAndUpdate(
+    const allowedStatuses = [
+      "booked",
+      "called",
+      "consulting",
+      "completed",
+      "no-show",
+    ];
+    if (!allowedStatuses.includes(status)) {
+      return res.status(400).json({ message: "Invalid status" });
+    }
+
+    const token = await Token.findByIdAndUpdate(
       tokenId,
       { status },
       { new: true }
     );
 
-    res.json({ message: "Status updated", token: updated });
-  } catch (err) {
-    res.status(500).json({ message: err.message });
+    res.status(200).json({ message: "Token status updated", token });
+  } catch (error) {
+    res.status(500).json({ message: "Failed to update status", error });
+  }
+};
+
+exports.bookOfflineToken = async (req, res) => {
+  try {
+    const { doctorId, hospitalId, patientName } = req.body;
+
+    const token = new Token({
+      doctorId,
+      hospitalId,
+      patientName,
+      isOffline: true,
+      status: "booked",
+      bookingDate: new Date(),
+    });
+
+    await token.save();
+
+    res.status(201).json({ message: "Offline token booked", token });
+  } catch (error) {
+    res.status(500).json({ message: "Failed to book offline token", error });
   }
 };

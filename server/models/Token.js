@@ -12,6 +12,8 @@ const tokenSchema = new mongoose.Schema(
       ref: "User",
       required: true,
     },
+    patientName: { type: String },
+    isOffline: { type: Boolean, default: false },
     tokenNumber: Number,
     status: {
       type: String,
