@@ -1,4 +1,5 @@
 const Token = require("../models/Token");
+const DoctorSchedule = require("../models/DoctorSchedule");
 
 exports.bookToken = async (req, res) => {
   try {

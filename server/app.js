@@ -16,5 +16,6 @@ app.use("/api/tokens", require("./routes/token.routes"));
 app.use("/api/records", require("./routes/record.routes"));
 app.use("/api/qr", require("./routes/qr.routes"));
 app.use("/api/profile", require("./routes/profile.routes"));
+app.use("/api/schedule", require("./routes/schedule.routes"));
 
 module.exports = app;
