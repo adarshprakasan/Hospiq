@@ -1,3 +1,4 @@
+const Doctor = require("../models/Doctor");
 const Token = require("../models/Token");
 const DoctorSchedule = require("../models/DoctorSchedule");
 
@@ -6,14 +7,49 @@ exports.bookToken = async (req, res) => {
     const { doctorId } = req.body;
     const patientId = req.user.id;
 
-    // Get today's date in YYYY-MM-DD
-    const today = new Date().toISOString().split("T")[0];
+    const doctor = await Doctor.findById(doctorId);
+    if (!doctor) {
+      return res.status(404).json({ message: "Doctor not found" });
+    }
 
-    // Count today's existing tokens for the doctor
-    const count = await Token.countDocuments({
-      doctorId,
-      date: today,
+    // Get today (e.g., "Monday")
+    const today = new Date().toLocaleDateString("en-US", { weekday: "long" });
+
+    // Fetch doctor schedule
+    const doctorSchedule = await DoctorSchedule.findOne({
+      doctorId: doctor._id,
     });
+    if (!doctorSchedule) {
+      return res.status(400).json({ message: "Doctor schedule not set." });
+    }
+
+    const todaySchedule = doctorSchedule.weeklySchedule.find(
+      (day) => day.day === today
+    );
+
+    if (!todaySchedule || !todaySchedule.isAvailable) {
+      return res
+        .status(400)
+        .json({ message: "Doctor is not available today." });
+    }
+
+    if (todaySchedule.startTime && todaySchedule.endTime) {
+      const now = new Date();
+      const [startHour, startMinute] = todaySchedule.startTime
+        .split(":")
+        .map(Number);
+      const [endHour, endMinute] = todaySchedule.endTime.split(":").map(Number);
+
+      const currentMinutes = now.getHours() * 60 + now.getMinutes();
+      const startMinutes = startHour * 60 + startMinute;
+      const endMinutes = endHour * 60 + endMinute;
+
+      if (currentMinutes < startMinutes || currentMinutes > endMinutes) {
+        return res
+          .status(400)
+          .json({ message: "Doctor is not available at this time." });
+      }
+    }
 
     const newToken = new Token({
       doctorId,
