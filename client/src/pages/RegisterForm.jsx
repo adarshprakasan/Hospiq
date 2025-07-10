@@ -1,113 +1,165 @@
 import React, { useState } from "react";
 import {
-  Container,
   TextField,
   Button,
-  Typography,
-  Box,
-  Alert,
   MenuItem,
+  Box,
+  Typography,
+  Container,
+  Alert,
 } from "@mui/material";
-import axios from "../api/axios"; // Your axios instance
+import axios from "../api/axios"; // axios base instance
 import { useNavigate } from "react-router-dom";
 
 export default function RegisterForm() {
-  const navigate = useNavigate();
-
   const [form, setForm] = useState({
     name: "",
     email: "",
     password: "",
-    role: "patient", // default role
+    role: "patient",
   });
-
+  const [step, setStep] = useState(1);
+  const [otp, setOtp] = useState("");
   const [error, setError] = useState("");
-  const [success, setSuccess] = useState("");
+  const [info, setInfo] = useState("");
+  const navigate = useNavigate();
 
-  const handleChange = (e) => {
+  const handleChange = (e) =>
     setForm({ ...form, [e.target.name]: e.target.value });
+
+  const sendOtp = async () => {
+    try {
+      await axios.post("/auth/send-otp", { email: form.email });
+      setInfo("OTP sent to your email");
+      setStep(2);
+    } catch (err) {
+      setError("Failed to send OTP");
+    }
   };
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    setError("");
-    setSuccess("");
-
+  const verifyOtp = async () => {
     try {
-      const res = await axios.post("/auth/register", form);
-      setSuccess("Registration successful. Redirecting to login...");
-      setTimeout(() => navigate("/login"), 1500);
-    } catch (err) {
-      setError(err.response?.data?.message || "Registration failed");
+      await axios.post("/auth/verify-otp", { email: form.email, otp });
+      setStep(3);
+    } catch {
+      setError("Invalid or expired OTP");
+    }
+  };
+
+  const register = async () => {
+    try {
+      await axios.post("/auth/register", form);
+      navigate("/login");
+    } catch {
+      setError("Registration failed");
     }
   };
 
   return (
     <Container maxWidth="sm">
-      <Box sx={{ mt: 8 }}>
-        <Typography variant="h4" gutterBottom align="center">
-          Create an Account
+      <Box sx={{ mt: 6 }}>
+        <Typography variant="h5" align="center" gutterBottom>
+          {step === 1
+            ? "Register"
+            : step === 2
+            ? "Enter OTP"
+            : "Creating Account..."}
         </Typography>
 
-        {error && (
-          <Alert severity="error" sx={{ mb: 2 }}>
-            {error}
-          </Alert>
-        )}
-        {success && (
-          <Alert severity="success" sx={{ mb: 2 }}>
-            {success}
-          </Alert>
-        )}
+        {error && <Alert severity="error">{error}</Alert>}
+        {info && <Alert severity="info">{info}</Alert>}
 
-        <form onSubmit={handleSubmit}>
-          <TextField
-            label="Name"
-            name="name"
-            fullWidth
-            margin="normal"
-            required
-            value={form.name}
-            onChange={handleChange}
-          />
-          <TextField
-            label="Email"
-            name="email"
-            type="email"
-            fullWidth
-            margin="normal"
-            required
-            value={form.email}
-            onChange={handleChange}
-          />
-          <TextField
-            label="Password"
-            name="password"
-            type="password"
-            fullWidth
-            margin="normal"
-            required
-            value={form.password}
-            onChange={handleChange}
-          />
-          <TextField
-            select
-            label="Role"
-            name="role"
-            fullWidth
-            margin="normal"
-            value={form.role}
-            onChange={handleChange}
+        {step === 1 && (
+          <Box
+            component="form"
+            sx={{ mt: 2 }}
+            onSubmit={(e) => e.preventDefault()}
           >
-            <MenuItem value="patient">Patient</MenuItem>
-            <MenuItem value="doctor">Doctor</MenuItem>
-            <MenuItem value="staff">Staff</MenuItem>
-          </TextField>
+            <TextField
+              label="Name"
+              fullWidth
+              margin="normal"
+              name="name"
+              value={form.name}
+              onChange={handleChange}
+              required
+            />
+            <TextField
+              label="Email"
+              fullWidth
+              margin="normal"
+              name="email"
+              type="email"
+              value={form.email}
+              onChange={handleChange}
+              required
+            />
+            <TextField
+              label="Password"
+              fullWidth
+              margin="normal"
+              name="password"
+              type="password"
+              value={form.password}
+              onChange={handleChange}
+              required
+            />
+            <TextField
+              select
+              label="Role"
+              fullWidth
+              margin="normal"
+              name="role"
+              value={form.role}
+              onChange={handleChange}
+            >
+              <MenuItem value="patient">Patient</MenuItem>
+              <MenuItem value="doctor">Doctor</MenuItem>
+              <MenuItem value="staff">Staff</MenuItem>
+            </TextField>
+            <Button
+              variant="contained"
+              fullWidth
+              onClick={sendOtp}
+              sx={{ mt: 2 }}
+            >
+              Send OTP
+            </Button>
+          </Box>
+        )}
 
-          <Button type="submit" variant="contained" fullWidth sx={{ mt: 2 }}>
-            Register
-          </Button>
-        </form>
+        {step === 2 && (
+          <Box>
+            <TextField
+              label="Enter OTP"
+              fullWidth
+              margin="normal"
+              value={otp}
+              onChange={(e) => setOtp(e.target.value)}
+            />
+            <Button
+              variant="contained"
+              fullWidth
+              onClick={verifyOtp}
+              sx={{ mt: 2 }}
+            >
+              Verify OTP
+            </Button>
+          </Box>
+        )}
+
+        {step === 3 && (
+          <Box>
+            <Button
+              variant="contained"
+              fullWidth
+              onClick={register}
+              sx={{ mt: 4 }}
+            >
+              Create Account
+            </Button>
+          </Box>
+        )}
       </Box>
     </Container>
   );

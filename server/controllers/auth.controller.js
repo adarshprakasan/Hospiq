@@ -1,6 +1,12 @@
 const User = require("../models/User");
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
+const OtpRequest = require("../models/OtpRequest");
+const sendOTPEmail = require("../utils/mailer");
+
+const generateOTP = () => {
+  return Math.floor(100000 + Math.random() * 900000).toString(); // 6-digit numeric OTP
+};
 
 exports.sendOtp = async (req, res) => {
   const { email } = req.body;
