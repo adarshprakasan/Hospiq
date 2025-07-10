@@ -1,15 +1,40 @@
-import React from "react";
-import { Button, Container, Typography } from "@mui/material";
+import { Routes, Route } from "react-router-dom";
+import BookingPage from "./pages/BookingPage";
+import LoginPage from "./pages/LoginPage";
+import RegisterForm from "./pages/RegisterForm";
+import DashboardPage from "./pages/DashboardPage";
+import ProtectedRoute from "./components/ProtectedRoute";
 
-export default function App() {
+function App() {
   return (
-    <Container maxWidth="sm" sx={{ textAlign: "center", mt: 10 }}>
-      <Typography variant="h3" gutterBottom>
-        Welcome to Hospiq
-      </Typography>
-      <Button variant="contained" color="primary">
-        Book OPD Token
-      </Button>
-    </Container>
+    <Routes>
+      <Route path="/login" element={<LoginPage />} />
+      <Route path="/register" element={<RegisterForm />} />
+
+      <Route
+        path="/"
+        element={
+          <ProtectedRoute allowedRoles={["patient"]}>
+            <BookingPage />
+          </ProtectedRoute>
+        }
+      />
+
+      <Route
+        path="/dashboard"
+        element={
+          <ProtectedRoute allowedRoles={["doctor", "staff"]}>
+            <DashboardPage />
+          </ProtectedRoute>
+        }
+      />
+
+      <Route
+        path="/unauthorized"
+        element={<div style={{ padding: "2rem" }}>Access Denied</div>}
+      />
+    </Routes>
   );
 }
+
+export default App;
