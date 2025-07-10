@@ -2,6 +2,28 @@ const User = require("../models/User");
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 
+exports.sendOtp = async (req, res) => {
+  const { email } = req.body;
+  const otp = generateOTP();
+  await OtpRequest.create({ email, otp });
+  try {
+    await sendOTPEmail(email, otp);
+    res.json({ message: "OTP sent" });
+  } catch (err) {
+    res.status(500).json({ message: "Failed to send OTP" });
+  }
+};
+
+exports.verifyOtp = async (req, res) => {
+  const { email, otp } = req.body;
+  const record = await OtpRequest.findOne({ email, otp });
+  if (!record || record.expiresAt < Date.now()) {
+    return res.status(400).json({ message: "Invalid or expired OTP" });
+  }
+  await OtpRequest.deleteMany({ email });
+  res.json({ success: true });
+};
+
 exports.registerUser = async (req, res) => {
   try {
     const { name, email, password, role } = req.body;
