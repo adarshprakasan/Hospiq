@@ -3,6 +3,7 @@ import BookingPage from "./pages/BookingPage";
 import LoginPage from "./pages/LoginPage";
 import RegisterForm from "./pages/RegisterForm";
 import DashboardPage from "./pages/DashboardPage";
+import ProfileDashboard from "./pages/ProfileDashboard";
 import ProtectedRoute from "./components/ProtectedRoute";
 
 function App() {
@@ -25,6 +26,15 @@ function App() {
         element={
           <ProtectedRoute allowedRoles={["doctor", "staff"]}>
             <DashboardPage />
+          </ProtectedRoute>
+        }
+      />
+
+      <Route
+        path="/profile"
+        element={
+          <ProtectedRoute allowedRoles={["patient", "doctor", "staff"]}>
+            <ProfileDashboard />
           </ProtectedRoute>
         }
       />
