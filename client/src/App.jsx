@@ -3,8 +3,9 @@ import BookingPage from "./pages/BookingPage";
 import LoginPage from "./pages/LoginPage";
 import RegisterForm from "./pages/RegisterForm";
 import DashboardPage from "./pages/DashboardPage";
-import ProfileDashboard from "./pages/ProfileDashboard";
 import ProtectedRoute from "./components/ProtectedRoute";
+import Layout from "./components/Layout";
+import ProfileDashboard from "./pages/ProfileDashboard";
 
 function App() {
   return (
@@ -16,7 +17,9 @@ function App() {
         path="/"
         element={
           <ProtectedRoute allowedRoles={["patient"]}>
-            <BookingPage />
+            <Layout>
+              <BookingPage />
+            </Layout>
           </ProtectedRoute>
         }
       />
@@ -25,7 +28,9 @@ function App() {
         path="/dashboard"
         element={
           <ProtectedRoute allowedRoles={["doctor", "staff"]}>
-            <DashboardPage />
+            <Layout>
+              <DashboardPage />
+            </Layout>
           </ProtectedRoute>
         }
       />
@@ -34,7 +39,9 @@ function App() {
         path="/profile"
         element={
           <ProtectedRoute allowedRoles={["patient", "doctor", "staff"]}>
-            <ProfileDashboard />
+            <Layout>
+              <ProfileDashboard />
+            </Layout>
           </ProtectedRoute>
         }
       />
