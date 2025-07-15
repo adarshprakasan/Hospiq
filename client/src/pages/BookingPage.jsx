@@ -57,30 +57,47 @@ export default function BookingPage() {
       setDepartments(res.data);
     } catch (err) {
       console.error("Failed to fetch departments:", err);
-      setDepartments([
-        { _id: "1", name: "Cardiology" },
-        { _id: "2", name: "Neurology" },
-      ]);
     }
   };
 
   // Handle Department Change → Load Doctors
   const handleDepartmentChange = async (e) => {
-    const deptId = e.target.value;
-    setSelectedDepartment(deptId);
+    const dept = e.target.value;
+    setSelectedDepartment(dept);
     setSelectedDoctor("");
+
+    console.log("Departments:", departments);
+    console.log("Searching for dept:", dept);
+
+    // Find selected department object
+    const selectedDept = departments.find(
+      // (d) => String(d.name) == String(dept)
+      (d) => d === dept
+    );
+
+    if (!selectedDept) {
+      console.error("Department not found", {
+        dept,
+        departments: departments.map((d) => ({
+          id: d._id || "undefined",
+          name: d.name || "undefined",
+        })),
+      });
+      return;
+    }
+
+    const departmentName = selectedDept;
 
     try {
       const res = await axios.get(
-        `/doctors?hospitalId=${selectedHospital}&departmentId=${deptId}`
+        `/doctors?hospitalId=${selectedHospital}&department=${encodeURIComponent(
+          departmentName
+        )}`
       );
       setDoctors(res.data);
     } catch (err) {
       console.error("Failed to fetch doctors:", err);
-      setDoctors([
-        { _id: "1", name: "Dr. Smith" },
-        { _id: "2", name: "Dr. Adams" },
-      ]);
+      setDoctors([]);
     }
   };
 
@@ -97,21 +114,22 @@ export default function BookingPage() {
     setLoading(true);
     try {
       const res = await axios.post("/tokens/book", {
-        hospitalId: selectedHospital,
         doctorId: selectedDoctor,
+        hospitalId: selectedHospital, // Optional if required by backend
       });
 
-      const data = res.data;
       setSnack({
         open: true,
-        message: `Token Booked! Your token: ${data.tokenNumber}, ETA: ${data.estimatedTime}`,
+        message: `Token Booked! Your token: ${
+          res.data.token.tokenNumber
+        }, ETA: ${res.data.token.estimatedTime || "TBD"}`,
         severity: "success",
       });
     } catch (err) {
-      console.error("Booking failed:", err);
       setSnack({
         open: true,
-        message: "Booking failed. Try again.",
+        message:
+          err.response?.data?.message || "Booking failed. Please try again.",
         severity: "error",
       });
     } finally {
@@ -129,7 +147,7 @@ export default function BookingPage() {
         <FormControl fullWidth>
           <InputLabel>Hospital</InputLabel>
           <Select
-            value={selectedHospital}
+            value={selectedHospital || ""}
             label="Hospital"
             onChange={handleHospitalChange}
           >
@@ -144,13 +162,13 @@ export default function BookingPage() {
         <FormControl fullWidth disabled={!selectedHospital}>
           <InputLabel>Department</InputLabel>
           <Select
-            value={selectedDepartment}
+            value={selectedDepartment || ""}
             label="Department"
             onChange={handleDepartmentChange}
           >
-            {departments.map((d) => (
-              <MenuItem key={d._id} value={d._id}>
-                {d.name}
+            {departments.map((name, index) => (
+              <MenuItem key={index} value={name}>
+                {name}
               </MenuItem>
             ))}
           </Select>
@@ -159,7 +177,7 @@ export default function BookingPage() {
         <FormControl fullWidth disabled={!selectedDepartment}>
           <InputLabel>Doctor</InputLabel>
           <Select
-            value={selectedDoctor}
+            value={selectedDoctor || ""}
             label="Doctor"
             onChange={(e) => setSelectedDoctor(e.target.value)}
           >

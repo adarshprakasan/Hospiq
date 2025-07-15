@@ -6,6 +6,7 @@ import DashboardPage from "./pages/DashboardPage";
 import ProtectedRoute from "./components/ProtectedRoute";
 import Layout from "./components/Layout";
 import ProfileDashboard from "./pages/ProfileDashboard";
+import MyTokensPage from "./pages/MyTokensPage";
 
 function App() {
   return (
@@ -41,6 +42,17 @@ function App() {
           <ProtectedRoute allowedRoles={["patient", "doctor", "staff"]}>
             <Layout>
               <ProfileDashboard />
+            </Layout>
+          </ProtectedRoute>
+        }
+      />
+
+      <Route
+        path="/my-tokens"
+        element={
+          <ProtectedRoute allowedRoles={["patient"]}>
+            <Layout>
+              <MyTokensPage />
             </Layout>
           </ProtectedRoute>
         }

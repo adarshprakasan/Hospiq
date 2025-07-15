@@ -1,6 +1,11 @@
 const express = require("express");
 const router = express.Router();
-const { createDoctor, getDoctorsByHospital, updateAvailability } = require("../controllers/doctor.controller");
+const {
+  createDoctor,
+  getDoctorsByHospital,
+  updateAvailability,
+  getDoctorsByHospitalAndDepartment,
+} = require("../controllers/doctor.controller");
 const auth = require("../middlewares/auth");
 const checkRole = require("../middlewares/roles");
 
@@ -11,6 +16,13 @@ router.post("/create", auth, checkRole(["staff", "admin"]), createDoctor);
 router.get("/hospital/:hospitalId", getDoctorsByHospital);
 
 // Doctor or staff can update availability
-router.put("/:id/availability", auth, checkRole(["doctor", "staff"]), updateAvailability);
+router.put(
+  "/:id/availability",
+  auth,
+  checkRole(["doctor", "staff"]),
+  updateAvailability
+);
+
+router.get("/", getDoctorsByHospitalAndDepartment);
 
 module.exports = router;

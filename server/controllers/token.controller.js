@@ -1,6 +1,7 @@
 const Doctor = require("../models/Doctor");
 const Token = require("../models/Token");
 const DoctorSchedule = require("../models/DoctorSchedule");
+const User = require("../models/User");
 
 exports.bookToken = async (req, res) => {
   try {
@@ -140,5 +141,108 @@ exports.bookOfflineToken = async (req, res) => {
     res.status(201).json({ message: "Offline token booked", token });
   } catch (error) {
     res.status(500).json({ message: "Failed to book offline token", error });
+  }
+};
+
+// Get tokens for logged-in doctor or staff
+exports.getMyTokens = async (req, res) => {
+  try {
+    let tokens;
+    if (req.user.role === "doctor") {
+      tokens = await Token.find({ doctorId: req.user.id });
+    } else if (req.user.role === "staff") {
+      tokens = await Token.find(); // optionally filter by hospital/department
+    } else {
+      return res.status(403).json({ message: "Access denied" });
+    }
+
+    const populatedTokens = await Token.populate(tokens, [
+      { path: "patientId", select: "name email" },
+      { path: "doctorId", select: "name" },
+      { path: "departmentId", select: "name" },
+    ]);
+
+    const result = populatedTokens.map((token) => ({
+      _id: token._id,
+      tokenNumber: token.tokenNumber,
+      status: token.status,
+      patientId: token.patientId?._id,
+      patientName: token.patientId?.name || "Unknown",
+      doctorName: token.doctorId?.name || "Unknown",
+      departmentName: token.departmentId?.name || "Unknown",
+      estimatedTime: token.estimatedTime,
+      consultationTime: token.consultationTime,
+      createdAt: token.createdAt,
+    }));
+
+    res.json(result);
+  } catch (err) {
+    res.status(500).json({ message: "Server error" });
+  }
+};
+
+// Get tokens for the logged-in patient
+exports.getMyPatientTokens = async (req, res) => {
+  try {
+    if (req.user.role !== "patient") {
+      return res.status(403).json({ message: "Access denied" });
+    }
+
+    const tokens = await Token.find({ patientId: req.user.id })
+      .sort({ createdAt: -1 })
+      .populate("doctorId", "name")
+      .populate("departmentId", "name");
+
+    const result = tokens.map((token) => ({
+      _id: token._id,
+      tokenNumber: token.tokenNumber,
+      status: token.status,
+      doctorName: token.doctorId?.name || "Unknown",
+      departmentName: token.departmentId?.name || "Unknown",
+      estimatedTime: token.estimatedTime,
+      consultationTime: token.consultationTime,
+      createdAt: token.createdAt,
+    }));
+
+    res.json(result);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: "Failed to fetch tokens" });
+  }
+};
+
+// Mark a token as completed
+exports.tokenComplete = async (req, res) => {
+  try {
+    const token = await Token.findById(req.params.id);
+    if (!token) return res.status(404).json({ message: "Token not found" });
+
+    token.status = "completed";
+    await token.save();
+
+    res.json({ message: "Token marked as completed" });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: "Failed to complete token" });
+  }
+};
+
+exports.cancelToken = async (req, res) => {
+  try {
+    const token = await Token.findById(req.params.tokenId);
+    if (!token || token.patientId.toString() !== req.user.id) {
+      return res.status(403).json({ message: "Not authorized" });
+    }
+
+    if (["completed", "cancelled"].includes(token.status)) {
+      return res.status(400).json({ message: "Cannot cancel this token" });
+    }
+
+    token.status = "cancelled";
+    await token.save();
+
+    res.json({ message: "Token cancelled" });
+  } catch (err) {
+    res.status(500).json({ message: "Failed to cancel token" });
   }
 };
