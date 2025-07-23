@@ -245,7 +245,12 @@ exports.tokenComplete = async (req, res) => {
 exports.cancelToken = async (req, res) => {
   try {
     const token = await Token.findById(req.params.tokenId);
-    if (!token || token.patientId.toString() !== req.user.id) {
+    console.log(token);
+    if (
+      !token ||
+      !token.patientId ||
+      token.patientId.toString() !== req.user.id
+    ) {
       return res.status(403).json({ message: "Not authorized" });
     }
 
@@ -254,9 +259,15 @@ exports.cancelToken = async (req, res) => {
     }
 
     token.status = "cancelled";
-    await token.save();
+    console.log(token);
 
-    res.json({ message: "Token cancelled" });
+    try {
+      await token.save();
+      res.json({ message: "Token cancelled" });
+    } catch (saveErr) {
+      console.error("Save error:", saveErr);
+      res.status(500).json({ message: "Error saving token" });
+    }
   } catch (err) {
     res.status(500).json({ message: "Failed to cancel token" });
   }

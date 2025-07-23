@@ -15,8 +15,8 @@ const tokenSchema = new mongoose.Schema(
     patientName: { type: String },
     departmentId: {
       type: mongoose.Schema.Types.ObjectId,
-      ref: "Department", // ✅ Added this
-      required: true,
+      ref: "Department",
+      required: false,
     },
     isOffline: { type: Boolean, default: false },
     tokenNumber: Number,

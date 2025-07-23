@@ -16,6 +16,7 @@ import {
 import axios from "../api/axios";
 import { QRCodeCanvas } from "qrcode.react";
 import { isSameDay } from "date-fns";
+import PrintableQRCode from "../components/PrintableQRCode";
 
 const MyTokensPage = () => {
   const [tokens, setTokens] = useState([]);
@@ -163,24 +164,28 @@ const MyTokensPage = () => {
               )}
 
               {/* QR Code with more details */}
-              <Box mt={2}>
-                <QRCodeCanvas
-                  value={JSON.stringify({
-                    tokenId: token._id,
-                    tokenNumber: token.tokenNumber,
-                    patientName: token.patientName,
-                  })}
-                  size={128}
-                />
+              <PrintableQRCode token={token} />
+              {/* <Box mt={2}>
+                <div id="print-area" style={{ padding: 16 }}>
+                  <QRCodeCanvas
+                    value={JSON.stringify({
+                      tokenId: token._id,
+                      tokenNumber: token.tokenNumber,
+                      patientName: token.patientName,
+                    })}
+                    size={128}
+                  />
+                </div>
+
                 <Button
                   variant="outlined"
                   size="small"
                   sx={{ mt: 1 }}
-                  onClick={() => window.print()}
+                  onClick={handlePrintQRCode}
                 >
-                  Print Token
+                  Print QR Code
                 </Button>
-              </Box>
+              </Box> */}
 
               {token.status === "booked" && (
                 <Box mt={2}>
@@ -194,7 +199,7 @@ const MyTokensPage = () => {
                 </Box>
               )}
 
-              {token.status === "completed" && (
+              {/* {token.status === "completed" && (
                 <Box mt={2}>
                   <Button
                     variant="contained"
@@ -206,7 +211,7 @@ const MyTokensPage = () => {
                     Book Again
                   </Button>
                 </Box>
-              )}
+              )} */}
             </Paper>
           );
         })
