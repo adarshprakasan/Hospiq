@@ -20,6 +20,8 @@ exports.bookToken = async (req, res) => {
     const doctorSchedule = await DoctorSchedule.findOne({
       doctorId: doctor._id,
     });
+    console.log("Schedule fetched for doctor:", doctor._id, doctorSchedule);
+
     if (!doctorSchedule) {
       return res.status(400).json({ message: "Doctor schedule not set." });
     }
@@ -52,11 +54,21 @@ exports.bookToken = async (req, res) => {
       }
     }
 
+    // Count existing tokens for today
+    const todayDate = new Date();
+    todayDate.setHours(0, 0, 0, 0);
+
+    const count = await Token.countDocuments({
+      doctorId,
+      date: { $gte: todayDate },
+    });
+
+    // Create the token
     const newToken = new Token({
       doctorId,
       patientId,
       tokenNumber: count + 1,
-      date: today,
+      date: new Date(),
     });
 
     await newToken.save();
@@ -162,6 +174,8 @@ exports.getMyTokens = async (req, res) => {
       { path: "departmentId", select: "name" },
     ]);
 
+    console.log(populatedTokens);
+
     const result = populatedTokens.map((token) => ({
       _id: token._id,
       tokenNumber: token.tokenNumber,
@@ -193,6 +207,7 @@ exports.getMyPatientTokens = async (req, res) => {
       .populate("doctorId", "name")
       .populate("departmentId", "name");
 
+    console.log(tokens);
     const result = tokens.map((token) => ({
       _id: token._id,
       tokenNumber: token.tokenNumber,

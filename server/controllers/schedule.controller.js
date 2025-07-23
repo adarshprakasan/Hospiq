@@ -2,22 +2,30 @@ const DoctorSchedule = require("../models/DoctorSchedule");
 
 exports.setSchedule = async (req, res) => {
   try {
-    const doctorId = req.user.id;
-    const { weeklySchedule } = req.body;
+    const { doctorId, days, startTime, endTime } = req.body;
 
-    const existing = await DoctorSchedule.findOne({ doctorId });
+    const weeklySchedule = days.map((day) => ({
+      day,
+      startTime,
+      endTime,
+      isAvailable: true,
+    }));
 
-    if (existing) {
-      existing.weeklySchedule = weeklySchedule;
-      await existing.save();
-      return res.json({ message: "Schedule updated", schedule: existing });
+    // Check for existing schedule
+    let schedule = await DoctorSchedule.findOne({ doctorId });
+
+    if (schedule) {
+      schedule.weeklySchedule = weeklySchedule;
+      await schedule.save();
+      return res.json({ message: "Schedule updated", schedule });
     }
 
-    const schedule = new DoctorSchedule({ doctorId, weeklySchedule });
+    schedule = new DoctorSchedule({ doctorId, weeklySchedule });
     await schedule.save();
 
     res.status(201).json({ message: "Schedule created", schedule });
   } catch (err) {
+    console.error("Error saving schedule:", err);
     res.status(500).json({ message: err.message });
   }
 };

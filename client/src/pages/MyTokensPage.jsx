@@ -33,7 +33,7 @@ const MyTokensPage = () => {
   useEffect(() => {
     const fetchTokens = async () => {
       try {
-        const res = await axios.get("/tokens/my");
+        const res = await axios.get("/tokens/mine");
         setTokens(res.data);
         setFilteredTokens(res.data);
       } catch (err) {
@@ -131,51 +131,85 @@ const MyTokensPage = () => {
       {paginatedTokens.length === 0 ? (
         <Alert severity="info">No tokens match your filters.</Alert>
       ) : (
-        paginatedTokens.map((token) => (
-          <Paper key={token._id} sx={{ p: 2, my: 2 }}>
-            <Typography variant="h6">
-              Token #{token.tokenNumber} - Doctor: {token.doctorName}
-            </Typography>
-            <Typography>Department: {token.departmentName}</Typography>
-            <Typography>Status: {token.status}</Typography>
-            <Typography>
-              ETA:{" "}
-              {token.estimatedTime
-                ? new Date(token.estimatedTime).toLocaleTimeString()
-                : "Not calculated"}
-            </Typography>
-            {token.consultationTime && (
-              <Typography>
-                Checked-in at:{" "}
-                {new Date(token.consultationTime).toLocaleTimeString()}
+        paginatedTokens.map((token) => {
+          const isToday = isSameDay(new Date(token.createdAt), new Date());
+          return (
+            <Paper
+              key={token._id}
+              sx={{
+                p: 2,
+                my: 2,
+                backgroundColor: isToday ? "#f0f8ff" : "white",
+              }}
+            >
+              <Typography variant="h6">
+                Token #{token.tokenNumber} - Doctor: {token.doctorName || "N/A"}
               </Typography>
-            )}
+              <Typography>
+                Department: {token.departmentName || "N/A"}
+              </Typography>
+              <Typography>Status: {token.status}</Typography>
+              <Typography>
+                ETA:{" "}
+                {token.estimatedTime
+                  ? new Date(token.estimatedTime).toLocaleTimeString()
+                  : "Not calculated"}
+              </Typography>
+              {token.consultationTime && (
+                <Typography>
+                  Checked-in at:{" "}
+                  {new Date(token.consultationTime).toLocaleTimeString()}
+                </Typography>
+              )}
 
-            {/* QR Code with more details */}
-            <Box mt={2}>
-              <QRCodeCanvas
-                value={JSON.stringify({
-                  tokenId: token._id,
-                  tokenNumber: token.tokenNumber,
-                  patientName: token.patientName,
-                })}
-                size={128}
-              />
-            </Box>
-
-            {token.status === "booked" && (
+              {/* QR Code with more details */}
               <Box mt={2}>
+                <QRCodeCanvas
+                  value={JSON.stringify({
+                    tokenId: token._id,
+                    tokenNumber: token.tokenNumber,
+                    patientName: token.patientName,
+                  })}
+                  size={128}
+                />
                 <Button
                   variant="outlined"
-                  color="error"
-                  onClick={() => handleCancel(token._id)}
+                  size="small"
+                  sx={{ mt: 1 }}
+                  onClick={() => window.print()}
                 >
-                  Cancel Token
+                  Print Token
                 </Button>
               </Box>
-            )}
-          </Paper>
-        ))
+
+              {token.status === "booked" && (
+                <Box mt={2}>
+                  <Button
+                    variant="outlined"
+                    color="error"
+                    onClick={() => handleCancel(token._id)}
+                  >
+                    Cancel Token
+                  </Button>
+                </Box>
+              )}
+
+              {token.status === "completed" && (
+                <Box mt={2}>
+                  <Button
+                    variant="contained"
+                    color="primary"
+                    onClick={() => {
+                      window.location.href = `/book?doctorId=${token.doctorId}`;
+                    }}
+                  >
+                    Book Again
+                  </Button>
+                </Box>
+              )}
+            </Paper>
+          );
+        })
       )}
 
       {/* Pagination Controls */}

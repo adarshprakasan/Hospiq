@@ -8,7 +8,7 @@ const {
 } = require("../controllers/schedule.controller");
 
 // Set or update schedule — Doctor only
-router.post("/set", auth, checkRole(["doctor"]), setSchedule);
+router.post("/set", auth, checkRole(["staff", "doctor"]), setSchedule);
 
 // Get doctor schedule by ID (public/staff/patient access)
 router.get("/:doctorId", getSchedule);
