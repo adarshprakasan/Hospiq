@@ -11,7 +11,7 @@ import {
   Stack,
   Paper,
 } from "@mui/material";
-import axios from "axios";
+import axios from "../api/axios";
 
 const StaffQueuePage = () => {
   const [tokens, setTokens] = useState([]);
@@ -22,8 +22,7 @@ const StaffQueuePage = () => {
   useEffect(() => {
     const fetchTokens = async () => {
       try {
-        const res = await axios.get("/tokens/today");
-        console.log(res);
+        const res = await axios.get("/tokens/my");
         setTokens(res.data);
       } catch (err) {
         console.error("Error fetching tokens", err);
@@ -33,12 +32,11 @@ const StaffQueuePage = () => {
     };
 
     fetchTokens();
-    console.log(tokens);
   }, []);
 
   const handleStatusUpdate = async (tokenId, newStatus) => {
     try {
-      await axios.patch(`/tokens/${tokenId}/status`, { status: newStatus });
+      await axios.put(`/tokens/${tokenId}/status`, { status: newStatus });
       setTokens((prev) =>
         prev.map((t) => (t._id === tokenId ? { ...t, status: newStatus } : t))
       );

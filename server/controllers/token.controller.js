@@ -115,6 +115,7 @@ exports.updateTokenStatus = async (req, res) => {
     const allowedStatuses = [
       "booked",
       "called",
+      "skipped",
       "consulting",
       "completed",
       "no-show",
