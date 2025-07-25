@@ -13,6 +13,7 @@ import {
 } from "@mui/material";
 import axios from "../api/axios";
 import { format } from "date-fns";
+import { useMemo } from "react";
 
 export default function DashboardPage() {
   const [user, setUser] = useState(null);
@@ -27,11 +28,16 @@ export default function DashboardPage() {
         setUser(profileRes.data);
 
         const tokensRes = await axios.get("/tokens/my");
-        // Filter today's tokens
+
+        // Get today's date in YYYY-MM-DD format (local time)
         const today = new Date().toISOString().split("T")[0];
-        const todayTokens = tokensRes.data.filter((t) =>
-          t.createdAt?.startsWith(today)
-        );
+
+        const todayTokens = tokensRes.data.filter((t) => {
+          const createdAtDate = new Date(t.createdAt);
+          const localDate = createdAtDate.toISOString().split("T")[0];
+          return localDate === today;
+        });
+
         setTokens(todayTokens);
       } catch (err) {
         setError("Failed to load dashboard data.");
@@ -43,10 +49,12 @@ export default function DashboardPage() {
     fetchDashboard();
   }, []);
 
-  const grouped = {
-    waiting: tokens.filter((t) => t.status === "waiting"),
-    completed: tokens.filter((t) => t.status === "completed"),
-  };
+  const grouped = useMemo(() => {
+    return {
+      waiting: tokens.filter((t) => t.status === "pending"),
+      completed: tokens.filter((t) => t.status === "completed"),
+    };
+  }, [tokens]);
 
   const renderTokenCard = (token, index, statusGroup) => (
     <Paper key={token._id || index} sx={{ p: 2, my: 1 }}>

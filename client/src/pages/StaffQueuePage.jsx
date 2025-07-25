@@ -1,0 +1,132 @@
+import React, { useEffect, useState } from "react";
+import {
+  Box,
+  Typography,
+  Select,
+  MenuItem,
+  FormControl,
+  InputLabel,
+  Chip,
+  Button,
+  Stack,
+  Paper,
+} from "@mui/material";
+import axios from "axios";
+
+const StaffQueuePage = () => {
+  const [tokens, setTokens] = useState([]);
+  const [filterStatus, setFilterStatus] = useState("");
+  const [loading, setLoading] = useState(true);
+
+  // Fetch tokens for today
+  useEffect(() => {
+    const fetchTokens = async () => {
+      try {
+        const res = await axios.get("/tokens/today");
+        console.log(res);
+        setTokens(res.data);
+      } catch (err) {
+        console.error("Error fetching tokens", err);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchTokens();
+    console.log(tokens);
+  }, []);
+
+  const handleStatusUpdate = async (tokenId, newStatus) => {
+    try {
+      await axios.patch(`/tokens/${tokenId}/status`, { status: newStatus });
+      setTokens((prev) =>
+        prev.map((t) => (t._id === tokenId ? { ...t, status: newStatus } : t))
+      );
+    } catch (err) {
+      console.error("Status update failed", err);
+    }
+  };
+
+  const filteredTokens = filterStatus
+    ? tokens.filter((t) => t.status === filterStatus)
+    : tokens;
+
+  return (
+    <Box p={3}>
+      <Typography variant="h5" mb={2}>
+        Manage Token Queue
+      </Typography>
+
+      <FormControl sx={{ minWidth: 180, mb: 2 }}>
+        <InputLabel>Status Filter</InputLabel>
+        <Select
+          value={filterStatus}
+          label="Status Filter"
+          onChange={(e) => setFilterStatus(e.target.value)}
+        >
+          <MenuItem value="">All</MenuItem>
+          <MenuItem value="pending">Pending</MenuItem>
+          <MenuItem value="called">Called</MenuItem>
+          <MenuItem value="skipped">Skipped</MenuItem>
+          <MenuItem value="completed">Completed</MenuItem>
+        </Select>
+      </FormControl>
+
+      {loading ? (
+        <Typography>Loading...</Typography>
+      ) : (
+        <Stack spacing={2}>
+          {filteredTokens.map((token) => (
+            <Paper key={token._id} sx={{ p: 2 }}>
+              <Typography>
+                Token #{token.tokenNumber} -{" "}
+                <strong>{token.patientName}</strong>
+              </Typography>
+              <Typography variant="body2">
+                Status:{" "}
+                <Chip
+                  label={token.status}
+                  color={
+                    token.status === "completed"
+                      ? "success"
+                      : token.status === "called"
+                      ? "warning"
+                      : token.status === "pending"
+                      ? "primary"
+                      : "default"
+                  }
+                  size="small"
+                />
+              </Typography>
+              <Stack direction="row" spacing={1} mt={1}>
+                <Button
+                  variant="outlined"
+                  size="small"
+                  onClick={() => handleStatusUpdate(token._id, "called")}
+                >
+                  Call
+                </Button>
+                <Button
+                  variant="outlined"
+                  size="small"
+                  onClick={() => handleStatusUpdate(token._id, "skipped")}
+                >
+                  Skip
+                </Button>
+                <Button
+                  variant="outlined"
+                  size="small"
+                  onClick={() => handleStatusUpdate(token._id, "completed")}
+                >
+                  Complete
+                </Button>
+              </Stack>
+            </Paper>
+          ))}
+        </Stack>
+      )}
+    </Box>
+  );
+};
+
+export default StaffQueuePage;

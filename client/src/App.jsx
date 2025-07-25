@@ -8,6 +8,7 @@ import Layout from "./components/Layout";
 import ProfileDashboard from "./pages/ProfileDashboard";
 import MyTokensPage from "./pages/MyTokensPage";
 import DoctorScheduleForm from "./pages/DoctorScheduleForm";
+import StaffQueuePage from "./pages/StaffQueuePage";
 
 function App() {
   return (
@@ -65,6 +66,17 @@ function App() {
           <ProtectedRoute allowedRoles={["staff"]}>
             <Layout>
               <DoctorScheduleForm />
+            </Layout>
+          </ProtectedRoute>
+        }
+      />
+
+      <Route
+        path="/staff-queue"
+        element={
+          <ProtectedRoute allowedRoles={["staff"]}>
+            <Layout>
+              <StaffQueuePage />
             </Layout>
           </ProtectedRoute>
         }
