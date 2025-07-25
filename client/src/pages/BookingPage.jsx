@@ -66,8 +66,8 @@ export default function BookingPage() {
     setSelectedDepartment(dept);
     setSelectedDoctor("");
 
-    console.log("Departments:", departments);
-    console.log("Searching for dept:", dept);
+    // console.log("Departments:", departments);
+    // console.log("Searching for dept:", dept);
 
     // Find selected department object
     const selectedDept = departments.find(
@@ -115,6 +115,7 @@ export default function BookingPage() {
     try {
       const res = await axios.post("/tokens/book", {
         doctorId: selectedDoctor,
+        departmentId: selectedDepartment,
         hospitalId: selectedHospital, // Optional if required by backend
       });
 

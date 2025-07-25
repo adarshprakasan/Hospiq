@@ -5,7 +5,7 @@ const User = require("../models/User");
 
 exports.bookToken = async (req, res) => {
   try {
-    const { doctorId } = req.body;
+    const { doctorId, departmentId } = req.body;
     const patientId = req.user.id;
 
     const doctor = await Doctor.findById(doctorId);
@@ -20,7 +20,7 @@ exports.bookToken = async (req, res) => {
     const doctorSchedule = await DoctorSchedule.findOne({
       doctorId: doctor._id,
     });
-    console.log("Schedule fetched for doctor:", doctor._id, doctorSchedule);
+    // console.log("Schedule fetched for doctor:", doctor._id, doctorSchedule);
 
     if (!doctorSchedule) {
       return res.status(400).json({ message: "Doctor schedule not set." });
@@ -67,6 +67,7 @@ exports.bookToken = async (req, res) => {
     const newToken = new Token({
       doctorId,
       patientId,
+      departmentId,
       tokenNumber: count + 1,
       date: new Date(),
     });
@@ -172,7 +173,7 @@ exports.getMyTokens = async (req, res) => {
     const populatedTokens = await Token.populate(tokens, [
       { path: "patientId", select: "name email" },
       { path: "doctorId", select: "name" },
-      { path: "departmentId", select: "name" },
+      // { path: "departmentId", select: "name" },
     ]);
 
     console.log(populatedTokens);
@@ -184,7 +185,7 @@ exports.getMyTokens = async (req, res) => {
       patientId: token.patientId?._id,
       patientName: token.patientId?.name || "Unknown",
       doctorName: token.doctorId?.name || "Unknown",
-      departmentName: token.departmentId?.name || "Unknown",
+      departmentName: token.departmentId || "Unknown",
       estimatedTime: token.estimatedTime,
       consultationTime: token.consultationTime,
       createdAt: token.createdAt,

@@ -10,6 +10,7 @@ import {
   Button,
   Stack,
   Paper,
+  TextField,
 } from "@mui/material";
 import axios from "../api/axios";
 
@@ -17,13 +18,21 @@ const StaffQueuePage = () => {
   const [tokens, setTokens] = useState([]);
   const [filterStatus, setFilterStatus] = useState("");
   const [loading, setLoading] = useState(true);
+  const [loadingTokenId, setLoadingTokenId] = useState(null);
+  const [searchQuery, setSearchQuery] = useState("");
 
   // Fetch tokens for today
   useEffect(() => {
     const fetchTokens = async () => {
       try {
         const res = await axios.get("/tokens/my");
-        setTokens(res.data);
+        const today = new Date().toISOString().split("T")[0];
+        const todayTokens = res.data.filter((t) => {
+          const createdAt = new Date(t.createdAt);
+          const localDate = createdAt.toISOString().split("T")[0];
+          return localDate === today;
+        });
+        setTokens(todayTokens);
       } catch (err) {
         console.error("Error fetching tokens", err);
       } finally {
@@ -35,6 +44,7 @@ const StaffQueuePage = () => {
   }, []);
 
   const handleStatusUpdate = async (tokenId, newStatus) => {
+    setLoadingTokenId(tokenId);
     try {
       await axios.put(`/tokens/${tokenId}/status`, { status: newStatus });
       setTokens((prev) =>
@@ -42,12 +52,19 @@ const StaffQueuePage = () => {
       );
     } catch (err) {
       console.error("Status update failed", err);
+    } finally {
+      setLoadingTokenId(null);
     }
   };
 
-  const filteredTokens = filterStatus
-    ? tokens.filter((t) => t.status === filterStatus)
-    : tokens;
+  const filteredTokens = tokens.filter((t) => {
+    const matchesStatus = filterStatus ? t.status === filterStatus : true;
+    const matchesSearch =
+      t.patientName.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      t.tokenNumber.toString().includes(searchQuery);
+
+    return matchesStatus && matchesSearch;
+  });
 
   return (
     <Box p={3}>
@@ -55,6 +72,15 @@ const StaffQueuePage = () => {
         Manage Token Queue
       </Typography>
 
+      <TextField
+        label="Search by name or token"
+        variant="outlined"
+        size="small"
+        fullWidth
+        sx={{ maxWidth: 300, mb: 2 }}
+        value={searchQuery}
+        onChange={(e) => setSearchQuery(e.target.value)}
+      />
       <FormControl sx={{ minWidth: 180, mb: 2 }}>
         <InputLabel>Status Filter</InputLabel>
         <Select
@@ -81,6 +107,18 @@ const StaffQueuePage = () => {
                 <strong>{token.patientName}</strong>
               </Typography>
               <Typography variant="body2">
+                Doctor:{" "}
+                <strong>
+                  {token.doctor?.name || token.doctorName || "N/A"}
+                </strong>
+              </Typography>
+              <Typography variant="body2" mb={1}>
+                Department:{" "}
+                <strong>
+                  {token.department?.name || token.departmentName || "N/A"}
+                </strong>
+              </Typography>
+              <Typography variant="body2">
                 Status:{" "}
                 <Chip
                   label={token.status}
@@ -100,13 +138,16 @@ const StaffQueuePage = () => {
                 <Button
                   variant="outlined"
                   size="small"
+                  disabled={loadingTokenId === token._id}
                   onClick={() => handleStatusUpdate(token._id, "called")}
                 >
                   Call
                 </Button>
+
                 <Button
                   variant="outlined"
                   size="small"
+                  disabled={loadingTokenId === token._id}
                   onClick={() => handleStatusUpdate(token._id, "skipped")}
                 >
                   Skip
@@ -114,6 +155,7 @@ const StaffQueuePage = () => {
                 <Button
                   variant="outlined"
                   size="small"
+                  disabled={loadingTokenId === token._id}
                   onClick={() => handleStatusUpdate(token._id, "completed")}
                 >
                   Complete
