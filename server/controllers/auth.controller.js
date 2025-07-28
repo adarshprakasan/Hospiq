@@ -5,7 +5,7 @@ const OtpRequest = require("../models/OtpRequest");
 const sendOTPEmail = require("../utils/mailer");
 
 const generateOTP = () => {
-  return Math.floor(100000 + Math.random() * 900000).toString(); // 6-digit numeric OTP
+  return Math.floor(100000 + Math.random() * 900000).toString();
 };
 
 exports.sendOtp = async (req, res) => {
@@ -74,6 +74,7 @@ exports.loginUser = async (req, res) => {
         email: user.email,
         role: user.role,
         hospitalId: user.hospitalId,
+        departmentId: user.departmentId,
       },
     });
   } catch (err) {

@@ -11,12 +11,12 @@ import {
 import axios from "../api/axios";
 import { useNavigate } from "react-router-dom";
 
-export default function RegisterForm() {
+export default function HospitalRegister() {
   const [form, setForm] = useState({
     name: "",
     email: "",
     password: "",
-    role: "patient",
+    role: "staff",
   });
   const [step, setStep] = useState(1);
   const [otp, setOtp] = useState("");
@@ -96,6 +96,19 @@ export default function RegisterForm() {
               onChange={handleChange}
               required
             />
+            <TextField
+              select
+              label="Role"
+              fullWidth
+              margin="normal"
+              name="role"
+              value={form.role}
+              onChange={handleChange}
+              required
+            >
+              <MenuItem value="doctor">Doctor</MenuItem>
+              <MenuItem value="staff">Staff</MenuItem>
+            </TextField>
             <Button
               variant="contained"
               fullWidth

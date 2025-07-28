@@ -14,6 +14,10 @@ const userSchema = new mongoose.Schema(
       type: mongoose.Schema.Types.ObjectId,
       ref: "Hospital",
     },
+    departmentId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Department",
+    },
     availabilityStatus: {
       type: Boolean,
       default: false, // Only relevant for doctors

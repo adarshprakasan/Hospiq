@@ -120,6 +120,53 @@ export default function DashboardPage() {
 
   return (
     <Container maxWidth="md" sx={{ mt: 6 }}>
+      <Box display="flex" justifyContent="flex-end" gap={2} mb={2}>
+        {!user?.hospitalId ? (
+          <Button
+            variant="contained"
+            color="secondary"
+            onClick={() => (window.location.href = "/create-hospital")}
+          >
+            Add Clinic/Hospital
+          </Button>
+        ) : user?.hospital?.type === "clinic" ? (
+          <Button
+            variant="contained"
+            color="primary"
+            onClick={() => (window.location.href = "/schedule")}
+          >
+            Schedule Doctor
+          </Button>
+        ) : (
+          <>
+            <Button
+              variant="contained"
+              color="primary"
+              onClick={() => (window.location.href = "/departments/add")}
+            >
+              Add Department
+            </Button>
+
+            <Button
+              variant="contained"
+              color="primary"
+              onClick={() => (window.location.href = "/doctors/add")}
+            >
+              Add Doctor
+            </Button>
+
+            {user?.doctors?.length > 0 && (
+              <Button
+                variant="contained"
+                color="primary"
+                onClick={() => (window.location.href = "/schedule")}
+              >
+                Schedule
+              </Button>
+            )}
+          </>
+        )}
+      </Box>
       <Typography variant="h4" gutterBottom>
         {user.role === "doctor" ? "Doctor" : "Staff"} Dashboard
       </Typography>

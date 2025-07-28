@@ -1,7 +1,9 @@
 import { Routes, Route } from "react-router-dom";
-import BookingPage from "./pages/BookingPage";
-import LoginPage from "./pages/LoginPage";
 import RegisterForm from "./pages/RegisterForm";
+import LoginPage from "./pages/LoginPage";
+import HospitalRegister from "./pages/HospitalRegister";
+import CreateHospital from "./pages/CreateHospital";
+import BookingPage from "./pages/BookingPage";
 import DashboardPage from "./pages/DashboardPage";
 import ProtectedRoute from "./components/ProtectedRoute";
 import Layout from "./components/Layout";
@@ -13,8 +15,20 @@ import StaffQueuePage from "./pages/StaffQueuePage";
 function App() {
   return (
     <Routes>
-      <Route path="/login" element={<LoginPage />} />
+      <Route path="/hospital-register" element={<HospitalRegister />} />
       <Route path="/register" element={<RegisterForm />} />
+      <Route path="/login" element={<LoginPage />} />
+
+      <Route
+        path="/dashboard"
+        element={
+          <ProtectedRoute allowedRoles={["doctor", "staff"]}>
+            <Layout>
+              <DashboardPage />
+            </Layout>
+          </ProtectedRoute>
+        }
+      />
 
       <Route
         path="/"
@@ -28,11 +42,11 @@ function App() {
       />
 
       <Route
-        path="/dashboard"
+        path="/create-hospital"
         element={
-          <ProtectedRoute allowedRoles={["doctor", "staff"]}>
+          <ProtectedRoute allowedRoles={["staff", "doctor"]}>
             <Layout>
-              <DashboardPage />
+              <CreateHospital />
             </Layout>
           </ProtectedRoute>
         }

@@ -73,18 +73,6 @@ export default function LoginPage() {
         type="password"
         onChange={(e) => setPassword(e.target.value)}
       />
-      <TextField
-        select
-        fullWidth
-        margin="normal"
-        label="Role"
-        value={role}
-        onChange={(e) => setRole(e.target.value)}
-      >
-        <MenuItem value="patient">Patient</MenuItem>
-        <MenuItem value="doctor">Doctor</MenuItem>
-        <MenuItem value="staff">Staff</MenuItem>
-      </TextField>
 
       <Button
         fullWidth
