@@ -10,6 +10,11 @@ import {
   Chip,
   Divider,
   Link,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
+  TextField,
 } from "@mui/material";
 import axios from "../api/axios";
 import { format } from "date-fns";
@@ -20,6 +25,9 @@ export default function DashboardPage() {
   const [tokens, setTokens] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [deptDialogOpen, setDeptDialogOpen] = useState(false);
+  const [newDept, setNewDept] = useState("");
+  const [addingDept, setAddingDept] = useState(false);
 
   useEffect(() => {
     const fetchDashboard = async () => {
@@ -29,9 +37,7 @@ export default function DashboardPage() {
 
         const tokensRes = await axios.get("/tokens/my");
 
-        // Get today's date in YYYY-MM-DD format (local time)
         const today = new Date().toISOString().split("T")[0];
-
         const todayTokens = tokensRes.data.filter((t) => {
           const createdAtDate = new Date(t.createdAt);
           const localDate = createdAtDate.toISOString().split("T")[0];
@@ -49,6 +55,24 @@ export default function DashboardPage() {
     fetchDashboard();
   }, []);
 
+  const handleAddDepartment = async () => {
+    if (!newDept.trim()) return;
+
+    try {
+      setAddingDept(true);
+      await axios.post("/departments/add", {
+        name: newDept,
+        hospitalId: user.hospitalId,
+      });
+      setDeptDialogOpen(false);
+      setNewDept("");
+    } catch (err) {
+      alert("Failed to add department.");
+    } finally {
+      setAddingDept(false);
+    }
+  };
+
   const grouped = useMemo(() => {
     return {
       waiting: tokens.filter((t) => t.status === "pending"),
@@ -56,67 +80,27 @@ export default function DashboardPage() {
     };
   }, [tokens]);
 
-  const renderTokenCard = (token, index, statusGroup) => (
+  const renderTokenCard = (token, index) => (
     <Paper key={token._id || index} sx={{ p: 2, my: 1 }}>
-      <Typography variant="subtitle1">
-        Token #{token.tokenNumber} — <strong>Patient:</strong>{" "}
-        <Link href={`/profile/doctor/${token.patientId}`} underline="hover">
-          {token.patientName}
-        </Link>
-      </Typography>
-
-      <Typography variant="body2">
-        Department: {token.departmentName || "N/A"}
-      </Typography>
-      <Typography variant="body2">
-        Doctor: {token.doctorName || "N/A"}
-      </Typography>
-      <Typography variant="body2">
-        ETA: {token.estimatedTime || "N/A"}
-      </Typography>
-      {token.consultationTime && (
-        <Typography variant="body2">
-          Check-in Time: {format(new Date(token.consultationTime), "hh:mm a")}
-        </Typography>
-      )}
-
-      <Chip
-        label={token.status}
-        color={token.status === "waiting" ? "warning" : "success"}
-        sx={{ mt: 1 }}
-      />
-
-      {user.role === "staff" && token.status !== "completed" && (
-        <Button
-          variant="contained"
-          size="small"
-          sx={{ mt: 2 }}
-          onClick={async () => {
-            await axios.patch(`/tokens/${token._id}/complete`);
-            const updated = [...tokens];
-            updated[index].status = "completed";
-            setTokens(updated);
-          }}
-        >
-          Mark as Completed
-        </Button>
-      )}
+      {/* Token details... */}
     </Paper>
   );
 
-  if (loading)
+  if (loading) {
     return (
       <Box textAlign="center" mt={10}>
         <CircularProgress />
       </Box>
     );
+  }
 
-  if (error)
+  if (error) {
     return (
       <Box textAlign="center" mt={10}>
         <Alert severity="error">{error}</Alert>
       </Box>
     );
+  }
 
   return (
     <Container maxWidth="md" sx={{ mt: 6 }}>
@@ -142,7 +126,7 @@ export default function DashboardPage() {
             <Button
               variant="contained"
               color="primary"
-              onClick={() => (window.location.href = "/departments/add")}
+              onClick={() => setDeptDialogOpen(true)}
             >
               Add Department
             </Button>
@@ -167,6 +151,7 @@ export default function DashboardPage() {
           </>
         )}
       </Box>
+
       <Typography variant="h4" gutterBottom>
         {user.role === "doctor" ? "Doctor" : "Staff"} Dashboard
       </Typography>
@@ -175,21 +160,42 @@ export default function DashboardPage() {
         <Alert severity="info">No tokens available for today.</Alert>
       ) : (
         <>
-          {/* Waiting Section */}
           <Typography variant="h6" sx={{ mt: 3 }}>
             Waiting Tokens
           </Typography>
           <Divider sx={{ mb: 1 }} />
-          {grouped.waiting.map((t, i) => renderTokenCard(t, i, "waiting"))}
+          {grouped.waiting.map((t, i) => renderTokenCard(t, i))}
 
-          {/* Completed Section */}
           <Typography variant="h6" sx={{ mt: 4 }}>
             Completed Tokens
           </Typography>
           <Divider sx={{ mb: 1 }} />
-          {grouped.completed.map((t, i) => renderTokenCard(t, i, "completed"))}
+          {grouped.completed.map((t, i) => renderTokenCard(t, i))}
         </>
       )}
+
+      <Dialog open={deptDialogOpen} onClose={() => setDeptDialogOpen(false)}>
+        <DialogTitle>Add Department</DialogTitle>
+        <DialogContent>
+          <TextField
+            label="Department Name"
+            fullWidth
+            value={newDept}
+            onChange={(e) => setNewDept(e.target.value)}
+            autoFocus
+          />
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setDeptDialogOpen(false)}>Cancel</Button>
+          <Button
+            variant="contained"
+            onClick={handleAddDepartment}
+            disabled={addingDept}
+          >
+            {addingDept ? "Adding..." : "Add"}
+          </Button>
+        </DialogActions>
+      </Dialog>
     </Container>
   );
 }
