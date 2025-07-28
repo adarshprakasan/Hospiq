@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useMemo } from "react";
 import {
   Container,
   Typography,
@@ -9,25 +9,39 @@ import {
   Button,
   Chip,
   Divider,
-  Link,
   Dialog,
   DialogTitle,
   DialogContent,
   DialogActions,
   TextField,
+  MenuItem,
+  Select,
+  InputLabel,
+  FormControl,
 } from "@mui/material";
 import axios from "../api/axios";
 import { format } from "date-fns";
-import { useMemo } from "react";
 
 export default function DashboardPage() {
   const [user, setUser] = useState(null);
   const [tokens, setTokens] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+
   const [deptDialogOpen, setDeptDialogOpen] = useState(false);
   const [newDept, setNewDept] = useState("");
   const [addingDept, setAddingDept] = useState(false);
+
+  const [doctorDialogOpen, setDoctorDialogOpen] = useState(false);
+  const [departments, setDepartments] = useState([]);
+  const [doctorData, setDoctorData] = useState({
+    name: "",
+    department: "",
+    specialization: "",
+    qualifications: "",
+    status: "available",
+  });
+  const [addingDoctor, setAddingDoctor] = useState(false);
 
   useEffect(() => {
     const fetchDashboard = async () => {
@@ -73,6 +87,44 @@ export default function DashboardPage() {
     }
   };
 
+  const fetchDepartments = async () => {
+    try {
+      const res = await axios.get(`/departments?hospitalId=${user.hospitalId}`);
+      setDepartments(res.data);
+    } catch (err) {
+      console.error("Failed to fetch departments", err);
+    }
+  };
+
+  const handleOpenDoctorDialog = () => {
+    fetchDepartments();
+    setDoctorDialogOpen(true);
+  };
+
+  const handleAddDoctor = async () => {
+    if (!doctorData.name || !doctorData.department) return;
+
+    try {
+      setAddingDoctor(true);
+      await axios.post("/doctors/create", {
+        ...doctorData,
+        hospitalId: user.hospitalId,
+      });
+      setDoctorDialogOpen(false);
+      setDoctorData({
+        name: "",
+        department: "",
+        specialization: "",
+        qualifications: "",
+        status: "available",
+      });
+    } catch (err) {
+      alert("Failed to add doctor.");
+    } finally {
+      setAddingDoctor(false);
+    }
+  };
+
   const grouped = useMemo(() => {
     return {
       waiting: tokens.filter((t) => t.status === "pending"),
@@ -114,13 +166,15 @@ export default function DashboardPage() {
             Add Clinic/Hospital
           </Button>
         ) : user?.hospital?.type === "clinic" ? (
-          <Button
-            variant="contained"
-            color="primary"
-            onClick={() => (window.location.href = "/schedule")}
-          >
-            Schedule Doctor
-          </Button>
+          <>
+            <Button
+              variant="contained"
+              color="primary"
+              onClick={() => (window.location.href = "/schedule")}
+            >
+              Schedule
+            </Button>
+          </>
         ) : (
           <>
             <Button
@@ -134,20 +188,18 @@ export default function DashboardPage() {
             <Button
               variant="contained"
               color="primary"
-              onClick={() => (window.location.href = "/doctors/add")}
+              onClick={handleOpenDoctorDialog}
             >
               Add Doctor
             </Button>
 
-            {user?.doctors?.length > 0 && (
-              <Button
-                variant="contained"
-                color="primary"
-                onClick={() => (window.location.href = "/schedule")}
-              >
-                Schedule
-              </Button>
-            )}
+            <Button
+              variant="contained"
+              color="primary"
+              onClick={() => (window.location.href = "/schedule")}
+            >
+              Schedule
+            </Button>
           </>
         )}
       </Box>
@@ -174,6 +226,7 @@ export default function DashboardPage() {
         </>
       )}
 
+      {/* Add Department Dialog */}
       <Dialog open={deptDialogOpen} onClose={() => setDeptDialogOpen(false)}>
         <DialogTitle>Add Department</DialogTitle>
         <DialogContent>
@@ -193,6 +246,69 @@ export default function DashboardPage() {
             disabled={addingDept}
           >
             {addingDept ? "Adding..." : "Add"}
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* Add Doctor Dialog */}
+      <Dialog
+        open={doctorDialogOpen}
+        onClose={() => setDoctorDialogOpen(false)}
+      >
+        <DialogTitle>Add Doctor</DialogTitle>
+        <DialogContent sx={{ pt: 1 }}>
+          <TextField
+            label="Doctor Name"
+            fullWidth
+            margin="dense"
+            value={doctorData.name}
+            onChange={(e) =>
+              setDoctorData({ ...doctorData, name: e.target.value })
+            }
+          />
+          <FormControl fullWidth margin="dense">
+            <InputLabel>Department</InputLabel>
+            <Select
+              value={doctorData.department}
+              onChange={(e) =>
+                setDoctorData({ ...doctorData, department: e.target.value })
+              }
+              label="Department"
+            >
+              {departments.map((dept, idx) => (
+                <MenuItem key={idx} value={dept}>
+                  {dept}
+                </MenuItem>
+              ))}
+            </Select>
+          </FormControl>
+          <TextField
+            label="Specialization"
+            fullWidth
+            margin="dense"
+            value={doctorData.specialization}
+            onChange={(e) =>
+              setDoctorData({ ...doctorData, specialization: e.target.value })
+            }
+          />
+          <TextField
+            label="Qualifications"
+            fullWidth
+            margin="dense"
+            value={doctorData.qualifications}
+            onChange={(e) =>
+              setDoctorData({ ...doctorData, qualifications: e.target.value })
+            }
+          />
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setDoctorDialogOpen(false)}>Cancel</Button>
+          <Button
+            variant="contained"
+            onClick={handleAddDoctor}
+            disabled={addingDoctor}
+          >
+            {addingDoctor ? "Adding..." : "Add Doctor"}
           </Button>
         </DialogActions>
       </Dialog>

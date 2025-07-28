@@ -1,14 +1,64 @@
 const Doctor = require("../models/Doctor");
+const Hospital = require("../models/Hospital");
 
-// POST /api/doctors
 exports.createDoctor = async (req, res) => {
   try {
-    const { name, department, hospitalId } = req.body;
-    const newDoctor = new Doctor({ name, department, hospitalId });
+    const {
+      name,
+      department,
+      hospitalId,
+      specialization,
+      qualifications,
+      availability,
+    } = req.body;
+
+    if (!name || !department || !hospitalId) {
+      return res
+        .status(400)
+        .json({ message: "Name, Department, and Hospital ID are required" });
+    }
+
+    const hospital = await Hospital.findById(hospitalId);
+    if (!hospital) {
+      return res.status(404).json({ message: "Hospital not found" });
+    }
+
+    const deptExists = hospital.departments.some((dept) => {
+      if (typeof dept === "string") return dept === department;
+      return dept.name === department; // in case stored as objects
+    });
+
+    if (!deptExists) {
+      return res
+        .status(400)
+        .json({ message: "Selected department not found in hospital" });
+    }
+    const qualificationArray = Array.isArray(qualifications)
+      ? qualifications
+      : typeof qualifications === "string"
+      ? qualifications
+          .split(",")
+          .map((q) => q.trim())
+          .filter(Boolean)
+      : [];
+
+    const newDoctor = new Doctor({
+      name,
+      department,
+      hospitalId,
+      specialization,
+      qualifications: qualificationArray,
+      availability,
+    });
+
     await newDoctor.save();
-    res.status(201).json({ message: "Doctor created", doctor: newDoctor });
+
+    res
+      .status(201)
+      .json({ message: "Doctor created successfully", doctor: newDoctor });
   } catch (err) {
-    res.status(500).json({ message: err.message });
+    console.error("Error creating doctor:", err);
+    res.status(500).json({ message: "Failed to create doctor" });
   }
 };
 

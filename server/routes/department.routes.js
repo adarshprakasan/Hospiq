@@ -28,14 +28,12 @@ router.get("/", async (req, res) => {
 router.post("/add", async (req, res) => {
   try {
     const { name, hospitalId } = req.body;
-    console.log(req.body);
 
     if (!name || !hospitalId) {
       return res.status(400).json({ message: "Name and Hospital ID required" });
     }
 
     const hospital = await Hospital.findById(hospitalId);
-    console.log(hospital);
 
     if (!hospital) {
       return res.status(404).json({ message: "Hospital not found" });

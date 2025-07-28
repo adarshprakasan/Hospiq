@@ -40,7 +40,6 @@ exports.createHospital = async (req, res) => {
 exports.getAllHospitals = async (req, res) => {
   try {
     const hospitals = await Hospital.find();
-    console.log(hospitals);
     res.json(hospitals);
   } catch (err) {
     res.status(500).json({ message: err.message });
