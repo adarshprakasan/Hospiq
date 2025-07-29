@@ -203,11 +203,12 @@ exports.getMyPatientTokens = async (req, res) => {
     if (req.user.role !== "patient") {
       return res.status(403).json({ message: "Access denied" });
     }
+    console.log(req.body);
 
     const tokens = await Token.find({ patientId: req.user.id })
       .sort({ createdAt: -1 })
       .populate("doctorId", "name")
-      .populate("departmentId", "name");
+      .populate("department", "name");
 
     console.log(tokens);
     const result = tokens.map((token) => ({

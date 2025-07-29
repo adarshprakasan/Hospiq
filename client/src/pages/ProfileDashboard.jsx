@@ -52,23 +52,6 @@ const ProfileDashboard = () => {
         </Typography>
         <Typography>Email: {user?.email}</Typography>
         <Typography>Role: {user?.role}</Typography>
-
-        {/* Add role-based navigation */}
-        <Box sx={{ mt: 3 }}>
-          {user.role === "patient" ? (
-            <Button variant="outlined" href="/my-tokens">
-              View My Tokens
-            </Button>
-          ) : user.role === "doctor" ? (
-            <Button variant="outlined" href="/doctor-tokens">
-              View My Appointments
-            </Button>
-          ) : (
-            <Button variant="outlined" href="/staff-queue">
-              Manage Token Queue
-            </Button>
-          )}
-        </Box>
       </Paper>
     </Container>
   );

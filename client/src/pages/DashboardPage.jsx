@@ -18,6 +18,7 @@ import {
   Select,
   InputLabel,
   FormControl,
+  Stack,
 } from "@mui/material";
 import axios from "../api/axios";
 import { format } from "date-fns";
@@ -125,18 +126,84 @@ export default function DashboardPage() {
     }
   };
 
-  const grouped = useMemo(() => {
-    return {
-      waiting: tokens.filter((t) => t.status === "pending"),
+  const grouped = useMemo(
+    () => ({
+      waiting: tokens.filter((t) => t.status !== "completed"),
       completed: tokens.filter((t) => t.status === "completed"),
-    };
-  }, [tokens]);
+    }),
+    [tokens]
+  );
 
   const renderTokenCard = (token, index) => (
     <Paper key={token._id || index} sx={{ p: 2, my: 1 }}>
-      {/* Token details... */}
+      <Typography>
+        Token #{token.tokenNumber} - <strong>{token.patientName}</strong>
+      </Typography>
+      <Typography variant="body2">
+        Doctor:{" "}
+        <strong>{token.doctor?.name || token.doctorName || "N/A"}</strong>
+      </Typography>
+      <Typography variant="body2">
+        Department:{" "}
+        <strong>
+          {token.department?.name || token.departmentName || "N/A"}
+        </strong>
+      </Typography>
+      <Typography variant="body2" mt={1}>
+        Status:{" "}
+        <Chip
+          label={token.status}
+          color={
+            token.status === "completed"
+              ? "success"
+              : token.status === "called"
+              ? "warning"
+              : token.status === "pending"
+              ? "primary"
+              : "default"
+          }
+          size="small"
+        />
+      </Typography>
+
+      {token.status !== "completed" && (
+        <Stack direction="row" spacing={1} mt={1}>
+          <Button
+            variant="outlined"
+            size="small"
+            onClick={() => handleStatusUpdate(token._id, "called")}
+          >
+            Call
+          </Button>
+          <Button
+            variant="outlined"
+            size="small"
+            onClick={() => handleStatusUpdate(token._id, "skipped")}
+          >
+            Skip
+          </Button>
+          <Button
+            variant="outlined"
+            size="small"
+            onClick={() => handleStatusUpdate(token._id, "completed")}
+          >
+            Complete
+          </Button>
+        </Stack>
+      )}
     </Paper>
   );
+
+  const handleStatusUpdate = async (tokenId, newStatus) => {
+    try {
+      await axios.put(`/tokens/${tokenId}/status`, { status: newStatus });
+      setTokens((prev) =>
+        prev.map((t) => (t._id === tokenId ? { ...t, status: newStatus } : t))
+      );
+    } catch (err) {
+      console.error("Status update failed", err);
+    }
+  };
 
   if (loading) {
     return (
@@ -213,7 +280,7 @@ export default function DashboardPage() {
       ) : (
         <>
           <Typography variant="h6" sx={{ mt: 3 }}>
-            Waiting Tokens
+            In Progress Tokens
           </Typography>
           <Divider sx={{ mb: 1 }} />
           {grouped.waiting.map((t, i) => renderTokenCard(t, i))}
