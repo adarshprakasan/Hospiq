@@ -2,14 +2,12 @@ const DoctorSchedule = require("../models/DoctorSchedule");
 
 exports.setSchedule = async (req, res) => {
   try {
-    const { doctorId, days, startTime, endTime } = req.body;
+    const { doctorId, weeklySchedule } = req.body;
 
-    const weeklySchedule = days.map((day) => ({
-      day,
-      startTime,
-      endTime,
-      isAvailable: true,
-    }));
+    // Validate weeklySchedule is an array of objects
+    if (!Array.isArray(weeklySchedule)) {
+      return res.status(400).json({ message: "Invalid weeklySchedule format" });
+    }
 
     // Check for existing schedule
     let schedule = await DoctorSchedule.findOne({ doctorId });

@@ -1,9 +1,19 @@
 const mongoose = require("mongoose");
 
 const daySchema = new mongoose.Schema({
-  day: { type: String, required: true }, // e.g., "Monday"
-  startTime: String, // "09:00"
-  endTime: String, // "13:00"
+  day: { type: String, required: true },
+  startTime: {
+    type: String,
+    required: function () {
+      return this.isAvailable;
+    },
+  },
+  endTime: {
+    type: String,
+    required: function () {
+      return this.isAvailable;
+    },
+  },
   isAvailable: { type: Boolean, default: true },
 });
 
@@ -15,7 +25,7 @@ const doctorScheduleSchema = new mongoose.Schema(
       required: true,
       unique: true,
     },
-    weeklySchedule: [daySchema], // Array for each day
+    weeklySchedule: [daySchema],
   },
   { timestamps: true }
 );

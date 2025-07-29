@@ -53,6 +53,17 @@ function App() {
       />
 
       <Route
+        path="/schedule"
+        element={
+          <ProtectedRoute allowedRoles={["staff", "doctor"]}>
+            <Layout>
+              <DoctorScheduleForm />
+            </Layout>
+          </ProtectedRoute>
+        }
+      />
+
+      <Route
         path="/profile"
         element={
           <ProtectedRoute allowedRoles={["patient", "doctor", "staff"]}>
@@ -69,17 +80,6 @@ function App() {
           <ProtectedRoute allowedRoles={["patient"]}>
             <Layout>
               <MyTokensPage />
-            </Layout>
-          </ProtectedRoute>
-        }
-      />
-
-      <Route
-        path="/schedule"
-        element={
-          <ProtectedRoute allowedRoles={["staff"]}>
-            <Layout>
-              <DoctorScheduleForm />
             </Layout>
           </ProtectedRoute>
         }

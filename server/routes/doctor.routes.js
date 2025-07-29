@@ -10,7 +10,12 @@ const auth = require("../middlewares/auth");
 const checkRole = require("../middlewares/roles");
 
 // Staff/Admin can create doctors
-router.post("/create", auth, checkRole(["staff", "admin"]), createDoctor);
+router.post(
+  "/create",
+  auth,
+  checkRole(["staff", "admin", "doctor"]),
+  createDoctor
+);
 
 // Patient can view doctors by hospital
 router.get("/hospital/:hospitalId", getDoctorsByHospital);
