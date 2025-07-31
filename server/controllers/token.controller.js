@@ -204,21 +204,18 @@ exports.getMyPatientTokens = async (req, res) => {
       return res.status(403).json({ message: "Access denied" });
     }
 
-    console.log("1");
-
     const tokens = await Token.find({ patientId: req.user.id })
       .sort({ createdAt: -1 })
       .populate("doctorId", "name");
     // .populate("departmentId", "name");
 
-    console.log("2");
-
+    // console.log(tokens);
     const result = tokens.map((token) => ({
       _id: token._id,
       tokenNumber: token.tokenNumber,
       status: token.status,
       doctorName: token.doctorId?.name || "Unknown",
-      departmentName: token.departmentId?.name || "Unknown",
+      departmentName: token.departmentId || "Unknown",
       estimatedTime: token.estimatedTime,
       consultationTime: token.consultationTime,
       createdAt: token.createdAt,
