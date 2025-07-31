@@ -1,7 +1,8 @@
 const Doctor = require("../models/Doctor");
 const Token = require("../models/Token");
 const DoctorSchedule = require("../models/DoctorSchedule");
-const User = require("../models/User");
+// const User = require("../models/User");
+// const Department = require("../models/Department");
 
 exports.bookToken = async (req, res) => {
   try {
@@ -13,7 +14,6 @@ exports.bookToken = async (req, res) => {
       return res.status(404).json({ message: "Doctor not found" });
     }
 
-    // Get today (e.g., "Monday")
     const today = new Date().toLocaleDateString("en-US", { weekday: "long" });
 
     // Fetch doctor schedule
@@ -203,14 +203,16 @@ exports.getMyPatientTokens = async (req, res) => {
     if (req.user.role !== "patient") {
       return res.status(403).json({ message: "Access denied" });
     }
-    console.log(req.body);
+
+    console.log("1");
 
     const tokens = await Token.find({ patientId: req.user.id })
       .sort({ createdAt: -1 })
-      .populate("doctorId", "name")
-      .populate("department", "name");
+      .populate("doctorId", "name");
+    // .populate("departmentId", "name");
 
-    console.log(tokens);
+    console.log("2");
+
     const result = tokens.map((token) => ({
       _id: token._id,
       tokenNumber: token.tokenNumber,
@@ -221,7 +223,6 @@ exports.getMyPatientTokens = async (req, res) => {
       consultationTime: token.consultationTime,
       createdAt: token.createdAt,
     }));
-
     res.json(result);
   } catch (err) {
     console.error(err);

@@ -8,8 +8,8 @@ import DashboardPage from "./pages/DashboardPage";
 import ProtectedRoute from "./components/ProtectedRoute";
 import Layout from "./components/Layout";
 import ProfileDashboard from "./pages/ProfileDashboard";
+import MyTokensPage from "./pages/MyTokensPage";
 import DoctorScheduleForm from "./pages/DoctorScheduleForm";
-import StaffQueuePage from "./pages/StaffQueuePage";
 
 function App() {
   return (
@@ -73,12 +73,13 @@ function App() {
         }
       />
 
+      {/* Need editing---------------- */}
       <Route
-        path="/staff-queue"
+        path="/my-tokens"
         element={
-          <ProtectedRoute allowedRoles={["staff"]}>
+          <ProtectedRoute allowedRoles={["patient"]}>
             <Layout>
-              <StaffQueuePage />
+              <MyTokensPage />
             </Layout>
           </ProtectedRoute>
         }
