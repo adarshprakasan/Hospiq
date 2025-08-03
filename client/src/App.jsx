@@ -3,13 +3,14 @@ import RegisterForm from "./pages/RegisterForm";
 import LoginPage from "./pages/LoginPage";
 import HospitalRegister from "./pages/HospitalRegister";
 import CreateHospital from "./pages/CreateHospital";
-import BookingPage from "./pages/BookingPage";
+import HomePage from "./pages/HomePage";
 import DashboardPage from "./pages/DashboardPage";
 import ProtectedRoute from "./components/ProtectedRoute";
 import Layout from "./components/Layout";
 import ProfileDashboard from "./pages/ProfileDashboard";
 import MyTokensPage from "./pages/MyTokensPage";
 import DoctorScheduleForm from "./pages/DoctorScheduleForm";
+import BookingPage from "./pages/BookingPage";
 
 function App() {
   return (
@@ -34,7 +35,7 @@ function App() {
         element={
           <ProtectedRoute allowedRoles={["patient"]}>
             <Layout>
-              <BookingPage />
+              <HomePage />
             </Layout>
           </ProtectedRoute>
         }
@@ -72,6 +73,8 @@ function App() {
           </ProtectedRoute>
         }
       />
+
+      <Route path="/book/:hospitalId" element={<BookingPage />} />
 
       {/* Need editing---------------- */}
       <Route
