@@ -19,15 +19,22 @@ import {
   InputLabel,
   FormControl,
   Stack,
+  Snackbar,
 } from "@mui/material";
-import axios from "../api/axios";
-import { format } from "date-fns";
+import axios from "../api/axios"; 
+import OfflineBookingDialog from "./OfflineBookingDialog";
 
 export default function DashboardPage() {
   const [user, setUser] = useState(null);
   const [tokens, setTokens] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [offlineOpen, setOfflineOpen] = useState(false);
+  const [snack, setSnack] = useState({
+    open: false,
+    message: "",
+    severity: "success",
+  });
 
   const [deptDialogOpen, setDeptDialogOpen] = useState(false);
   const [newDept, setNewDept] = useState("");
@@ -44,31 +51,72 @@ export default function DashboardPage() {
   });
   const [addingDoctor, setAddingDoctor] = useState(false);
 
+  const fetchDashboard = async () => {
+    try {
+      const profileRes = await axios.get("/auth/me");
+      setUser(profileRes.data);
+
+      const tokensRes = await axios.get("/tokens/my");
+
+      const today = new Date().toISOString().split("T")[0];
+      const todayTokens = tokensRes.data.filter((t) => {
+        const createdAtDate = new Date(t.createdAt);
+        const localDate = createdAtDate.toISOString().split("T")[0];
+        return localDate === today;
+      });
+
+      setTokens(todayTokens);
+    } catch (err) {
+      setError("Failed to load dashboard data.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
   useEffect(() => {
-    const fetchDashboard = async () => {
-      try {
-        const profileRes = await axios.get("/auth/me");
-        setUser(profileRes.data);
-
-        const tokensRes = await axios.get("/tokens/my");
-
-        const today = new Date().toISOString().split("T")[0];
-        const todayTokens = tokensRes.data.filter((t) => {
-          const createdAtDate = new Date(t.createdAt);
-          const localDate = createdAtDate.toISOString().split("T")[0];
-          return localDate === today;
-        });
-
-        setTokens(todayTokens);
-      } catch (err) {
-        setError("Failed to load dashboard data.");
-      } finally {
-        setLoading(false);
-      }
-    };
-
     fetchDashboard();
   }, []);
+
+  const handleOfflineBooked = (success) => {
+    setOfflineOpen(false);
+
+    if (success) {
+      setSnack({
+        open: true,
+        message: "Offline token booked successfully!",
+        severity: "success",
+      });
+
+      // Refresh dashboard data
+      const fetchDashboard = async () => {
+        try {
+          const profileRes = await axios.get("/auth/me");
+          setUser(profileRes.data);
+
+          const tokensRes = await axios.get("/tokens/my");
+
+          const today = new Date().toISOString().split("T")[0];
+          const todayTokens = tokensRes.data.filter((t) => {
+            const createdAtDate = new Date(t.createdAt);
+            const localDate = createdAtDate.toISOString().split("T")[0];
+            return localDate === today;
+          });
+
+          setTokens(todayTokens);
+        } catch (err) {
+          setError("Failed to load dashboard data.");
+        }
+      };
+
+      fetchDashboard();
+    } else {
+      setSnack({
+        open: true,
+        message: "Failed to book offline token.",
+        severity: "error",
+      });
+    }
+  };
 
   const handleAddDepartment = async () => {
     if (!newDept.trim()) return;
@@ -223,7 +271,24 @@ export default function DashboardPage() {
 
   return (
     <Container maxWidth="md" sx={{ mt: 6 }}>
+      <Typography variant="h4" gutterBottom>
+        {user.role === "doctor" ? "Doctor" : "Staff"} Dashboard
+      </Typography>
       <Box display="flex" justifyContent="flex-end" gap={2} mb={2}>
+        <Button
+          variant="outlined"
+          onClick={() => {
+            console.log("Opening offline dialog, hospitalId:", user.hospitalId);
+            setOfflineOpen(true);
+          }}
+        >
+          Book Offline Token
+        </Button>
+        <OfflineBookingDialog
+          open={offlineOpen}
+          onClose={handleOfflineBooked}
+          hospitalId={user.hospitalId}
+        />
         {!user?.hospitalId ? (
           <Button
             variant="contained"
@@ -271,10 +336,6 @@ export default function DashboardPage() {
         )}
       </Box>
 
-      <Typography variant="h4" gutterBottom>
-        {user.role === "doctor" ? "Doctor" : "Staff"} Dashboard
-      </Typography>
-
       {tokens.length === 0 ? (
         <Alert severity="info">No tokens available for today.</Alert>
       ) : (
@@ -294,7 +355,16 @@ export default function DashboardPage() {
       )}
 
       {/* Add Department Dialog */}
-      <Dialog open={deptDialogOpen} onClose={() => setDeptDialogOpen(false)}>
+      <Dialog
+        open={deptDialogOpen}
+        onClose={() => setDeptDialogOpen(false)}
+        sx={{
+          zIndex: 9999,
+          "& .MuiDialog-paper": {
+            zIndex: 10000,
+          },
+        }}
+      >
         <DialogTitle>Add Department</DialogTitle>
         <DialogContent>
           <TextField
@@ -321,6 +391,12 @@ export default function DashboardPage() {
       <Dialog
         open={doctorDialogOpen}
         onClose={() => setDoctorDialogOpen(false)}
+        sx={{
+          zIndex: 9999,
+          "& .MuiDialog-paper": {
+            zIndex: 10000,
+          },
+        }}
       >
         <DialogTitle>Add Doctor</DialogTitle>
         <DialogContent sx={{ pt: 1 }}>
@@ -341,6 +417,11 @@ export default function DashboardPage() {
                 setDoctorData({ ...doctorData, department: e.target.value })
               }
               label="Department"
+              MenuProps={{
+                sx: {
+                  zIndex: 10001,
+                },
+              }}
             >
               {departments.map((dept, idx) => (
                 <MenuItem key={idx} value={dept}>
@@ -379,6 +460,21 @@ export default function DashboardPage() {
           </Button>
         </DialogActions>
       </Dialog>
+
+      {/* Snackbar for notifications */}
+      <Snackbar
+        open={snack.open}
+        autoHideDuration={6000}
+        onClose={() => setSnack({ ...snack, open: false })}
+      >
+        <Alert
+          onClose={() => setSnack({ ...snack, open: false })}
+          severity={snack.severity}
+          sx={{ width: "100%" }}
+        >
+          {snack.message}
+        </Alert>
+      </Snackbar>
     </Container>
   );
 }

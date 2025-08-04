@@ -10,7 +10,9 @@ const tokenSchema = new mongoose.Schema(
     patientId: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "User",
-      required: true,
+      required: function () {
+        return !this.isOffline; // Only required for online tokens
+      },
     },
     patientName: { type: String },
     departmentId: {

@@ -139,22 +139,50 @@ exports.updateTokenStatus = async (req, res) => {
 
 exports.bookOfflineToken = async (req, res) => {
   try {
-    const { doctorId, hospitalId, patientName } = req.body;
+    const { doctorId, hospitalId, patientName, departmentId } = req.body;
+
+    // Validate required fields
+    if (!doctorId || !hospitalId || !patientName || !departmentId) {
+      return res.status(400).json({
+        message:
+          "Missing required fields: doctorId, hospitalId, patientName, departmentId",
+      });
+    }
+
+    // Check if doctor exists
+    const doctor = await Doctor.findById(doctorId);
+    if (!doctor) {
+      return res.status(404).json({ message: "Doctor not found" });
+    }
+
+    // Get today's date in YYYY-MM-DD format for counting
+    const todayString = new Date().toISOString().split("T")[0];
+
+    // Count existing tokens for today to assign token number
+    const count = await Token.countDocuments({
+      doctorId,
+      date: todayString,
+    });
 
     const token = new Token({
       doctorId,
-      hospitalId,
+      patientId: null, // Offline tokens don't have patient accounts
       patientName,
+      departmentId,
       isOffline: true,
-      status: "booked",
-      bookingDate: new Date(),
+      tokenNumber: count + 1,
+      status: "pending",
+      date: todayString,
     });
 
     await token.save();
 
     res.status(201).json({ message: "Offline token booked", token });
   } catch (error) {
-    res.status(500).json({ message: "Failed to book offline token", error });
+    console.error("Offline token booking error:", error);
+    res
+      .status(500)
+      .json({ message: "Failed to book offline token", error: error.message });
   }
 };
 
