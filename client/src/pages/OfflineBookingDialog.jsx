@@ -14,8 +14,6 @@ import { useState, useEffect } from "react";
 import axios from "../api/axios";
 
 const OfflineBookingDialog = ({ open, onClose, hospitalId }) => {
-  console.log("OfflineBookingDialog props:", { open, hospitalId });
-
   const [patientName, setPatientName] = useState("");
   const [selectedDepartment, setSelectedDepartment] = useState("");
   const [selectedDoctor, setSelectedDoctor] = useState("");
@@ -31,9 +29,7 @@ const OfflineBookingDialog = ({ open, onClose, hospitalId }) => {
 
   const fetchDepartments = async () => {
     try {
-      console.log("Fetching departments for hospitalId:", hospitalId);
       const res = await axios.get(`/departments?hospitalId=${hospitalId}`);
-      console.log("Departments fetched:", res.data);
       setDepartments(res.data);
     } catch (err) {
       console.error("Failed to fetch departments", err);
@@ -42,7 +38,6 @@ const OfflineBookingDialog = ({ open, onClose, hospitalId }) => {
 
   const handleDepartmentChange = async (e) => {
     const dept = e.target.value;
-    console.log("Department selected:", dept);
     setSelectedDepartment(dept);
     setSelectedDoctor("");
 
@@ -52,7 +47,6 @@ const OfflineBookingDialog = ({ open, onClose, hospitalId }) => {
           dept
         )}`
       );
-      console.log("Doctors fetched for department:", res.data);
       setDoctors(res.data);
     } catch (err) {
       console.error("Failed to fetch doctors", err);
@@ -65,13 +59,6 @@ const OfflineBookingDialog = ({ open, onClose, hospitalId }) => {
       return;
     }
 
-    console.log("Submitting offline token with data:", {
-      doctorId: selectedDoctor,
-      hospitalId,
-      patientName,
-      departmentId: selectedDepartment,
-    });
-
     setLoading(true);
     try {
       const res = await axios.post("/tokens/offline", {
@@ -80,7 +67,6 @@ const OfflineBookingDialog = ({ open, onClose, hospitalId }) => {
         patientName,
         departmentId: selectedDepartment,
       });
-      console.log("Offline token booked successfully:", res.data);
       onClose(true); // Close modal with success flag
     } catch (err) {
       console.error("Offline booking error:", err);
@@ -100,10 +86,8 @@ const OfflineBookingDialog = ({ open, onClose, hospitalId }) => {
 
   const handleClose = () => {
     resetFields();
-    onClose(false); // Close with cancel flag
+    onClose(false);
   };
-
-  console.log("Rendering OfflineBookingDialog, open:", open);
 
   return (
     <Dialog

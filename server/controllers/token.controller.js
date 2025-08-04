@@ -20,7 +20,6 @@ exports.bookToken = async (req, res) => {
     const doctorSchedule = await DoctorSchedule.findOne({
       doctorId: doctor._id,
     });
-    // console.log("Schedule fetched for doctor:", doctor._id, doctorSchedule);
 
     if (!doctorSchedule) {
       return res.status(400).json({ message: "Doctor schedule not set." });
@@ -204,8 +203,6 @@ exports.getMyTokens = async (req, res) => {
       // { path: "departmentId", select: "name" },
     ]);
 
-    console.log(populatedTokens);
-
     const result = populatedTokens.map((token) => ({
       _id: token._id,
       tokenNumber: token.tokenNumber,
@@ -237,7 +234,6 @@ exports.getMyPatientTokens = async (req, res) => {
       .populate("doctorId", "name");
     // .populate("departmentId", "name");
 
-    // console.log(tokens);
     const result = tokens.map((token) => ({
       _id: token._id,
       tokenNumber: token.tokenNumber,
@@ -274,7 +270,6 @@ exports.tokenComplete = async (req, res) => {
 exports.cancelToken = async (req, res) => {
   try {
     const token = await Token.findById(req.params.tokenId);
-    console.log(token);
     if (
       !token ||
       !token.patientId ||
@@ -288,7 +283,6 @@ exports.cancelToken = async (req, res) => {
     }
 
     token.status = "cancelled";
-    console.log(token);
 
     try {
       await token.save();

@@ -33,7 +33,7 @@ const MyTokensPage = () => {
     const fetchTokens = async () => {
       try {
         const res = await axios.get("/tokens/mine");
-        console.log("res is ", res);
+
         setTokens(res.data);
         setFilteredTokens(res.data);
       } catch (err) {

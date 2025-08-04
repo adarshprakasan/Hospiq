@@ -21,7 +21,7 @@ import {
   Stack,
   Snackbar,
 } from "@mui/material";
-import axios from "../api/axios"; 
+import axios from "../api/axios";
 import OfflineBookingDialog from "./OfflineBookingDialog";
 
 export default function DashboardPage() {
@@ -275,13 +275,7 @@ export default function DashboardPage() {
         {user.role === "doctor" ? "Doctor" : "Staff"} Dashboard
       </Typography>
       <Box display="flex" justifyContent="flex-end" gap={2} mb={2}>
-        <Button
-          variant="outlined"
-          onClick={() => {
-            console.log("Opening offline dialog, hospitalId:", user.hospitalId);
-            setOfflineOpen(true);
-          }}
-        >
+        <Button variant="outlined" onClick={() => setOfflineOpen(true)}>
           Book Offline Token
         </Button>
         <OfflineBookingDialog
