@@ -178,13 +178,37 @@ export default function DashboardPage() {
     }
   };
 
-  const grouped = useMemo(
-    () => ({
-      waiting: tokens.filter((t) => t.status !== "completed"),
-      completed: tokens.filter((t) => t.status === "completed"),
-    }),
-    [tokens]
-  );
+  const grouped = useMemo(() => {
+    // First, separate by completion status
+    const waiting = tokens.filter((t) => t.status !== "completed");
+    const completed = tokens.filter((t) => t.status === "completed");
+
+    // Then organize waiting tokens by department and doctor
+    const byDepartmentAndDoctor = {};
+
+    waiting.forEach((token) => {
+      const deptName =
+        token.department?.name || token.departmentName || "Unknown Department";
+      const doctorName =
+        token.doctor?.name || token.doctorName || "Unknown Doctor";
+
+      if (!byDepartmentAndDoctor[deptName]) {
+        byDepartmentAndDoctor[deptName] = {};
+      }
+
+      if (!byDepartmentAndDoctor[deptName][doctorName]) {
+        byDepartmentAndDoctor[deptName][doctorName] = [];
+      }
+
+      byDepartmentAndDoctor[deptName][doctorName].push(token);
+    });
+
+    return {
+      waiting,
+      completed,
+      byDepartmentAndDoctor,
+    };
+  }, [tokens]);
 
   const renderTokenCard = (token, index, isCompleted = false) => (
     <Paper
@@ -237,26 +261,30 @@ export default function DashboardPage() {
       </Typography>
       {!isCompleted && (
         <Stack direction="row" spacing={1} mt={1}>
-          <Button
-            variant="outlined"
-            size="small"
-            onClick={() => handleStatusUpdate(token._id, "called")}
-          >
-            Call
-          </Button>
+          {token.status !== "called" ? (
+            <Button
+              variant="outlined"
+              size="small"
+              onClick={() => handleStatusUpdate(token._id, "called")}
+            >
+              Call
+            </Button>
+          ) : (
+            <Button
+              variant="contained"
+              color="success"
+              size="small"
+              onClick={() => handleStatusUpdate(token._id, "completed")}
+            >
+              Complete
+            </Button>
+          )}
           <Button
             variant="outlined"
             size="small"
             onClick={() => handleStatusUpdate(token._id, "skipped")}
           >
             Skip
-          </Button>
-          <Button
-            variant="outlined"
-            size="small"
-            onClick={() => handleStatusUpdate(token._id, "completed")}
-          >
-            Complete
           </Button>
         </Stack>
       )}
@@ -361,13 +389,57 @@ export default function DashboardPage() {
             In Progress Tokens
           </Typography>
           <Divider sx={{ mb: 1 }} />
-          <Grid container spacing={2} sx={{ mb: 2 }}>
-            {grouped.waiting.map((t, i) => (
-              <Grid item key={t._id || i} xs={12} sm={6} md={4} lg={3}>
-                {renderTokenCard(t, i, false)}
-              </Grid>
-            ))}
-          </Grid>
+          {Object.keys(grouped.byDepartmentAndDoctor).length === 0 ? (
+            <Alert severity="info">No tokens in progress</Alert>
+          ) : (
+            <Box>
+              {Object.entries(grouped.byDepartmentAndDoctor).map(
+                ([deptName, doctors]) => (
+                  <Box key={deptName} mb={4}>
+                    <Typography
+                      variant="subtitle1"
+                      sx={{
+                        fontWeight: "bold",
+                        mb: 1,
+                        borderBottom: "1px solid #eee",
+                        pb: 1,
+                      }}
+                    >
+                      {deptName}
+                    </Typography>
+
+                    {Object.entries(doctors).map(
+                      ([doctorName, doctorTokens]) => (
+                        <Box key={`${deptName}-${doctorName}`} mb={3}>
+                          <Typography
+                            variant="subtitle2"
+                            sx={{ fontWeight: "bold", mb: 1 }}
+                          >
+                            {doctorName}
+                          </Typography>
+
+                          <Grid container spacing={2}>
+                            {doctorTokens.map((token, index) => (
+                              <Grid
+                                item
+                                key={token._id || index}
+                                xs={12}
+                                sm={6}
+                                md={4}
+                                lg={3}
+                              >
+                                {renderTokenCard(token, index, false)}
+                              </Grid>
+                            ))}
+                          </Grid>
+                        </Box>
+                      )
+                    )}
+                  </Box>
+                )
+              )}
+            </Box>
+          )}
           <Typography variant="h6" sx={{ mt: 4 }}>
             Completed Tokens
           </Typography>
