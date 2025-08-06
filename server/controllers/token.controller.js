@@ -53,13 +53,12 @@ exports.bookToken = async (req, res) => {
       }
     }
 
+    // Use standardized date string for today
+    const todayString = new Date().toISOString().split("T")[0];
     // Count existing tokens for today
-    const todayDate = new Date();
-    todayDate.setHours(0, 0, 0, 0);
-
     const count = await Token.countDocuments({
       doctorId,
-      date: { $gte: todayDate },
+      date: todayString,
     });
 
     // Create the token
@@ -68,7 +67,7 @@ exports.bookToken = async (req, res) => {
       patientId,
       departmentId,
       tokenNumber: count + 1,
-      date: new Date(),
+      date: todayString,
     });
 
     await newToken.save();
@@ -101,7 +100,21 @@ exports.getDoctorTokens = async (req, res) => {
       .sort({ createdAt: 1 })
       .populate("patientId", "name email");
 
-    res.status(200).json(tokens);
+    // Fix patientName mapping for offline tokens
+    const result = tokens.map((token) => ({
+      _id: token._id,
+      tokenNumber: token.tokenNumber,
+      status: token.status,
+      patientId: token.patientId?._id,
+      patientName: token.patientId?.name || token.patientName || "Unknown",
+      doctorName: token.doctorId?.name || "Unknown",
+      departmentName: token.departmentId || "Unknown",
+      estimatedTime: token.estimatedTime,
+      consultationTime: token.consultationTime,
+      createdAt: token.createdAt,
+    }));
+
+    res.status(200).json(result);
   } catch (error) {
     res.status(500).json({ message: "Failed to fetch tokens", error });
   }
@@ -208,7 +221,7 @@ exports.getMyTokens = async (req, res) => {
       tokenNumber: token.tokenNumber,
       status: token.status,
       patientId: token.patientId?._id,
-      patientName: token.patientId?.name || "Unknown",
+      patientName: token.patientId?.name || token.patientName || "Unknown",
       doctorName: token.doctorId?.name || "Unknown",
       departmentName: token.departmentId || "Unknown",
       estimatedTime: token.estimatedTime,
@@ -234,10 +247,12 @@ exports.getMyPatientTokens = async (req, res) => {
       .populate("doctorId", "name");
     // .populate("departmentId", "name");
 
+    // Fix patientName mapping for offline tokens
     const result = tokens.map((token) => ({
       _id: token._id,
       tokenNumber: token.tokenNumber,
       status: token.status,
+      patientName: token.patientId?.name || token.patientName || "Unknown",
       doctorName: token.doctorId?.name || "Unknown",
       departmentName: token.departmentId || "Unknown",
       estimatedTime: token.estimatedTime,
