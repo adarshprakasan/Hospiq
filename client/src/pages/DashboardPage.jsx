@@ -210,13 +210,17 @@ export default function DashboardPage() {
         <strong>{token.patientName}</strong>
       </Typography>
       <Typography variant="body2">
-        Doctor: <strong>{token.doctor?.name || token.doctorName || "N/A"}</strong>
+        Doctor:{" "}
+        <strong>{token.doctor?.name || token.doctorName || "N/A"}</strong>
       </Typography>
       <Typography variant="body2">
-        Department: <strong>{token.department?.name || token.departmentName || "N/A"}</strong>
+        Department:{" "}
+        <strong>
+          {token.department?.name || token.departmentName || "N/A"}
+        </strong>
       </Typography>
       <Typography variant="body2" mt={1}>
-        Status: {" "}
+        Status:{" "}
         <Chip
           label={token.status}
           color={
@@ -341,17 +345,9 @@ export default function DashboardPage() {
             <Button
               variant="contained"
               color="primary"
-              onClick={handleOpenDoctorDialog}
+              onClick={() => (window.location.href = "/manage-doctors")}
             >
-              Add Doctor
-            </Button>
-
-            <Button
-              variant="contained"
-              color="primary"
-              onClick={() => (window.location.href = "/schedule")}
-            >
-              Schedule
+              Manage Doctors
             </Button>
           </>
         )}

@@ -11,6 +11,8 @@ import ProfileDashboard from "./pages/ProfileDashboard";
 import MyTokensPage from "./pages/MyTokensPage";
 import DoctorScheduleForm from "./pages/DoctorScheduleForm";
 import BookingPage from "./pages/BookingPage";
+import ManageDoctorsPage from "./pages/ManageDoctorsPage";
+import DoctorProfilePage from "./pages/DoctorProfilePage";
 
 function App() {
   return (
@@ -58,6 +60,28 @@ function App() {
           <ProtectedRoute allowedRoles={["staff", "doctor"]}>
             <Layout>
               <DoctorScheduleForm />
+            </Layout>
+          </ProtectedRoute>
+        }
+      />
+
+      <Route
+        path="/manage-doctors"
+        element={
+          <ProtectedRoute allowedRoles={["staff", "doctor"]}>
+            <Layout>
+              <ManageDoctorsPage />
+            </Layout>
+          </ProtectedRoute>
+        }
+      />
+
+      <Route
+        path="/doctor/:doctorId"
+        element={
+          <ProtectedRoute allowedRoles={["staff", "doctor", "patient"]}>
+            <Layout>
+              <DoctorProfilePage />
             </Layout>
           </ProtectedRoute>
         }

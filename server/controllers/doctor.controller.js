@@ -106,3 +106,19 @@ exports.getDoctorsByHospitalAndDepartment = async (req, res) => {
     res.status(500).json({ message: err.message });
   }
 };
+
+// GET /api/doctors/:id
+exports.getDoctorById = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const doctor = await Doctor.findById(id);
+    
+    if (!doctor) {
+      return res.status(404).json({ message: "Doctor not found" });
+    }
+    
+    res.json(doctor);
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+};

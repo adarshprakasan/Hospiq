@@ -5,6 +5,7 @@ const {
   getDoctorsByHospital,
   updateAvailability,
   getDoctorsByHospitalAndDepartment,
+  getDoctorById,
 } = require("../controllers/doctor.controller");
 const auth = require("../middlewares/auth");
 const checkRole = require("../middlewares/roles");
@@ -29,5 +30,8 @@ router.put(
 );
 
 router.get("/", getDoctorsByHospitalAndDepartment);
+
+// Get doctor by ID
+router.get("/:id", getDoctorById);
 
 module.exports = router;
