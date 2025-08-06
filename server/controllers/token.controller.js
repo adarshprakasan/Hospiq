@@ -120,32 +120,28 @@ exports.getDoctorTokens = async (req, res) => {
   }
 };
 
+// Update token status
 exports.updateTokenStatus = async (req, res) => {
   try {
     const { tokenId } = req.params;
     const { status } = req.body;
-
-    const allowedStatuses = [
-      "booked",
-      "called",
-      "skipped",
-      "consulting",
-      "completed",
-      "no-show",
-    ];
-    if (!allowedStatuses.includes(status)) {
-      return res.status(400).json({ message: "Invalid status" });
+    
+    if (!status || !['pending', 'called', 'completed', 'skipped', 'cancelled'].includes(status)) {
+      return res.status(400).json({ message: "Invalid status value" });
     }
-
-    const token = await Token.findByIdAndUpdate(
-      tokenId,
-      { status },
-      { new: true }
-    );
-
-    res.status(200).json({ message: "Token status updated", token });
-  } catch (error) {
-    res.status(500).json({ message: "Failed to update status", error });
+    
+    const token = await Token.findById(tokenId);
+    if (!token) {
+      return res.status(404).json({ message: "Token not found" });
+    }
+    
+    token.status = status;
+    await token.save();
+    
+    res.json({ message: "Token status updated", token });
+  } catch (err) {
+    console.error("Status update error:", err);
+    res.status(500).json({ message: "Failed to update token status" });
   }
 };
 

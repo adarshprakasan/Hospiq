@@ -20,9 +20,13 @@ import {
   FormControl,
   Stack,
   Snackbar,
+  Grid,
+  IconButton,
 } from "@mui/material";
 import axios from "../api/axios";
 import OfflineBookingDialog from "./OfflineBookingDialog";
+import CloseIcon from "@mui/icons-material/Close";
+import RestoreIcon from "@mui/icons-material/Restore";
 
 export default function DashboardPage() {
   const [user, setUser] = useState(null);
@@ -182,23 +186,37 @@ export default function DashboardPage() {
     [tokens]
   );
 
-  const renderTokenCard = (token, index) => (
-    <Paper key={token._id || index} sx={{ p: 2, my: 1 }}>
-      <Typography>
-        Token #{token.tokenNumber} - <strong>{token.patientName}</strong>
+  const renderTokenCard = (token, index, isCompleted = false) => (
+    <Paper
+      key={token._id || index}
+      sx={{
+        p: 2,
+        m: 1,
+        minWidth: 220,
+        maxWidth: 260,
+        display: "flex",
+        flexDirection: "column",
+        alignItems: "flex-start",
+        position: "relative",
+        boxShadow: 3,
+        borderRadius: 2,
+        backgroundColor: isCompleted ? "#f5f5f5" : "#fff",
+      }}
+    >
+      <Typography fontWeight={600} gutterBottom>
+        Token #{token.tokenNumber}
+      </Typography>
+      <Typography variant="body2" gutterBottom>
+        <strong>{token.patientName}</strong>
       </Typography>
       <Typography variant="body2">
-        Doctor:{" "}
-        <strong>{token.doctor?.name || token.doctorName || "N/A"}</strong>
+        Doctor: <strong>{token.doctor?.name || token.doctorName || "N/A"}</strong>
       </Typography>
       <Typography variant="body2">
-        Department:{" "}
-        <strong>
-          {token.department?.name || token.departmentName || "N/A"}
-        </strong>
+        Department: <strong>{token.department?.name || token.departmentName || "N/A"}</strong>
       </Typography>
       <Typography variant="body2" mt={1}>
-        Status:{" "}
+        Status: {" "}
         <Chip
           label={token.status}
           color={
@@ -213,8 +231,7 @@ export default function DashboardPage() {
           size="small"
         />
       </Typography>
-
-      {token.status !== "completed" && (
+      {!isCompleted && (
         <Stack direction="row" spacing={1} mt={1}>
           <Button
             variant="outlined"
@@ -238,6 +255,16 @@ export default function DashboardPage() {
             Complete
           </Button>
         </Stack>
+      )}
+      {isCompleted && (
+        <IconButton
+          size="small"
+          sx={{ position: "absolute", top: 4, right: 4 }}
+          onClick={() => handleStatusUpdate(token._id, "pending")}
+          aria-label="Move to in-progress"
+        >
+          <RestoreIcon fontSize="small" />
+        </IconButton>
       )}
     </Paper>
   );
@@ -338,13 +365,24 @@ export default function DashboardPage() {
             In Progress Tokens
           </Typography>
           <Divider sx={{ mb: 1 }} />
-          {grouped.waiting.map((t, i) => renderTokenCard(t, i))}
-
+          <Grid container spacing={2} sx={{ mb: 2 }}>
+            {grouped.waiting.map((t, i) => (
+              <Grid item key={t._id || i} xs={12} sm={6} md={4} lg={3}>
+                {renderTokenCard(t, i, false)}
+              </Grid>
+            ))}
+          </Grid>
           <Typography variant="h6" sx={{ mt: 4 }}>
             Completed Tokens
           </Typography>
           <Divider sx={{ mb: 1 }} />
-          {grouped.completed.map((t, i) => renderTokenCard(t, i))}
+          <Grid container spacing={2}>
+            {grouped.completed.map((t, i) => (
+              <Grid item key={t._id || i} xs={12} sm={6} md={4} lg={3}>
+                {renderTokenCard(t, i, true)}
+              </Grid>
+            ))}
+          </Grid>
         </>
       )}
 
