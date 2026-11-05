@@ -1,0 +1,28 @@
+name: Feature request
+description: Propose an improvement for patients or care teams.
+title: "[Feature]: "
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: User problem
+      description: Who needs this, and what is difficult today?
+    validations:
+      required: true
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Proposed behavior
+      description: Describe the workflow and acceptance criteria.
+    validations:
+      required: true
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives and scope
+      description: Include alternatives, dependencies, and what can wait.
+  - type: textarea
+    id: privacy
+    attributes:
+      label: Privacy and access considerations
+      description: Describe affected roles and data without including real patient information.

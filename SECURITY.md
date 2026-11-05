@@ -1,0 +1,37 @@
+# Security policy
+
+## Status and supported development line
+
+The default branch is the maintained development line. There are no versioned release-support guarantees or published response-time commitments. Hospiq is not currently represented as ready to handle real patient data.
+
+## Reporting a vulnerability
+
+Do not publish exploit details, patient information, credentials, tokens, or database URLs in public issues. If GitHub's **Security → Report a vulnerability** option is available for this repository, use it. Otherwise open a public issue asking the maintainer for a private reporting channel, without technical exploit or sensitive details. This document does not imply that GitHub private vulnerability reporting is enabled.
+
+Include the affected commit, component, sanitized reproduction, impact, and a proposed mitigation where possible. Use fictional accounts/data and only test systems you are authorized to access. Maintainer profile: [Adarsh](https://github.com/adarshprakasan).
+
+## Existing controls
+
+- JWT signature verification with a current User lookup on protected requests.
+- Role and hospital/linked-doctor ownership checks on management and queue operations.
+- Patient self-access and authored-record restrictions.
+- Hashed passwords/OTPs, bounded OTP attempts, expiry checks, resend cooldown, and process-local auth throttling.
+- Request/file limits and unique booking indexes.
+
+These controls do not establish regulatory compliance or eliminate application risk.
+
+## Known release blockers and limits
+
+- Cloudinary assets currently use ordinary delivery URLs. API authentication does not make uploaded medical assets private.
+- Browser tokens are stored in localStorage, have a seven-day lifetime, and lack a dedicated revocation/refresh service.
+- Staff/doctor self-registration does not verify real-world credentials or affiliation; hospital association alone is not a complete onboarding policy.
+- Medical-record creation checks a historical token relationship, not consent or a completed-encounter policy. Upload requires doctor role but does not itself verify a patient relationship.
+- Clinical data audit trails, retention policies, malware scanning, transaction/recovery behavior, and full database/browser integration coverage are incomplete.
+- IP throttling is local to each process, and trusted-proxy behavior must be configured deliberately for hosting.
+- Demo credentials are generated for fictional testing; remove or isolate demo users before any real deployment.
+
+Track remediation in the [roadmap](docs/ROADMAP.md) and [project review](PROJECT_REVIEW.md). Do not advertise compliance certifications based on this repository.
+
+## Secret hygiene
+
+Keep `.env` files, generated passwords, JWTs, and provider credentials out of Git. If a secret is exposed, rotate it at the issuing system and review affected access; deleting it from a new commit does not invalidate it or remove history. Production configuration belongs in a secret manager. Dependency audits are time-sensitive checks, not security certification.

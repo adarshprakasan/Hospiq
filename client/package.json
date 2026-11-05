@@ -23,5 +23,31 @@
   "devDependencies": {
     "@vitejs/plugin-react": "^4.6.0",
     "vite": "^7.0.3"
-  }
+  },
+  "description": "Hospital discovery, same-day appointment tokens, and care-team queue management.",
+  "author": {
+    "name": "Adarsh",
+    "url": "https://github.com/adarshprakasan"
+  },
+  "license": "ISC",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/adarshprakasan/Hospiq.git",
+    "directory": "client"
+  },
+  "homepage": "https://github.com/adarshprakasan/Hospiq#readme",
+  "bugs": {
+    "url": "https://github.com/adarshprakasan/Hospiq/issues"
+  },
+  "keywords": [
+    "healthcare",
+    "hospital-management",
+    "appointment-booking",
+    "queue-management",
+    "patient-portal",
+    "mern",
+    "react",
+    "express",
+    "mongodb"
+  ]
 }

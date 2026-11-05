@@ -53,3 +53,7 @@ These are explicitly not represented as complete by this change.
 - npm audits initially reported 11 server and 14 frontend advisories. Updated lockfiles report zero known vulnerabilities in both trees as of this review. This does not establish application security.
 - Browser preview could not reach the local frontend from the browser environment (connection refused/timed out). Visual and authenticated browser verification remain pending.
 - MongoDB, SMTP and Cloudinary delivery were not exercised against live services. No production data migration or deployment was performed.
+
+## Subsequent demo validation and documentation
+
+After the initial review, the demo seed connected to the configured MongoDB database and verified three fictional hospitals, nine doctors, and nine schedules. The account seed created fifteen demo users, verified their login-controller behavior, and verified nine doctor-account links. These actions intentionally inserted demo data; they did not constitute a full database concurrency, authenticated HTTP, browser, SMTP, or Cloudinary integration test. The documentation index is now available at [docs/README.md](docs/README.md).

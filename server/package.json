@@ -10,10 +10,23 @@
     "seed:demo": "node scripts/seed-demo.js",
     "seed:accounts": "node scripts/seed-demo-accounts.js"
   },
-  "keywords": [],
-  "author": "",
+  "keywords": [
+    "healthcare",
+    "hospital-management",
+    "appointment-booking",
+    "queue-management",
+    "patient-portal",
+    "mern",
+    "react",
+    "express",
+    "mongodb"
+  ],
+  "author": {
+    "name": "Adarsh",
+    "url": "https://github.com/adarshprakasan"
+  },
   "license": "ISC",
-  "description": "",
+  "description": "Hospital discovery, same-day appointment tokens, and care-team queue management.",
   "dependencies": {
     "bcryptjs": "^3.0.2",
     "cloudinary": "^2.11.0",
@@ -31,5 +44,14 @@
   },
   "engines": {
     "node": ">=22"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/adarshprakasan/Hospiq.git",
+    "directory": "server"
+  },
+  "homepage": "https://github.com/adarshprakasan/Hospiq#readme",
+  "bugs": {
+    "url": "https://github.com/adarshprakasan/Hospiq/issues"
   }
 }
