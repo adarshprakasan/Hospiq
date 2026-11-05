@@ -5,8 +5,9 @@ const Doctor = require("../models/Doctor");
 const MedicalRecord = require("../models/MedicalRecord");
 
 // Fetch patient profile & history
-router.get("/patient/:id", async (req, res) => {
+router.get("/patient/:id", require("../middlewares/auth"), async (req, res) => {
   try {
+    if (String(req.params.id) !== String(req.user.id)) return res.status(403).json({ message: "Access denied" });
     const user = await User.findById(req.params.id).select("-password");
     if (!user) return res.status(404).json({ message: "Patient not found" });
 

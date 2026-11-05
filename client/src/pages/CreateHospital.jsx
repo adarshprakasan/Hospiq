@@ -36,7 +36,9 @@ export default function CreateHospital() {
 
   const handleSubmit = async () => {
     try {
-      const [lat, lng] = formData.location.split(",").map(Number);
+      const coordinates = formData.location.split(",").map(v => v.trim());
+      const [lat, lng] = coordinates.map(Number);
+      if (coordinates.length !== 2 || coordinates.some(v => !v) || !Number.isFinite(lat) || !Number.isFinite(lng) || Math.abs(lat) > 90 || Math.abs(lng) > 180) { alert("Enter valid latitude and longitude separated by a comma"); return; }
       const data = {
         ...formData,
         location: { lat, lng },

@@ -1,308 +1,62 @@
 const Doctor = require("../models/Doctor");
 const Token = require("../models/Token");
 const DoctorSchedule = require("../models/DoctorSchedule");
-// const User = require("../models/User");
-// const Department = require("../models/Department");
-
-exports.bookToken = async (req, res) => {
-  try {
-    const { doctorId, departmentId } = req.body;
-    const patientId = req.user.id;
-
-    const doctor = await Doctor.findById(doctorId);
-    if (!doctor) {
-      return res.status(404).json({ message: "Doctor not found" });
-    }
-
-    const today = new Date().toLocaleDateString("en-US", { weekday: "long" });
-
-    // Fetch doctor schedule
-    const doctorSchedule = await DoctorSchedule.findOne({
-      doctorId: doctor._id,
-    });
-
-    if (!doctorSchedule) {
-      return res.status(400).json({ message: "Doctor schedule not set." });
-    }
-
-    const todaySchedule = doctorSchedule.weeklySchedule.find(
-      (day) => day.day === today
-    );
-
-    if (!todaySchedule || !todaySchedule.isAvailable) {
-      return res
-        .status(400)
-        .json({ message: "Doctor is not available today." });
-    }
-
-    if (todaySchedule.startTime && todaySchedule.endTime) {
-      const now = new Date();
-      const [startHour, startMinute] = todaySchedule.startTime
-        .split(":")
-        .map(Number);
-      const [endHour, endMinute] = todaySchedule.endTime.split(":").map(Number);
-
-      const currentMinutes = now.getHours() * 60 + now.getMinutes();
-      const startMinutes = startHour * 60 + startMinute;
-      const endMinutes = endHour * 60 + endMinute;
-
-      if (currentMinutes < startMinutes || currentMinutes > endMinutes) {
-        return res
-          .status(400)
-          .json({ message: "Doctor is not available at this time." });
-      }
-    }
-
-    // Use standardized date string for today
-    const todayString = new Date().toISOString().split("T")[0];
-    // Count existing tokens for today
-    const count = await Token.countDocuments({
-      doctorId,
-      date: todayString,
-    });
-
-    // Create the token
-    const newToken = new Token({
-      doctorId,
-      patientId,
-      departmentId,
-      tokenNumber: count + 1,
-      date: todayString,
-    });
-
-    await newToken.save();
-
-    res.status(201).json({
-      message: "Token booked successfully",
-      token: newToken,
-    });
-  } catch (err) {
-    res.status(500).json({ message: err.message });
-  }
-};
-
+const QueueCounter = require("../models/QueueCounter");
+const { ownsDoctor, sameId } = require("../middlewares/ownership");
+const { queueDate, queueClock } = require("../utils/queue");
+async function book(req, res, offline) {
+  const { doctorId, patientName } = req.body;
+  const doctor = await Doctor.findById(doctorId);
+  if (!doctor) return res.status(404).json({ message: "Doctor not found" });
+  if (offline && !await ownsDoctor(req.user, doctorId)) return res.status(403).json({ message: "Access denied" });
+  if (offline && (typeof patientName !== "string" || !patientName.trim())) return res.status(400).json({ message: "Patient name is required" });
+  if (doctor.availabilityStatus !== "available") return res.status(400).json({ message: "Doctor is unavailable" });
+  const schedule = await DoctorSchedule.findOne({ doctorId });
+  const clock = queueClock();
+  const day = schedule?.weeklySchedule.find(d => d.day === clock.day);
+  if (!day?.isAvailable || !day.startTime || !day.endTime || clock.time < day.startTime || clock.time >= day.endTime) return res.status(400).json({ message: "Booking is available during the doctor's scheduled hours" });
+  const date = queueDate();
+  if (!offline && await Token.exists({ doctorId, patientId: req.user.id, date, status: { $in: ["pending", "called", "skipped"] } })) return res.status(409).json({ message: "You already have an active token for this doctor today" });
+  const key = `${doctorId}:${date}`;
+  // Initialize from existing data when upgrading an existing installation.
+  const last = await Token.findOne({ doctorId, date }).sort({ tokenNumber: -1 }).select("tokenNumber").lean();
+  try { await QueueCounter.updateOne({ _id: key }, { $setOnInsert: { sequence: last?.tokenNumber || 0 } }, { upsert: true }); } catch (err) { if (err.code !== 11000) throw err; }
+  const counter = await QueueCounter.findByIdAndUpdate(key, { $inc: { sequence: 1 } }, { new: true });
+  const token = await Token.create({ doctorId, patientId: offline ? null : req.user.id, patientName: offline ? patientName.trim() : req.user.name, departmentId: doctor.department, isOffline: offline, tokenNumber: counter.sequence, date });
+  res.status(201).json({ message: "Token booked successfully", token });
+}
+exports.bookToken = (req, res) => book(req, res, false);
+exports.bookOfflineToken = (req, res) => book(req, res, true);
+function serialize(token) {
+  return { _id: token._id, tokenNumber: token.tokenNumber, status: token.status, patientId: token.patientId?._id, patientName: token.patientId?.name || token.patientName || "Patient", doctorId: token.doctorId?._id, doctorName: token.doctorId?.name || "Doctor unavailable", departmentName: token.departmentId, date: token.date, createdAt: token.createdAt, isOffline: token.isOffline };
+}
+async function list(filter) {
+  return (await Token.find(filter).sort({ date: -1, tokenNumber: 1 }).populate("patientId", "name").populate("doctorId", "name").lean()).map(serialize);
+}
 exports.getDoctorTokens = async (req, res) => {
-  try {
-    const { doctorId } = req.params;
-
-    const todayStart = new Date();
-    todayStart.setHours(0, 0, 0, 0);
-    const tomorrow = new Date(todayStart);
-    tomorrow.setDate(todayStart.getDate() + 1);
-
-    const tokens = await Token.find({
-      doctorId,
-      bookingDate: {
-        $gte: todayStart,
-        $lt: tomorrow,
-      },
-    })
-      .sort({ createdAt: 1 })
-      .populate("patientId", "name email");
-
-    // Fix patientName mapping for offline tokens
-    const result = tokens.map((token) => ({
-      _id: token._id,
-      tokenNumber: token.tokenNumber,
-      status: token.status,
-      patientId: token.patientId?._id,
-      patientName: token.patientId?.name || token.patientName || "Unknown",
-      doctorName: token.doctorId?.name || "Unknown",
-      departmentName: token.departmentId || "Unknown",
-      estimatedTime: token.estimatedTime,
-      consultationTime: token.consultationTime,
-      createdAt: token.createdAt,
-    }));
-
-    res.status(200).json(result);
-  } catch (error) {
-    res.status(500).json({ message: "Failed to fetch tokens", error });
-  }
+  if (!await ownsDoctor(req.user, req.params.doctorId)) return res.status(403).json({ message: "Access denied" });
+  res.json(await list({ doctorId: req.params.doctorId, date: queueDate() }));
 };
-
-// Update token status
-exports.updateTokenStatus = async (req, res) => {
-  try {
-    const { tokenId } = req.params;
-    const { status } = req.body;
-    
-    if (!status || !['pending', 'called', 'completed', 'skipped', 'cancelled'].includes(status)) {
-      return res.status(400).json({ message: "Invalid status value" });
-    }
-    
-    const token = await Token.findById(tokenId);
-    if (!token) {
-      return res.status(404).json({ message: "Token not found" });
-    }
-    
-    token.status = status;
-    await token.save();
-    
-    res.json({ message: "Token status updated", token });
-  } catch (err) {
-    console.error("Status update error:", err);
-    res.status(500).json({ message: "Failed to update token status" });
-  }
-};
-
-exports.bookOfflineToken = async (req, res) => {
-  try {
-    const { doctorId, hospitalId, patientName, departmentId } = req.body;
-
-    // Validate required fields
-    if (!doctorId || !hospitalId || !patientName || !departmentId) {
-      return res.status(400).json({
-        message:
-          "Missing required fields: doctorId, hospitalId, patientName, departmentId",
-      });
-    }
-
-    // Check if doctor exists
-    const doctor = await Doctor.findById(doctorId);
-    if (!doctor) {
-      return res.status(404).json({ message: "Doctor not found" });
-    }
-
-    // Get today's date in YYYY-MM-DD format for counting
-    const todayString = new Date().toISOString().split("T")[0];
-
-    // Count existing tokens for today to assign token number
-    const count = await Token.countDocuments({
-      doctorId,
-      date: todayString,
-    });
-
-    const token = new Token({
-      doctorId,
-      patientId: null, // Offline tokens don't have patient accounts
-      patientName,
-      departmentId,
-      isOffline: true,
-      tokenNumber: count + 1,
-      status: "pending",
-      date: todayString,
-    });
-
-    await token.save();
-
-    res.status(201).json({ message: "Offline token booked", token });
-  } catch (error) {
-    console.error("Offline token booking error:", error);
-    res
-      .status(500)
-      .json({ message: "Failed to book offline token", error: error.message });
-  }
-};
-
-// Get tokens for logged-in doctor or staff
 exports.getMyTokens = async (req, res) => {
-  try {
-    let tokens;
-    if (req.user.role === "doctor") {
-      tokens = await Token.find({ doctorId: req.user.id });
-    } else if (req.user.role === "staff") {
-      tokens = await Token.find(); // optionally filter by hospital/department
-    } else {
-      return res.status(403).json({ message: "Access denied" });
-    }
-
-    const populatedTokens = await Token.populate(tokens, [
-      { path: "patientId", select: "name email" },
-      { path: "doctorId", select: "name" },
-      // { path: "departmentId", select: "name" },
-    ]);
-
-    const result = populatedTokens.map((token) => ({
-      _id: token._id,
-      tokenNumber: token.tokenNumber,
-      status: token.status,
-      patientId: token.patientId?._id,
-      patientName: token.patientId?.name || token.patientName || "Unknown",
-      doctorName: token.doctorId?.name || "Unknown",
-      departmentName: token.departmentId || "Unknown",
-      estimatedTime: token.estimatedTime,
-      consultationTime: token.consultationTime,
-      createdAt: token.createdAt,
-    }));
-
-    res.json(result);
-  } catch (err) {
-    res.status(500).json({ message: "Server error" });
-  }
+  const filter = req.user.role === "doctor" ? { userId: req.user.id } : { hospitalId: req.user.hospitalId || null };
+  const doctors = await Doctor.find(filter).select("_id").lean();
+  res.json(await list({ doctorId: { $in: doctors.map(d => d._id) }, date: queueDate() }));
 };
-
-// Get tokens for the logged-in patient
-exports.getMyPatientTokens = async (req, res) => {
-  try {
-    if (req.user.role !== "patient") {
-      return res.status(403).json({ message: "Access denied" });
-    }
-
-    const tokens = await Token.find({ patientId: req.user.id })
-      .sort({ createdAt: -1 })
-      .populate("doctorId", "name");
-    // .populate("departmentId", "name");
-
-    // Fix patientName mapping for offline tokens
-    const result = tokens.map((token) => ({
-      _id: token._id,
-      tokenNumber: token.tokenNumber,
-      status: token.status,
-      patientName: token.patientId?.name || token.patientName || "Unknown",
-      doctorName: token.doctorId?.name || "Unknown",
-      departmentName: token.departmentId || "Unknown",
-      estimatedTime: token.estimatedTime,
-      consultationTime: token.consultationTime,
-      createdAt: token.createdAt,
-    }));
-    res.json(result);
-  } catch (err) {
-    console.error(err);
-    res.status(500).json({ message: "Failed to fetch tokens" });
-  }
+exports.getMyPatientTokens = async (req, res) => res.json(await list({ patientId: req.user.id }));
+exports.updateTokenStatus = async (req, res) => {
+  const token = await Token.findById(req.params.tokenId || req.params.id);
+  if (!token) return res.status(404).json({ message: "Token not found" });
+  if (!await ownsDoctor(req.user, token.doctorId)) return res.status(403).json({ message: "Access denied" });
+  const status = req.body.status;
+  const transitions = { pending: ["called", "skipped", "cancelled"], called: ["completed", "skipped", "cancelled"], skipped: ["pending", "called", "cancelled"], completed: [], cancelled: [] };
+  if (!transitions[token.status]?.includes(status)) return res.status(400).json({ message: "Invalid token status transition" });
+  const updated = await Token.findOneAndUpdate({ _id: token._id, status: token.status }, { $set: { status } }, { new: true, runValidators: true });
+  if (!updated) return res.status(409).json({ message: "Token changed; refresh and try again" });
+  res.json({ message: "Token status updated", token: updated });
 };
-
-// Mark a token as completed
-exports.tokenComplete = async (req, res) => {
-  try {
-    const token = await Token.findById(req.params.id);
-    if (!token) return res.status(404).json({ message: "Token not found" });
-
-    token.status = "completed";
-    await token.save();
-
-    res.json({ message: "Token marked as completed" });
-  } catch (err) {
-    console.error(err);
-    res.status(500).json({ message: "Failed to complete token" });
-  }
-};
-
+exports.tokenComplete = async (req, res) => { req.body = { status: "completed" }; return exports.updateTokenStatus(req, res); };
 exports.cancelToken = async (req, res) => {
-  try {
-    const token = await Token.findById(req.params.tokenId);
-    if (
-      !token ||
-      !token.patientId ||
-      token.patientId.toString() !== req.user.id
-    ) {
-      return res.status(403).json({ message: "Not authorized" });
-    }
-
-    if (["completed", "cancelled"].includes(token.status)) {
-      return res.status(400).json({ message: "Cannot cancel this token" });
-    }
-
-    token.status = "cancelled";
-
-    try {
-      await token.save();
-      res.json({ message: "Token cancelled" });
-    } catch (saveErr) {
-      console.error("Save error:", saveErr);
-      res.status(500).json({ message: "Error saving token" });
-    }
-  } catch (err) {
-    res.status(500).json({ message: "Failed to cancel token" });
-  }
+  const token = await Token.findOneAndUpdate({ _id: req.params.tokenId, patientId: req.user.id, status: { $in: ["pending", "called", "skipped"] } }, { $set: { status: "cancelled" } }, { new: true });
+  if (!token) return res.status(409).json({ message: "Token cannot be cancelled" });
+  res.json({ message: "Token cancelled", token });
 };

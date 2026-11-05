@@ -1,154 +1,36 @@
 import { useEffect, useState } from "react";
-import { useParams } from "react-router-dom";
-import {
-  Container,
-  Typography,
-  MenuItem,
-  Select,
-  Button,
-  CircularProgress,
-  Snackbar,
-} from "@mui/material";
+import { Link, useParams } from "react-router-dom";
+import { Container, Typography, Box, TextField, MenuItem, Button, Alert, Paper, Stack } from "@mui/material";
 import axios from "../api/axios";
-
 export default function BookingPage() {
   const { hospitalId } = useParams();
-
-  const [departments, setDepartments] = useState([]);
+  const [hospital, setHospital] = useState(null);
   const [doctors, setDoctors] = useState([]);
-  const [selectedDepartment, setSelectedDepartment] = useState("");
-  const [selectedDoctor, setSelectedDoctor] = useState("");
-  const [loading, setLoading] = useState(false);
-  const [snack, setSnack] = useState({
-    open: false,
-    message: "",
-    severity: "info",
-  });
-
-  // Fetch departments on load
+  const [department, setDepartment] = useState("");
+  const [doctorId, setDoctorId] = useState("");
+  const [error, setError] = useState("");
+  const [busy, setBusy] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [token, setToken] = useState(null);
   useEffect(() => {
-    const fetchDepartments = async () => {
-      try {
-        const res = await axios.get(`/departments?hospitalId=${hospitalId}`);
-        setDepartments(res.data);
-      } catch (err) {
-        console.error("Failed to fetch departments:", err);
-      }
-    };
-    fetchDepartments();
+    let live = true;
+    axios.get(`/hospitals/${hospitalId}`).then(({ data }) => { if (live) setHospital(data); }).catch(() => { if (live) setError("Unable to load this care provider."); }).finally(() => { if (live) setLoading(false); });
+    return () => { live = false; };
   }, [hospitalId]);
-
-  // Handle Department Change → Load Doctors
-  const handleDepartmentChange = async (e) => {
-    const dept = e.target.value;
-    setSelectedDepartment(dept);
-    setSelectedDoctor("");
-
-    try {
-      const res = await axios.get(
-        `/doctors?hospitalId=${hospitalId}&department=${encodeURIComponent(
-          dept
-        )}`
-      );
-      setDoctors(res.data);
-    } catch (err) {
-      console.error("Failed to fetch doctors:", err);
-      setDoctors([]);
-    }
-  };
-
-  const handleBook = async () => {
-    if (!hospitalId || !selectedDepartment || !selectedDoctor) {
-      return setSnack({
-        open: true,
-        message: "Please fill all fields",
-        severity: "error",
-      });
-    }
-
-    setLoading(true);
-    try {
-      const res = await axios.post("/tokens/book", {
-        doctorId: selectedDoctor,
-        departmentId: selectedDepartment,
-        hospitalId: hospitalId,
-      });
-
-      setSnack({
-        open: true,
-        message: `Token Booked! Your token: ${
-          res.data.token.tokenNumber
-        }, ETA: ${res.data.token.estimatedTime || "TBD"}`,
-        severity: "success",
-      });
-    } catch (err) {
-      setSnack({
-        open: true,
-        message:
-          err.response?.data?.message || "Booking failed. Please try again.",
-        severity: "error",
-      });
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  return (
-    <Container sx={{ mt: 4 }}>
-      <Typography variant="h5" gutterBottom>
-        Book Appointment
-      </Typography>
-
-      <Select
-        fullWidth
-        value={selectedDepartment}
-        onChange={handleDepartmentChange}
-        displayEmpty
-        sx={{ mt: 2 }}
-      >
-        <MenuItem value="" disabled>
-          Select Department
-        </MenuItem>
-        {departments.map((d, index) => (
-          <MenuItem key={index} value={d}>
-            {d}
-          </MenuItem>
-        ))}
-      </Select>
-
-      <Select
-        fullWidth
-        value={selectedDoctor}
-        onChange={(e) => setSelectedDoctor(e.target.value)}
-        displayEmpty
-        sx={{ mt: 2 }}
-        disabled={!doctors.length}
-      >
-        <MenuItem value="" disabled>
-          Select Doctor
-        </MenuItem>
-        {doctors.map((doc) => (
-          <MenuItem key={doc._id} value={doc._id}>
-            {doc.name}
-          </MenuItem>
-        ))}
-      </Select>
-
-      <Button
-        variant="contained"
-        onClick={handleBook}
-        sx={{ mt: 3 }}
-        disabled={loading}
-      >
-        {loading ? <CircularProgress size={24} /> : "Confirm Booking"}
-      </Button>
-
-      <Snackbar
-        open={snack.open}
-        autoHideDuration={4000}
-        onClose={() => setSnack({ ...snack, open: false })}
-        message={snack.message}
-      />
-    </Container>
-  );
+  useEffect(() => {
+    let live = true;
+    setDoctors([]); setDoctorId("");
+    if (department) axios.get("/doctors", { params: { hospitalId, department } }).then(({ data }) => { if (live) setDoctors(data); }).catch(() => { if (live) setError("Unable to load doctors. Please try again."); });
+    return () => { live = false; };
+  }, [department, hospitalId]);
+  async function book(event) {
+    event.preventDefault(); setBusy(true); setError("");
+    try { const { data } = await axios.post("/tokens/book", { doctorId }); setToken(data.token); }
+    catch (err) { setError(err.response?.data?.message || "Unable to book. Please try again."); }
+    finally { setBusy(false); }
+  }
+  return <Container maxWidth="md" sx={{ mt: 3 }}><Button component={Link} to="/" sx={{ mb: 2 }}>← Back to care providers</Button><Box className="page-hero"><Typography variant="overline">BOOK YOUR VISIT</Typography><Typography variant="h4">{hospital?.name || "Choose your care"}</Typography><Typography sx={{ mt: 1 }}>{hospital?.address || "Select a department and doctor to join today's queue."}</Typography></Box>
+    {error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}
+    {token ? <Paper sx={{ p: 4, textAlign: "center" }}><Alert severity="success">Your appointment is confirmed.</Alert><Typography color="text.secondary" sx={{ mt: 3 }}>Your token number</Typography><Typography variant="h2" color="primary">#{token.tokenNumber}</Typography><Typography sx={{ my: 2 }}>Please arrive during your doctor's scheduled hours.</Typography><Button component={Link} to="/my-tokens" variant="contained">View my appointments</Button></Paper> : <Paper component="form" onSubmit={book} sx={{ p: { xs: 2, sm: 4 } }}><Typography variant="h6" mb={2}>Who would you like to see?</Typography><Stack gap={3}><TextField select required fullWidth label="Department" value={department} onChange={e => { setDepartment(e.target.value); setError(""); }} disabled={loading || !hospital}>{(hospital?.departments || []).map(d => <MenuItem key={d} value={d}>{d}</MenuItem>)}</TextField><TextField select required fullWidth label="Doctor" value={doctorId} onChange={e => setDoctorId(e.target.value)} disabled={!department || !doctors.length}>{doctors.map(d => <MenuItem key={d._id} value={d._id} disabled={d.availabilityStatus !== "available"}>{d.name} · {d.specialization || d.department}{d.availabilityStatus !== "available" ? " (unavailable)" : ""}</MenuItem>)}</TextField>{department && !doctors.length && <Alert severity="info">No doctors listed for this department yet.</Alert>}<Typography variant="body2" color="text.secondary">Same-day tokens are issued during scheduled consultation hours. Availability is checked when you confirm.</Typography><Button type="submit" variant="contained" disabled={busy || !doctorId}>{busy ? "Confirming…" : "Confirm appointment"}</Button></Stack></Paper>}
+  </Container>;
 }

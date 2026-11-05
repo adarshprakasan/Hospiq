@@ -39,4 +39,8 @@ const tokenSchema = new mongoose.Schema(
   { timestamps: true }
 );
 
+tokenSchema.index({ doctorId: 1, date: 1, tokenNumber: 1 }, { unique: true });
+tokenSchema.index({ doctorId: 1, patientId: 1, date: 1 }, { unique: true, partialFilterExpression: { isOffline: false, status: { $in: ["pending", "called", "skipped"] } } });
+tokenSchema.index({ patientId: 1, date: -1 });
+
 module.exports = mongoose.model("Token", tokenSchema);

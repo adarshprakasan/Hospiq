@@ -1,3 +1,4 @@
+const { ownsHospital, ownsDoctor } = require("../middlewares/ownership");
 const Doctor = require("../models/Doctor");
 const Hospital = require("../models/Hospital");
 
@@ -18,6 +19,7 @@ exports.createDoctor = async (req, res) => {
         .json({ message: "Name, Department, and Hospital ID are required" });
     }
 
+    if (!ownsHospital(req.user, hospitalId)) return res.status(403).json({ message: "Access denied" });
     const hospital = await Hospital.findById(hospitalId);
     if (!hospital) {
       return res.status(404).json({ message: "Hospital not found" });
@@ -42,7 +44,14 @@ exports.createDoctor = async (req, res) => {
           .filter(Boolean)
       : [];
 
+    let account;
+    if (req.body.accountEmail || req.user.role === "doctor") {
+      account = req.user.role === "doctor" ? req.user : await require("../models/User").findOne({ email: String(req.body.accountEmail).trim().toLowerCase(), role: "doctor" });
+      if (!account || (account.hospitalId && String(account.hospitalId) !== String(hospitalId))) return res.status(400).json({ message: "Doctor must have a registered account and cannot belong to another hospital" });
+      if (await Doctor.exists({ userId: account._id })) return res.status(409).json({ message: "This account already has a doctor profile" });
+    }
     const newDoctor = new Doctor({
+      userId: account?._id,
       name,
       department,
       hospitalId,
@@ -52,6 +61,7 @@ exports.createDoctor = async (req, res) => {
     });
 
     await newDoctor.save();
+    if (account) await require("../models/User").findByIdAndUpdate(account._id, { hospitalId });
 
     res
       .status(201)
@@ -78,10 +88,12 @@ exports.updateAvailability = async (req, res) => {
   try {
     const { id } = req.params;
     const { available } = req.body;
+    if (!["available", "unavailable"].includes(available)) return res.status(400).json({ message: "Invalid availability" });
+    if (!await ownsDoctor(req.user, id)) return res.status(403).json({ message: "Access denied" });
     const doctor = await Doctor.findByIdAndUpdate(
       id,
       { availabilityStatus: available },
-      { new: true }
+      { new: true, runValidators: true }
     );
     res.json(doctor);
   } catch (err) {
@@ -121,4 +133,17 @@ exports.getDoctorById = async (req, res) => {
   } catch (err) {
     res.status(500).json({ message: err.message });
   }
+};
+
+exports.linkDoctorAccount = async (req, res) => {
+  const doctor = await Doctor.findById(req.params.id);
+  if (!doctor) return res.status(404).json({ message: "Doctor not found" });
+  if (!ownsHospital(req.user, doctor.hospitalId)) return res.status(403).json({ message: "Access denied" });
+  if (doctor.userId) return res.status(409).json({ message: "Doctor profile is already linked" });
+  const account = await require("../models/User").findOne({ email: String(req.body.email || "").trim().toLowerCase(), role: "doctor" });
+  if (!account || (account.hospitalId && String(account.hospitalId) !== String(doctor.hospitalId))) return res.status(400).json({ message: "Use a registered doctor account from this hospital or an unassigned account" });
+  const updated = await Doctor.findOneAndUpdate({ _id: doctor._id, userId: null }, { $set: { userId: account._id } }, { new: true, runValidators: true });
+  if (!updated) return res.status(409).json({ message: "Profile already changed; refresh and retry" });
+  await require("../models/User").findByIdAndUpdate(account._id, { hospitalId: doctor.hospitalId });
+  res.json({ message: "Doctor account linked", doctor: updated });
 };

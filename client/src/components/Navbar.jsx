@@ -1,103 +1,19 @@
-import React, { useState } from "react";
-import {
-  AppBar,
-  Toolbar,
-  Typography,
-  Button,
-  Box,
-  Avatar,
-  Menu,
-  MenuItem,
-  useMediaQuery,
-  useTheme,
-  IconButton,
-} from "@mui/material";
-import { Link, useNavigate } from "react-router-dom";
-
-const Navbar = ({ user }) => {
+import { AppBar, Toolbar, Typography, Button, Box, Avatar } from "@mui/material";
+import { NavLink, useNavigate } from "react-router-dom";
+export default function Navbar({ user }) {
   const navigate = useNavigate();
-  const theme = useTheme();
-  const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
-
-  const [anchorEl, setAnchorEl] = useState(null);
-
-  const handleAvatarEnter = (e) => setAnchorEl(e.currentTarget);
-  const handleMenuClose = () => setAnchorEl(null);
-
-  const handleLogout = () => {
-    localStorage.removeItem("token");
-    navigate("/login");
-  };
-
-  const goToProfile = () => {
-    handleMenuClose();
-    navigate("/profile");
-  };
-
-  return (
-    <AppBar position="static">
-      <Toolbar sx={{ justifyContent: "space-between" }}>
-        <Typography
-          variant="h6"
-          component={Link}
-          to="/"
-          sx={{ color: "#fff", textDecoration: "none" }}
-        >
-          Hospiq
-        </Typography>
-
-        {!isMobile && user && (
-          <Box sx={{ display: "flex", gap: 2, alignItems: "center" }}>
-            {user.role === "patient" && (
-              <Button color="inherit" component={Link} to="/">
-                Book
-              </Button>
-            )}
-
-            {(user.role === "doctor" || user.role === "staff") && (
-              <Button color="inherit" component={Link} to="/dashboard">
-                Dashboard
-              </Button>
-            )}
-
-            <Box
-              onMouseEnter={handleAvatarEnter}
-              sx={{
-                display: "flex",
-                alignItems: "center",
-                gap: 1,
-                cursor: "pointer",
-              }}
-            >
-              <IconButton size="small">
-                <Avatar
-                  sx={{ bgcolor: "secondary.main", width: 32, height: 32 }}
-                >
-                  {user.name?.[0]?.toUpperCase()}
-                </Avatar>
-              </IconButton>
-              <Typography variant="body2" sx={{ color: "#fff" }}>
-                {user.name}
-              </Typography>
-            </Box>
-
-            <Menu
-              anchorEl={anchorEl}
-              open={Boolean(anchorEl)}
-              onClose={handleMenuClose}
-              onMouseLeave={handleMenuClose}
-              MenuListProps={{ onMouseLeave: handleMenuClose }}
-              anchorOrigin={{ vertical: "bottom", horizontal: "right" }}
-              transformOrigin={{ vertical: "top", horizontal: "right" }}
-            >
-              <MenuItem onClick={goToProfile}>Profile</MenuItem>
-              <MenuItem onClick={handleLogout}>Logout</MenuItem>
-            </Menu>
-          </Box>
-        )}
-      </Toolbar>
-    </AppBar>
-  );
-};
-
-export default Navbar;
+  const patient = user?.role === "patient";
+  const links = patient ? [["/", "Find care"], ["/my-tokens", "My appointments"]] : [["/dashboard", "Queue overview"], ["/manage-doctors", "Doctors"], ["/schedule", "Schedules"]];
+  return <AppBar position="sticky" color="inherit" elevation={0} sx={{ borderBottom: "1px solid #e0e9e8" }}>
+    <Toolbar sx={{ maxWidth: 1440, width: "100%", mx: "auto", gap: 2, flexWrap: "wrap", py: 1 }}>
+      <Typography component={NavLink} to={patient ? "/" : "/dashboard"} variant="h5" sx={{ textDecoration: "none", color: "primary.main", mr: { sm: 3 } }}>✚ Hospiq</Typography>
+      <Box component="nav" aria-label="Main navigation" sx={{ display: "flex", gap: .5, flexWrap: "wrap", order: { xs: 3, md: 0 }, width: { xs: "100%", md: "auto" } }}>
+        {user && links.map(([to, label]) => <Button key={to} component={NavLink} to={to} end sx={{ color: "text.secondary", "&.active": { color: "primary.main", bgcolor: "#e5f3ef" } }}>{label}</Button>)}
+      </Box>
+      <Box sx={{ ml: "auto", display: "flex", alignItems: "center", gap: 1 }}>
+        {user && <Button component={NavLink} to="/profile" startIcon={<Avatar sx={{ width: 28, height: 28, bgcolor: "primary.main", fontSize: 14 }}>{user.name?.[0]}</Avatar>}>{user.name?.split(" ")[0]}</Button>}
+        <Button color="inherit" onClick={() => { localStorage.removeItem("token"); localStorage.removeItem("user"); navigate("/login", { replace: true }); }}>Sign out</Button>
+      </Box>
+    </Toolbar>
+  </AppBar>;
+}

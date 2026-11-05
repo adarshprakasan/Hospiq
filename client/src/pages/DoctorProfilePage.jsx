@@ -76,8 +76,8 @@ export default function DoctorProfilePage() {
 
       // Get doctor schedule
       try {
-        const scheduleRes = await axios.get(`/schedules/doctor/${doctorId}`);
-        setSchedule(scheduleRes.data);
+        const scheduleRes = await axios.get(`/schedule/doctor/${doctorId}`);
+        setSchedule(scheduleRes.data.weeklySchedule || []);
       } catch (scheduleErr) {
         console.error("Failed to fetch schedule", scheduleErr);
         // Not setting error here as this is not critical
@@ -191,7 +191,7 @@ export default function DoctorProfilePage() {
     );
   }
 
-  const isStaffOrDoctor = user && (user.role === "staff" || user.role === "doctor");
+  const isStaffOrDoctor = user && ((user.role === "staff" && String(user.hospitalId) === String(doctor.hospitalId)) || (user.role === "doctor" && String(doctor.userId) === String(user._id)));
 
   return (
     <Container maxWidth="lg" sx={{ mt: 6, mb: 4 }}>
@@ -208,7 +208,7 @@ export default function DoctorProfilePage() {
 
       <Grid container spacing={4}>
         {/* Doctor Info Card */}
-        <Grid item xs={12} md={4}>
+        <Grid size={{ xs: 12, md: 4 }}>
           <Card sx={{ height: '100%' }}>
             <CardContent>
               <Typography variant="h5" component="div" gutterBottom>
@@ -262,7 +262,7 @@ export default function DoctorProfilePage() {
         </Grid>
 
         {/* Tabs Section */}
-        <Grid item xs={12} md={8}>
+        <Grid size={{ xs: 12, md: 8 }}>
           <Paper sx={{ width: '100%' }}>
             <Tabs
               value={tabValue}
@@ -314,7 +314,7 @@ export default function DoctorProfilePage() {
                       </ListItemIcon>
                       <ListItemText 
                         primary={formatScheduleDay(scheduleItem.day)} 
-                        secondary={`${formatTime(scheduleItem.startTime)} - ${formatTime(scheduleItem.endTime)}`}
+                        secondary={scheduleItem.isAvailable ? `${formatTime(scheduleItem.startTime)} - ${formatTime(scheduleItem.endTime)}` : "Unavailable"}
                       />
                     </ListItem>
                   ))}

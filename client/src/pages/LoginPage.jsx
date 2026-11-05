@@ -1,95 +1,31 @@
-import React, { useEffect, useState } from "react";
+import { useState } from "react";
+import { Link, Navigate, useNavigate } from "react-router-dom";
+import { Container, Typography, TextField, Button, Alert } from "@mui/material";
 import axios from "../api/axios";
-import {
-  Container,
-  Typography,
-  TextField,
-  Button,
-  MenuItem,
-  Snackbar,
-  Alert,
-} from "@mui/material";
-import { useNavigate } from "react-router-dom";
-
+import { storedUser } from "../utils";
 export default function LoginPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [role, setRole] = useState("patient");
-  const [snack, setSnack] = useState({
-    open: false,
-    message: "",
-    severity: "error",
-  });
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState("");
   const navigate = useNavigate();
-
-  useEffect(() => {
-    const token = localStorage.getItem("token");
-    const user = JSON.parse(localStorage.getItem("user"));
-
-    if (token && user) {
-      navigate(user.role === "patient" ? "/" : "/dashboard");
-    }
-  }, []);
-
-  const handleLogin = async () => {
+  const user = storedUser();
+  if (user && localStorage.getItem("token")) return <Navigate to={user.role === "patient" ? "/" : "/dashboard"} replace />;
+  async function submit(e) {
+    e.preventDefault(); setBusy(true); setError("");
     try {
-      const res = await axios.post("/auth/login", { email, password });
-      localStorage.setItem("token", res.data.token);
-      localStorage.setItem("user", JSON.stringify(res.data.user));
-
-      setSnack({
-        open: true,
-        message: "Login successful!",
-        severity: "success",
-      });
-
-      // Navigate based on role
-      const r = res.data.user.role;
-      navigate(r === "patient" ? "/" : "/dashboard");
-    } catch (err) {
-      setSnack({
-        open: true,
-        message: err.response?.data?.message || "Login failed",
-      });
-    }
-  };
-
-  return (
-    <Container maxWidth="xs" sx={{ mt: 6 }}>
-      <Typography variant="h5" gutterBottom>
-        Login
-      </Typography>
-
-      <TextField
-        fullWidth
-        margin="normal"
-        label="Email"
-        onChange={(e) => setEmail(e.target.value)}
-      />
-      <TextField
-        fullWidth
-        margin="normal"
-        label="Password"
-        type="password"
-        onChange={(e) => setPassword(e.target.value)}
-      />
-
-      <Button
-        fullWidth
-        variant="contained"
-        sx={{ mt: 2 }}
-        onClick={handleLogin}
-      >
-        Login
-      </Button>
-
-      <Snackbar
-        open={snack.open}
-        autoHideDuration={4000}
-        onClose={() => setSnack({ ...snack, open: false })}
-      >
-        <Alert severity={snack.severity}>{snack.message}</Alert>
-      </Snackbar>
-    </Container>
-  );
+      const { data } = await axios.post("/auth/login", { email, password });
+      localStorage.setItem("token", data.token); localStorage.setItem("user", JSON.stringify(data.user));
+      navigate(data.user.role === "patient" ? "/" : "/dashboard", { replace: true });
+    } catch (err) { setError(err.response?.data?.message || "Unable to sign in. Please try again."); }
+    finally { setBusy(false); }
+  }
+  return <Container component="form" onSubmit={submit} maxWidth="xs" sx={{ mt: 8, p: 4, bgcolor: "background.paper", borderRadius: 4, border: "1px solid #e0e9e8" }}>
+    <Typography variant="h4" color="primary" gutterBottom>✚ Hospiq</Typography><Typography variant="h5">Welcome back</Typography><Typography color="text.secondary" sx={{ mb: 2 }}>Your care, connected.</Typography>
+    {error && <Alert severity="error">{error}</Alert>}
+    <TextField fullWidth margin="normal" label="Email" type="email" autoComplete="email" required value={email} onChange={e => setEmail(e.target.value)} />
+    <TextField fullWidth margin="normal" label="Password" type="password" autoComplete="current-password" required value={password} onChange={e => setPassword(e.target.value)} />
+    <Button fullWidth variant="contained" type="submit" disabled={busy} sx={{ mt: 2 }}>{busy ? "Signing in…" : "Sign in"}</Button>
+    <Button fullWidth component={Link} to="/register" sx={{ mt: 2 }}>Create a patient account</Button><Button fullWidth component={Link} to="/hospital-register">Register a hospital or clinic</Button>
+  </Container>;
 }

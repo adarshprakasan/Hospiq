@@ -32,6 +32,7 @@ router.put(
 router.get("/", getDoctorsByHospitalAndDepartment);
 
 // Get doctor by ID
+router.patch("/:id/account", auth, checkRole(["staff", "admin"]), require("../controllers/doctor.controller").linkDoctorAccount);
 router.get("/:id", getDoctorById);
 
 module.exports = router;

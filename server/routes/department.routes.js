@@ -25,9 +25,10 @@ router.get("/", async (req, res) => {
 });
 
 // POST add a department to hospital.departments
-router.post("/add", async (req, res) => {
+router.post("/add", require("../middlewares/auth"), require("../middlewares/roles")(["staff", "doctor", "admin"]), async (req, res) => {
   try {
-    const { name, hospitalId } = req.body;
+    const { hospitalId } = req.body;
+    const name = typeof req.body.name === "string" ? req.body.name.trim() : "";
 
     if (!name || !hospitalId) {
       return res.status(400).json({ message: "Name and Hospital ID required" });
@@ -39,14 +40,15 @@ router.post("/add", async (req, res) => {
       return res.status(404).json({ message: "Hospital not found" });
     }
 
+    if (!require("../middlewares/ownership").ownsHospital(req.user, hospitalId)) return res.status(403).json({ message: "Access denied" });
     // Avoid duplicate departments
-    if (hospital.departments?.some((dep) => dep.name === name)) {
+    if (hospital.departments?.some((dep) => String(dep).toLowerCase() === name.toLowerCase())) {
       return res.status(400).json({ message: "Department already exists" });
     }
 
     // Push new department to hospital schema
-    hospital.departments.push(name);
-    await hospital.save();
+    await Hospital.updateOne({ _id: hospitalId }, { $addToSet: { departments: name } });
+    hospital.departments = [...new Set([...hospital.departments, name])];
 
     res.status(201).json({
       message: "Department added successfully",

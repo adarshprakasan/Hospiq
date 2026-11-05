@@ -40,6 +40,7 @@ const OfflineBookingDialog = ({ open, onClose, hospitalId }) => {
     const dept = e.target.value;
     setSelectedDepartment(dept);
     setSelectedDoctor("");
+    setDoctors([]);
 
     try {
       const res = await axios.get(
@@ -67,6 +68,7 @@ const OfflineBookingDialog = ({ open, onClose, hospitalId }) => {
         patientName,
         departmentId: selectedDepartment,
       });
+      resetFields();
       onClose(true); // Close modal with success flag
     } catch (err) {
       console.error("Offline booking error:", err);

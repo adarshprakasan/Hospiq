@@ -1,204 +1,31 @@
-import React, { useEffect, useState } from "react";
-import {
-  Box,
-  Container,
-  Typography,
-  Paper,
-  CircularProgress,
-  Alert,
-  Button,
-  MenuItem,
-  Select,
-  InputLabel,
-  FormControl,
-  TextField,
-} from "@mui/material";
+import { useEffect, useState } from "react";
+import { Link } from "react-router-dom";
+import { Container, Typography, Box, Paper, Button, TextField, MenuItem, Alert, Chip, Stack, CircularProgress } from "@mui/material";
 import axios from "../api/axios";
-import { isSameDay } from "date-fns";
 import PrintableQRCode from "../components/PrintableQRCode";
-
-const MyTokensPage = () => {
+import { activeStatus, statusColor } from "../utils";
+export default function MyTokensPage() {
   const [tokens, setTokens] = useState([]);
-  const [filteredTokens, setFilteredTokens] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
-
-  const [filterStatus, setFilterStatus] = useState("");
-  const [filterDate, setFilterDate] = useState("");
-
-  const [currentPage, setCurrentPage] = useState(1);
-  const itemsPerPage = 4;
-
+  const [status, setStatus] = useState("");
+  const [date, setDate] = useState("");
+  const [busy, setBusy] = useState(null);
   useEffect(() => {
-    const fetchTokens = async () => {
-      try {
-        const res = await axios.get("/tokens/mine");
-
-        setTokens(res.data);
-        setFilteredTokens(res.data);
-      } catch (err) {
-        setError("Failed to load tokens.");
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchTokens();
+    let live = true;
+    axios.get("/tokens/mine").then(({ data }) => { if (live) setTokens(data); }).catch(() => { if (live) setError("Unable to load appointments."); }).finally(() => { if (live) setLoading(false); });
+    return () => { live = false; };
   }, []);
-
-  useEffect(() => {
-    let filtered = [...tokens];
-
-    if (filterStatus) {
-      filtered = filtered.filter((t) => t.status === filterStatus);
-    }
-
-    if (filterDate) {
-      filtered = filtered.filter((t) =>
-        isSameDay(new Date(t.createdAt), new Date(filterDate))
-      );
-    }
-
-    setFilteredTokens(filtered);
-    setCurrentPage(1);
-  }, [filterStatus, filterDate, tokens]);
-
-  const handleCancel = async (id) => {
-    try {
-      await axios.delete(`/tokens/${id}`);
-      setTokens((prev) => prev.filter((t) => t._id !== id));
-    } catch (err) {
-      alert("Failed to cancel token.");
-    }
-  };
-
-  const totalPages = Math.ceil(filteredTokens.length / itemsPerPage);
-  const paginatedTokens = filteredTokens.slice(
-    (currentPage - 1) * itemsPerPage,
-    currentPage * itemsPerPage
-  );
-
-  if (loading)
-    return (
-      <Box mt={10} textAlign="center">
-        <CircularProgress />
-      </Box>
-    );
-
-  if (error)
-    return (
-      <Box mt={10} textAlign="center">
-        <Alert severity="error">{error}</Alert>
-      </Box>
-    );
-
-  return (
-    <Container maxWidth="md" sx={{ mt: 6 }}>
-      <Typography variant="h4" gutterBottom>
-        My Booked Tokens
-      </Typography>
-
-      {/* Filters */}
-      <Box display="flex" gap={2} my={3} flexWrap="wrap">
-        <FormControl sx={{ minWidth: 160 }}>
-          <InputLabel>Status</InputLabel>
-          <Select
-            value={filterStatus}
-            label="Status"
-            onChange={(e) => setFilterStatus(e.target.value)}
-          >
-            <MenuItem value="">All</MenuItem>
-            <MenuItem value="booked">Booked</MenuItem>
-            <MenuItem value="called">Called</MenuItem>
-            <MenuItem value="consulting">Consulting</MenuItem>
-            <MenuItem value="completed">Completed</MenuItem>
-            <MenuItem value="no-show">No Show</MenuItem>
-          </Select>
-        </FormControl>
-
-        <TextField
-          type="date"
-          label="Filter by Date"
-          InputLabelProps={{ shrink: true }}
-          value={filterDate}
-          onChange={(e) => setFilterDate(e.target.value)}
-        />
-      </Box>
-
-      {/* Token list */}
-      {paginatedTokens.length === 0 ? (
-        <Alert severity="info">No tokens match your filters.</Alert>
-      ) : (
-        paginatedTokens.map((token) => {
-          const isToday = isSameDay(new Date(token.createdAt), new Date());
-          return (
-            <Paper
-              key={token._id}
-              sx={{
-                p: 2,
-                my: 2,
-                backgroundColor: isToday ? "#f0f8ff" : "white",
-              }}
-            >
-              <Typography variant="h6">
-                Token #{token.tokenNumber} - Doctor: {token.doctorName || "N/A"}
-              </Typography>
-              <Typography>
-                Department: {token.departmentName || "N/A"}
-              </Typography>
-              <Typography>Status: {token.status}</Typography>
-              <Typography>
-                ETA:{" "}
-                {token.estimatedTime
-                  ? new Date(token.estimatedTime).toLocaleTimeString()
-                  : "Not calculated"}
-              </Typography>
-              {token.consultationTime && (
-                <Typography>
-                  Checked-in at:{" "}
-                  {new Date(token.consultationTime).toLocaleTimeString()}
-                </Typography>
-              )}
-
-              {/* QR Code with more details */}
-              <PrintableQRCode token={token} />
-
-              {token.status === "booked" && (
-                <Box mt={2}>
-                  <Button
-                    variant="outlined"
-                    color="error"
-                    onClick={() => handleCancel(token._id)}
-                  >
-                    Cancel Token
-                  </Button>
-                </Box>
-              )}
-            </Paper>
-          );
-        })
-      )}
-
-      {/* Pagination Controls */}
-      {totalPages > 1 && (
-        <Box mt={3} display="flex" justifyContent="center" gap={2}>
-          <Button
-            disabled={currentPage === 1}
-            onClick={() => setCurrentPage((p) => p - 1)}
-          >
-            Previous
-          </Button>
-          <Typography mt={1}>Page {currentPage}</Typography>
-          <Button
-            disabled={currentPage === totalPages}
-            onClick={() => setCurrentPage((p) => p + 1)}
-          >
-            Next
-          </Button>
-        </Box>
-      )}
-    </Container>
-  );
-};
-
-export default MyTokensPage;
+  async function cancel(id) {
+    setBusy(id); setError("");
+    try { await axios.delete(`/tokens/${id}`); setTokens(previous => previous.map(t => t._id === id ? { ...t, status: "cancelled" } : t)); }
+    catch (err) { setError(err.response?.data?.message || "Unable to cancel appointment."); }
+    finally { setBusy(null); }
+  }
+  const visible = tokens.filter(t => (!status || t.status === status) && (!date || t.date === date));
+  return <Container maxWidth="lg" sx={{ mt: 3 }}><Box className="page-hero"><Typography variant="overline">YOUR CARE JOURNEY</Typography><Typography variant="h4">My appointments</Typography><Typography sx={{ mt: 1 }}>Your tokens, visit history, and booking details, all together.</Typography></Box>{error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}
+    <Stack direction={{ xs: "column", sm: "row" }} gap={2} mb={3}><TextField select label="Status" value={status} onChange={e => setStatus(e.target.value)} sx={{ minWidth: 180 }}><MenuItem value="">All appointments</MenuItem>{["pending", "called", "skipped", "completed", "cancelled"].map(s => <MenuItem key={s} value={s}>{s}</MenuItem>)}</TextField><TextField label="Visit date" type="date" value={date} onChange={e => setDate(e.target.value)} slotProps={{ inputLabel: { shrink: true } }} /><Button onClick={() => { setStatus(""); setDate(""); }}>Clear filters</Button><Button component={Link} to="/" sx={{ ml: { sm: "auto" } }} variant="contained">Book a visit</Button></Stack>
+    {loading ? <CircularProgress aria-label="Loading appointments" /> : <Box className="responsive-grid">{visible.map(t => <Paper key={t._id} sx={{ p: 3 }}><Stack direction="row" justifyContent="space-between" mb={2}><Typography variant="h5">#{t.tokenNumber}</Typography><Chip label={t.status} color={statusColor(t.status)} size="small" /></Stack><Typography variant="h6">{t.doctorName}</Typography><Typography color="text.secondary" mb={2}>{t.departmentName} · {t.date}</Typography><PrintableQRCode token={t} />{activeStatus(t.status) && <Button color="error" disabled={busy === t._id} onClick={() => cancel(t._id)} sx={{ display: "block", mt: 2 }}>{busy === t._id ? "Cancelling…" : "Cancel appointment"}</Button>}</Paper>)}</Box>}
+    {!loading && !visible.length && <Alert severity="info">No appointments match your filters.</Alert>}
+  </Container>;
+}

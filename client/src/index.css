@@ -1,5 +1,12 @@
-body {
-  margin: 0;
-  font-family: sans-serif;
-  background-color: #f9f9f9;
-}
+* { box-sizing: border-box; }
+body { margin: 0; min-width: 320px; }
+a { color: inherit; }
+:focus-visible { outline: 3px solid #4265a4; outline-offset: 3px; }
+.app-main { padding-top: 12px; min-height: calc(100vh - 140px); }
+.app-footer { color: #617779; padding: 24px; text-align: center; font-size: 13px; }
+.page-hero { background: linear-gradient(115deg, #075e56, #118c7e); color: white; padding: 36px; border-radius: 22px; margin-bottom: 28px; }
+.page-hero p { color: #d0eee8; max-width: 580px; }
+.responsive-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 290px), 1fr)); gap: 20px; }
+.stat-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 16px; margin: 24px 0; }
+@media (max-width: 600px) { .page-hero { padding: 24px; } }
+@media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation: none !important; transition: none !important; scroll-behavior: auto !important; } }

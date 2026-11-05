@@ -8,3 +8,6 @@ server/.env
 
 # Vite build output
 client/dist/
+client/.env
+client/.env.local
+*.stackdump

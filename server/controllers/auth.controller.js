@@ -4,35 +4,47 @@ const jwt = require("jsonwebtoken");
 const OtpRequest = require("../models/OtpRequest");
 const sendOTPEmail = require("../utils/mailer");
 
-const generateOTP = () => {
-  return Math.floor(100000 + Math.random() * 900000).toString();
-};
+const generateOTP = () => require("node:crypto").randomInt(100000, 1000000).toString();
+const normalizeEmail = value => typeof value === "string" ? value.trim().toLowerCase() : "";
+const validEmail = value => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value);
 
 exports.sendOtp = async (req, res) => {
-  const { email } = req.body;
+  const email = normalizeEmail(req.body.email);
+  if (!validEmail(email)) return res.status(400).json({ message: "A valid email is required" });
+  const recent = await OtpRequest.findOne({ email, expiresAt: { $gt: new Date(Date.now() + 4 * 60000) } });
+  if (recent) return res.status(429).json({ message: "Wait one minute before requesting another code" });
   const otp = generateOTP();
-  await OtpRequest.create({ email, otp });
+  const record = await OtpRequest.create({ email, otp: await bcrypt.hash(otp, 10) });
   try {
     await sendOTPEmail(email, otp);
     res.json({ message: "OTP sent" });
   } catch (err) {
-    res.status(500).json({ message: "Failed to send OTP" });
+    await OtpRequest.deleteOne({ _id: record._id });
+    res.status(503).json({ message: "Unable to send verification email" });
   }
 };
-
 exports.verifyOtp = async (req, res) => {
-  const { email, otp } = req.body;
-  const record = await OtpRequest.findOne({ email, otp });
-  if (!record || record.expiresAt < Date.now()) {
-    return res.status(400).json({ message: "Invalid or expired OTP" });
-  }
-  await OtpRequest.deleteMany({ email });
-  res.json({ success: true });
+  const email = normalizeEmail(req.body.email);
+  const { otp } = req.body;
+  if (!validEmail(email) || typeof otp !== "string" || !/^\d{6}$/.test(otp)) return res.status(400).json({ message: "Invalid code" });
+  const record = await OtpRequest.findOne({ email, expiresAt: { $gt: new Date() }, attempts: { $lt: 5 } }).sort({ _id: -1 });
+  if (!record) return res.status(400).json({ message: "Invalid or expired code" });
+  const attempt = await OtpRequest.updateOne({ _id: record._id, attempts: { $lt: 5 } }, { $inc: { attempts: 1 } });
+  if (!attempt.modifiedCount || !await bcrypt.compare(otp, record.otp)) return res.status(400).json({ message: "Invalid or expired code" });
+  const verificationToken = jwt.sign({ email, purpose: "registration", otpId: String(record._id) }, process.env.JWT_SECRET, { expiresIn: "10m" });
+  res.json({ success: true, verificationToken });
 };
 
 exports.registerUser = async (req, res) => {
   try {
-    const { name, email, password, role } = req.body;
+    const { name, password, role = "patient", verificationToken } = req.body;
+    const email = normalizeEmail(req.body.email);
+    if (typeof name !== "string" || !name.trim() || !validEmail(email) || typeof password !== "string" || password.length < 8 || Buffer.byteLength(password, "utf8") > 72 || !["patient", "doctor", "staff"].includes(role)) return res.status(400).json({ message: "Provide a name, email, password of 8â€“128 characters and valid role" });
+    let verified;
+    try { verified = jwt.verify(verificationToken, process.env.JWT_SECRET); } catch { return res.status(400).json({ message: "Verify your email before registering" }); }
+    if (verified.purpose !== "registration" || verified.email !== email) return res.status(400).json({ message: "Email verification does not match" });
+    const proof = await OtpRequest.findOneAndDelete({ _id: verified.otpId, email });
+    if (!proof) return res.status(400).json({ message: "Verification already used; request another code" });
 
     const existing = await User.findOne({ email });
     if (existing)
@@ -51,10 +63,12 @@ exports.registerUser = async (req, res) => {
 
 exports.loginUser = async (req, res) => {
   try {
-    const { email, password } = req.body;
+    const email = normalizeEmail(req.body.email);
+    const { password } = req.body;
+    if (!validEmail(email) || typeof password !== "string" || password.length > 128) return res.status(400).json({ message: "Provide valid credentials" });
 
     const user = await User.findOne({ email });
-    if (!user) return res.status(404).json({ message: "User not found" });
+    if (!user) return res.status(401).json({ message: "Invalid credentials" });
 
     const isMatch = await bcrypt.compare(password, user.password);
     if (!isMatch)

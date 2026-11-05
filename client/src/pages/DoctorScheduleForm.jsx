@@ -47,17 +47,12 @@ export default function DoctorScheduleForm() {
 
   useEffect(() => {
     const fetchDoctors = async () => {
-      const user = JSON.parse(localStorage.getItem("user"));
-      const hospitalId = user?.hospitalId;
-
-      if (!hospitalId) {
-        console.error("No hospitalId found");
-        return;
-      }
-
       try {
+        const profile = await axios.get("/auth/me");
+        const hospitalId = profile.data.hospitalId;
+        if (!hospitalId) { setSnack({ open: true, severity: "info", message: "Create a hospital or link your account first" }); return; }
         const res = await axios.get(`/doctors/hospital/${hospitalId}`);
-        setDoctors(res.data);
+        setDoctors(profile.data.role === "doctor" ? res.data.filter(d => d.userId === profile.data._id) : res.data);
       } catch (err) {
         console.error("Failed to fetch doctors:", err);
         setDoctors([]);
@@ -67,8 +62,17 @@ export default function DoctorScheduleForm() {
     fetchDoctors();
   }, []);
 
+  useEffect(() => {
+    let live = true;
+    setSchedule(daysOfWeek.map(day => ({ day, isAvailable: false, startTime: "", endTime: "" })));
+    if (selectedDoctor) axios.get(`/schedule/${selectedDoctor}`).then(({ data }) => {
+      if (live) setSchedule(daysOfWeek.map(day => data.weeklySchedule.find(entry => entry.day === day) || { day, isAvailable: false, startTime: "", endTime: "" }));
+    }).catch(err => { if (live && err.response?.status !== 404) setSnack({ open: true, severity: "error", message: "Unable to load this schedule" }); });
+    return () => { live = false; };
+  }, [selectedDoctor]);
+
   const handleScheduleChange = (index, field, value) => {
-    const updated = [...schedule];
+    const updated = schedule.map(entry => ({ ...entry }));
     updated[index][field] = value;
 
     // If setting unavailable, clear times
@@ -143,7 +147,7 @@ export default function DoctorScheduleForm() {
 
       <Grid container spacing={2} sx={{ mb: 3 }}>
         {schedule.map((entry, index) => (
-          <Grid item xs={12} md={6} key={entry.day}>
+          <Grid key={entry.day} size={{ xs: 12, md: 6 }}>
             <Box border={1} borderRadius={2} p={2}>
               <Typography variant="subtitle1" gutterBottom>
                 {entry.day}

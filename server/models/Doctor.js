@@ -2,6 +2,7 @@ const mongoose = require("mongoose");
 
 const doctorSchema = new mongoose.Schema(
   {
+    userId: { type: mongoose.Schema.Types.ObjectId, ref: "User" },
     name: {
       type: String,
       required: true,
@@ -25,5 +26,8 @@ const doctorSchema = new mongoose.Schema(
   },
   { timestamps: true }
 );
+
+doctorSchema.index({ userId: 1 }, { unique: true, partialFilterExpression: { userId: { $type: "objectId" } } });
+doctorSchema.index({ hospitalId: 1, department: 1 });
 
 module.exports = mongoose.model("Doctor", doctorSchema);

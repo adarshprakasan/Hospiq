@@ -30,6 +30,9 @@ import axios from "../api/axios";
 import { useNavigate } from "react-router-dom";
 
 export default function ManageDoctorsPage() {
+  const [linkDoctor, setLinkDoctor] = useState(null);
+  const [linkEmail, setLinkEmail] = useState("");
+  const [linking, setLinking] = useState(false);
   const [user, setUser] = useState(null);
   const [doctors, setDoctors] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -44,6 +47,7 @@ export default function ManageDoctorsPage() {
   // Dialog states
   const [doctorDialogOpen, setDoctorDialogOpen] = useState(false);
   const [doctorData, setDoctorData] = useState({
+    accountEmail: "",
     name: "",
     department: "",
     specialization: "",
@@ -111,7 +115,8 @@ export default function ManageDoctorsPage() {
       });
       setDoctorDialogOpen(false);
       setDoctorData({
-        name: "",
+        accountEmail: "",
+    name: "",
         department: "",
         specialization: "",
         qualifications: "",
@@ -126,7 +131,7 @@ export default function ManageDoctorsPage() {
     } catch (err) {
       setSnack({
         open: true,
-        message: "Failed to add doctor.",
+        message: err.response?.data?.message || "Failed to add doctor.",
         severity: "error",
       });
     } finally {
@@ -163,6 +168,13 @@ export default function ManageDoctorsPage() {
         severity: "error",
       });
     }
+  };
+
+  const handleLinkAccount = async (event) => {
+    event.preventDefault(); setLinking(true);
+    try { await axios.patch(`/doctors/${linkDoctor._id}/account`, { email: linkEmail }); setLinkDoctor(null); setLinkEmail(""); fetchDoctors(); }
+    catch (err) { setSnack({ open: true, message: err.response?.data?.message || "Unable to link account", severity: "error" }); }
+    finally { setLinking(false); }
   };
 
   const handleDoctorClick = (doctorId) => {
@@ -228,10 +240,10 @@ export default function ManageDoctorsPage() {
       ) : (
         <Grid container spacing={3} alignItems="stretch">
           {doctors.map((doctor) => (
-            <Grid item xs={12} sm={6} md={4} lg={3} key={doctor._id}>
+            <Grid key={doctor._id} size={{ xs: 12, sm: 6, md: 4, lg: 3 }}>
               <Card
                 sx={{
-                  height: 160, // Reduced fixed height for all cards
+                  minHeight: 210, // Reduced fixed height for all cards
                   display: "flex",
                   flexDirection: "column",
                   justifyContent: "space-between",
@@ -270,6 +282,7 @@ export default function ManageDoctorsPage() {
                   >
                     Department: {doctor.department}
                   </Typography>
+                  {!doctor.userId && user?.role === "staff" && <Button size="small" onClick={e => { e.stopPropagation(); setLinkDoctor(doctor); }}>Link doctor account</Button>}
                   <Divider sx={{ my: 1.5 }} />
                   <Box
                     display="flex"
@@ -307,6 +320,7 @@ export default function ManageDoctorsPage() {
         </Grid>
       )}
 
+      <Dialog open={Boolean(linkDoctor)} onClose={() => setLinkDoctor(null)} fullWidth maxWidth="xs"><Box component="form" onSubmit={handleLinkAccount}><DialogTitle>Link doctor account</DialogTitle><DialogContent><TextField type="email" label="Registered doctor email" required fullWidth margin="dense" value={linkEmail} onChange={e => setLinkEmail(e.target.value)} helperText="The doctor must register and verify their email first." /></DialogContent><DialogActions><Button onClick={() => setLinkDoctor(null)}>Cancel</Button><Button type="submit" variant="contained" disabled={linking}>Link account</Button></DialogActions></Box></Dialog>
       {/* Add Doctor Dialog */}
       <Dialog
         open={doctorDialogOpen}
@@ -320,6 +334,7 @@ export default function ManageDoctorsPage() {
       >
         <DialogTitle>Add Doctor</DialogTitle>
         <DialogContent sx={{ pt: 1 }}>
+          <TextField label="Doctor account email (optional)" type="email" fullWidth margin="dense" helperText="Link a registered doctor account to enable its queue and schedule access." value={doctorData.accountEmail} onChange={e => setDoctorData({ ...doctorData, accountEmail: e.target.value })} />
           <TextField
             label="Doctor Name"
             fullWidth

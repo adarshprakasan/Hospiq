@@ -1,21 +1,25 @@
+import { lazy, Suspense } from "react";
+import { CircularProgress, Box } from "@mui/material";
+import NotFound from "./pages/NotFound";
 import { Routes, Route } from "react-router-dom";
-import RegisterForm from "./pages/RegisterForm";
-import LoginPage from "./pages/LoginPage";
-import HospitalRegister from "./pages/HospitalRegister";
-import CreateHospital from "./pages/CreateHospital";
-import HomePage from "./pages/HomePage";
-import DashboardPage from "./pages/DashboardPage";
+const RegisterForm = lazy(() => import("./pages/RegisterForm"));
+const LoginPage = lazy(() => import("./pages/LoginPage"));
+const HospitalRegister = lazy(() => import("./pages/HospitalRegister"));
+const CreateHospital = lazy(() => import("./pages/CreateHospital"));
+const HomePage = lazy(() => import("./pages/HomePage"));
+const DashboardPage = lazy(() => import("./pages/DashboardPage"));
 import ProtectedRoute from "./components/ProtectedRoute";
 import Layout from "./components/Layout";
-import ProfileDashboard from "./pages/ProfileDashboard";
-import MyTokensPage from "./pages/MyTokensPage";
-import DoctorScheduleForm from "./pages/DoctorScheduleForm";
-import BookingPage from "./pages/BookingPage";
-import ManageDoctorsPage from "./pages/ManageDoctorsPage";
-import DoctorProfilePage from "./pages/DoctorProfilePage";
+const ProfileDashboard = lazy(() => import("./pages/ProfileDashboard"));
+const MyTokensPage = lazy(() => import("./pages/MyTokensPage"));
+const DoctorScheduleForm = lazy(() => import("./pages/DoctorScheduleForm"));
+const BookingPage = lazy(() => import("./pages/BookingPage"));
+const ManageDoctorsPage = lazy(() => import("./pages/ManageDoctorsPage"));
+const DoctorProfilePage = lazy(() => import("./pages/DoctorProfilePage"));
 
 function App() {
   return (
+    <Suspense fallback={<Box textAlign="center" p={8}><CircularProgress aria-label="Loading page" /></Box>}>
     <Routes>
       <Route path="/hospital-register" element={<HospitalRegister />} />
       <Route path="/register" element={<RegisterForm />} />
@@ -98,7 +102,7 @@ function App() {
         }
       />
 
-      <Route path="/book/:hospitalId" element={<BookingPage />} />
+      <Route path="/book/:hospitalId" element={<ProtectedRoute allowedRoles={["patient"]}><Layout><BookingPage /></Layout></ProtectedRoute>} />
 
       {/* Need editing---------------- */}
       <Route
@@ -116,7 +120,9 @@ function App() {
         path="/unauthorized"
         element={<div style={{ padding: "2rem" }}>Access Denied</div>}
       />
+      <Route path="*" element={<NotFound />} />
     </Routes>
+    </Suspense>
   );
 }
 

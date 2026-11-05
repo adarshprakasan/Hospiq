@@ -1,132 +1,25 @@
-import React, { useState } from "react";
-import {
-  TextField,
-  Button,
-  MenuItem,
-  Box,
-  Typography,
-  Container,
-  Alert,
-} from "@mui/material";
+import { useState } from "react";
+import { Link, useNavigate } from "react-router-dom";
+import { Container, Typography, TextField, Button, MenuItem, Stack, Alert } from "@mui/material";
 import axios from "../api/axios";
-import { useNavigate } from "react-router-dom";
-
-export default function RegisterForm() {
-  const [form, setForm] = useState({
-    name: "",
-    email: "",
-    password: "",
-    role: "patient",
-  });
+export default function RegisterForm({ professional = false }) {
+  const [form, setForm] = useState({ name: "", email: "", password: "", role: professional ? "staff" : "patient" });
   const [step, setStep] = useState(1);
   const [otp, setOtp] = useState("");
+  const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
-  const [info, setInfo] = useState("");
   const navigate = useNavigate();
-
-  const handleChange = (e) =>
-    setForm({ ...form, [e.target.name]: e.target.value });
-
-  const sendOtp = async () => {
+  const change = e => setForm(previous => ({ ...previous, [e.target.name]: e.target.value }));
+  async function submit(event) {
+    event.preventDefault(); setBusy(true); setError("");
     try {
-      await axios.post("/auth/send-otp", { email: form.email });
-      setInfo("OTP sent to your email");
-      setStep(2);
-    } catch (err) {
-      setError("Failed to send OTP");
-    }
-  };
-
-  const verifyOtp = async () => {
-    try {
-      await axios.post("/auth/verify-otp", { email: form.email, otp });
-      await axios.post("/auth/register", form);
-      navigate("/login");
-    } catch (err) {
-      setError("OTP verification or registration failed");
-    }
-  };
-
-  return (
-    <Container maxWidth="sm">
-      <Box sx={{ mt: 6 }}>
-        <Typography variant="h5" align="center" gutterBottom>
-          {step === 1
-            ? "Register"
-            : step === 2
-            ? "Enter OTP"
-            : "Creating Account..."}
-        </Typography>
-
-        {error && <Alert severity="error">{error}</Alert>}
-        {info && <Alert severity="info">{info}</Alert>}
-
-        {step === 1 && (
-          <Box
-            component="form"
-            sx={{ mt: 2 }}
-            onSubmit={(e) => e.preventDefault()}
-          >
-            <TextField
-              label="Name"
-              fullWidth
-              margin="normal"
-              name="name"
-              value={form.name}
-              onChange={handleChange}
-              required
-            />
-            <TextField
-              label="Email"
-              fullWidth
-              margin="normal"
-              name="email"
-              type="email"
-              value={form.email}
-              onChange={handleChange}
-              required
-            />
-            <TextField
-              label="Password"
-              fullWidth
-              margin="normal"
-              name="password"
-              type="password"
-              value={form.password}
-              onChange={handleChange}
-              required
-            />
-            <Button
-              variant="contained"
-              fullWidth
-              onClick={sendOtp}
-              sx={{ mt: 2 }}
-            >
-              Send OTP
-            </Button>
-          </Box>
-        )}
-
-        {step === 2 && (
-          <Box>
-            <TextField
-              label="Enter OTP"
-              fullWidth
-              margin="normal"
-              value={otp}
-              onChange={(e) => setOtp(e.target.value)}
-            />
-            <Button
-              variant="contained"
-              fullWidth
-              onClick={verifyOtp}
-              sx={{ mt: 2 }}
-            >
-              Verify & Create Account
-            </Button>
-          </Box>
-        )}
-      </Box>
-    </Container>
-  );
+      if (step === 1) { await axios.post("/auth/send-otp", { email: form.email }); setStep(2); }
+      else { const verification = await axios.post("/auth/verify-otp", { email: form.email, otp }); await axios.post("/auth/register", { ...form, verificationToken: verification.data.verificationToken }); navigate("/login", { replace: true }); }
+    } catch (err) { setError(err.response?.data?.message || "Unable to complete registration. Please try again."); }
+    finally { setBusy(false); }
+  }
+  return <Container maxWidth="sm" component="form" onSubmit={submit} sx={{ mt: 6, p: { xs: 3, sm: 4 }, borderRadius: 4, bgcolor: "background.paper", border: "1px solid #e0e9e8" }}><Typography variant="h4" color="primary" gutterBottom>✚ Hospiq</Typography><Typography variant="h5">{step === 2 ? "Check your inbox" : professional ? "Connect your care team" : "Your care starts here"}</Typography><Typography color="text.secondary" sx={{ mt: 1, mb: 3 }}>{step === 2 ? `Enter the six-digit code sent to ${form.email}.` : professional ? "Create your staff or doctor account to get started." : "Create a patient account to find care and manage appointments."}</Typography>
+    {error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}
+    <Stack gap={2}>{step === 1 ? <><TextField label="Full name" name="name" required autoComplete="name" value={form.name} onChange={change} /><TextField label="Email" name="email" type="email" autoComplete="email" required value={form.email} onChange={change} /><TextField label="Password" name="password" type="password" autoComplete="new-password" required slotProps={{ htmlInput: { minLength: 8, maxLength: 128 } }} helperText="Use at least 8 characters." value={form.password} onChange={change} />{professional && <TextField label="Role" select name="role" value={form.role} onChange={change}><MenuItem value="staff">Hospital staff</MenuItem><MenuItem value="doctor">Doctor</MenuItem></TextField>}</> : <><TextField label="Verification code" required value={otp} autoComplete="one-time-code" onChange={e => setOtp(e.target.value)} slotProps={{ htmlInput: { inputMode: "numeric", pattern: "[0-9]{6}", maxLength: 6 } }} /><Button onClick={() => { setStep(1); setOtp(""); setError(""); }}>Change details or request a new code</Button></>}<Button type="submit" variant="contained" disabled={busy}>{busy ? "Please wait…" : step === 1 ? "Send verification code" : "Verify and create account"}</Button><Button component={Link} to="/login">Already have an account? Sign in</Button></Stack>
+  </Container>;
 }
