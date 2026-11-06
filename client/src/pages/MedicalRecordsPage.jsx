@@ -6,7 +6,8 @@ import MedicalRecordForm from "../components/MedicalRecordForm";
 export default function MedicalRecordsPage() {
   const { patientId } = useParams();
   const location = useLocation();
-  const scannedVisit = location.state?.scannedVisit?.patient?.patientId === patientId ? location.state.scannedVisit : null;
+  const candidateVisit = location.state?.scannedVisit;
+  const scannedVisit = patientId && candidateVisit?.patient?.patientId === patientId ? candidateVisit : null;
   const isDoctor = Boolean(patientId);
   const [records, setRecords] = useState([]);
   const [grants, setGrants] = useState([]);
