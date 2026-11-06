@@ -6,7 +6,7 @@ These priorities describe intended work, not committed dates or shipped function
 
 ## Before real patient data
 
-- Private/authenticated medical assets with authorized short-lived retrieval, ownership metadata, file-signature checks, and malware scanning.
+- Migrate any historical public medical assets, add malware scanning and managed private object-storage support; new attachments already use encrypted local private storage and authorized downloads.
 - Disposable-database concurrency tests for booking uniqueness, counters, status changes, account linking, and upgrade migrations.
 - Transactional or recoverable multi-document hospital/doctor-account changes.
 - Stronger staff onboarding, explicit care-team consent, secure session storage/revocation, password recovery, and consistent validation/error responses.
@@ -17,7 +17,7 @@ These priorities describe intended work, not committed dates or shipped function
 - Real-time queue updates, reconnect handling, queue position and measured wait estimates.
 - One active consultation per doctor, capacity/no-show policies, validated QR check-in.
 - Future appointments, holidays and leave, timezone per facility, overnight shift rules.
-- Patient clinical history and clinician encounter/prescription/attachment interfaces.
+- Extend the implemented patient history and clinician visit/prescription/attachment interfaces with versioned corrections, richer encounters and optional reviewed OCR.
 - Opt-in reminders, follow-up messaging, and delivery tracking.
 - Improved staff invitation/account lifecycle and a deliberate admin experience.
 

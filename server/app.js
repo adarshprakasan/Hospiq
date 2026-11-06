@@ -28,8 +28,8 @@ app.use("/api/schedule", require("./routes/schedule.routes"));
 
 app.use((_req, res) => res.status(404).json({ message: "Endpoint not found" }));
 app.use((err, _req, res, _next) => {
-  console.error(err.message);
+  console.error("Request failed:", err.name || "Error", err.status || 500);
   const status = err.status || (err.code === "LIMIT_FILE_SIZE" ? 413 : err.name === "MulterError" ? 400 : undefined) || (err.name === "ValidationError" || err.name === "CastError" ? 400 : err.code === 11000 ? 409 : 500);
-  res.status(status).json({ message: status === 500 ? "An unexpected error occurred" : status === 409 ? "This record already exists" : "Invalid request" });
+  res.status(status).json({ message: status >= 500 ? "Service temporarily unavailable. Please try again" : status === 409 ? "This record already exists" : err.status && err.status < 500 ? err.message : "Invalid request" });
 });
 module.exports = app;

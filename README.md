@@ -18,7 +18,7 @@ Hospiq gives patients and hospital teams a shared appointment workflow. Patients
 
 Built and maintained by [Adarsh](https://github.com/adarshprakasan).
 
-**Project status:** development and demonstration. Medical records have API access controls, but uploaded files still use ordinary Cloudinary delivery URLs. Private file delivery, database concurrency testing, and operational hardening remain release blockers. Use fictional patient information while evaluating the app. See [Security](SECURITY.md) and the [project review](PROJECT_REVIEW.md).
+**Project status:** development and demonstration. New medical attachments use encrypted private storage with authorized downloads. Existing public-link attachments require private migration/re-upload; broader database concurrency testing and operational hardening remain release work. Use fictional patient information while evaluating the app. See [Security](SECURITY.md) and the [project review](PROJECT_REVIEW.md).
 
 ## Features
 
@@ -28,9 +28,10 @@ Built and maintained by [Adarsh](https://github.com/adarshprakasan).
 | Search facilities by name, address, or department | Departments, doctor profiles, and account linking | Queue scoped to the linked doctor |
 | Filter hospitals and clinics | Weekly consultation schedules | Call, skip, and complete visits |
 | Book same-day tokens during consultation hours | Walk-in bookings and hospital queue search | Manage own availability and schedule |
-| Appointment history, cancellation, printable QR | Queue counts and status filters | Authored clinical records through the API |
+| Appointment history, cancellation, printable QR | Queue counts and status filters | Dated visit records and prescriptions |
+| Medical history, scanned documents, lab uploads, consent revocation | No access to clinical records | Own earlier visit records; other records with patient-approved email OTP |
 
-The interface includes responsive navigation, a shared teal/neutral theme, loading and empty states, guarded routes, and lazy-loaded pages. Clinical-record editing, future-date slots, live queue notifications, and patient queue-position estimates are planned rather than implemented.
+The interface includes responsive navigation, a shared teal/neutral theme, loading and empty states, guarded routes, and lazy-loaded pages. The medical-record page includes dated visits, structured medications, protected prescription/lab files, camera capture, and patient-controlled temporary doctor access. Automatic OCR, SMS OTP, future-date slots, live queue notifications, and patient queue-position estimates are not implemented.
 
 ## Technology
 
@@ -40,7 +41,7 @@ The interface includes responsive navigation, a shared teal/neutral theme, loadi
 | API | Node.js, Express 5, Mongoose 8 |
 | Database | MongoDB 7+ recommended |
 | Authentication | JWT bearer tokens, bcrypt passwords, email OTP |
-| Integrations | Nodemailer/Gmail, Cloudinary, QR code generation |
+| Integrations | Nodemailer/Gmail or SMTP, private encrypted attachment storage, QR code generation |
 | Tests | Node.js test runner and assertions |
 
 ## Quick start
@@ -61,7 +62,7 @@ if (!(Test-Path server/.env)) { Copy-Item server/.env.example server/.env }
 if (!(Test-Path client/.env)) { Copy-Item client/.env.example client/.env }
 ```
 
-Fill in `server/.env` with your MongoDB URI, JWT secret, Gmail app credentials, and Cloudinary credentials. `client/.env` contains only the public API base URL. See the [environment reference](docs/CONFIGURATION.md); do not put secrets in `VITE_*` variables.
+Fill in `server/.env` with your MongoDB URI, JWT secret, Gmail app credentials, and a separate medical-file encryption key. `client/.env` contains only the public API base URL. See the [environment reference](docs/CONFIGURATION.md); do not put secrets in `VITE_*` variables.
 
 Start the API and frontend in two separate terminals:
 
@@ -100,6 +101,7 @@ For Creekside testing, use `patient.creekside@example.invalid`, `staff.creekside
 | `npm --prefix client run build` | Build frontend into `client/dist` |
 | `npm --prefix client run preview` | Local preview of built frontend |
 | `npm --prefix server test` | Backend regression tests |
+| `npm --prefix server run test:records` | Isolated database + local SMTP medical-record integration checks |
 | `npm --prefix server run check:upgrade` | Read-only database upgrade preflight |
 | `npm --prefix server run seed:demo` | Insert demo facilities/doctors/schedules |
 | `npm --prefix server run seed:accounts` | Insert and link demo login accounts |
@@ -116,6 +118,7 @@ For Creekside testing, use `patient.creekside@example.invalid`, `staff.creekside
 | [Demo data](docs/DEMO_DATA.md) | Fictional facilities, accounts, and smoke test |
 | [Architecture](docs/ARCHITECTURE.md) | Components, data model, and access boundaries |
 | [API reference](docs/API.md) | Routes, authorization, requests, and responses |
+| [Medical records](docs/MEDICAL_RECORDS.md) | Visit records, private attachments, and patient consent |
 | [Testing](docs/TESTING.md) | Automated checks and manual scenarios |
 | [Deployment](docs/DEPLOYMENT.md) | Build/hosting model and release requirements |
 | [Roadmap](docs/ROADMAP.md) | Prioritized gaps and feature ideas |

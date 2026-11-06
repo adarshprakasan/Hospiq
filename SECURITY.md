@@ -22,11 +22,11 @@ These controls do not establish regulatory compliance or eliminate application r
 
 ## Known release blockers and limits
 
-- Cloudinary assets currently use ordinary delivery URLs. API authentication does not make uploaded medical assets private.
+- New medical attachments use encrypted private storage and authorized downloads. Historical Cloudinary URLs may still be public outside the app: responses quarantine them, but existing provider assets must be migrated/removed separately.
 - Browser tokens are stored in localStorage, have a seven-day lifetime, and lack a dedicated revocation/refresh service.
 - Staff/doctor self-registration does not verify real-world credentials or affiliation; hospital association alone is not a complete onboarding policy.
-- Medical-record creation checks a historical token relationship, not consent or a completed-encounter policy. Upload requires doctor role but does not itself verify a patient relationship.
-- Clinical data audit trails, retention policies, malware scanning, transaction/recovery behavior, and full database/browser integration coverage are incomplete.
+- Doctor record creation now requires a called/completed token relationship. Other doctors' history needs a five-minute patient-email OTP for a revocable 30-minute read grant. Clinical credential/affiliation verification and richer consent scope still need work.
+- Full clinical access audit trails, retention policies, malware scanning, transaction/recovery behavior, and broad integration coverage remain incomplete. JPEG/PNG/PDF signature checks are not malware scanning. Attachment keys/storage backups and deployment permissions need operational management.
 - IP throttling is local to each process, and trusted-proxy behavior must be configured deliberately for hosting.
 - Demo credentials are generated for fictional testing; remove or isolate demo users before any real deployment.
 

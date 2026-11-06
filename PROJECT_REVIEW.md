@@ -57,3 +57,7 @@ These are explicitly not represented as complete by this change.
 ## Subsequent demo validation and documentation
 
 After the initial review, the demo seed connected to the configured MongoDB database and verified three fictional hospitals, nine doctors, and nine schedules. The account seed created fifteen demo users, verified their login-controller behavior, and verified nine doctor-account links. These actions intentionally inserted demo data; they did not constitute a full database concurrency, authenticated HTTP, browser, SMTP, or Cloudinary integration test. The documentation index is now available at [docs/README.md](docs/README.md).
+
+## Medical-record implementation — 6 November 2026
+
+The patient/doctor history UI and consent workflow are now implemented: dated visit entries, medications, prescriptions, lab files, patient camera/file intake, doctor-specific visibility, patient-email OTP for other records, 30-minute revocable grants and authorized encrypted attachment downloads. Public medical uploads are retired and historical public links are quarantined in API responses; existing provider URLs still need migration/removal. Nineteen regression tests and 48 isolated MongoDB/local-SMTP checks passed. Patient entry, doctor OTP approval and patient revocation were also verified in a browser with fictional data. See [Medical records](docs/MEDICAL_RECORDS.md). Earlier review findings above describe the original baseline rather than the current status of these remediated items.

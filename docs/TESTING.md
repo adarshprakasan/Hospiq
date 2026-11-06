@@ -59,3 +59,11 @@ Mocked tests do not establish these properties. Record database version and quer
 ## Historical verification
 
 The initial redesign passed the 12-case suite and Vite build. Dependency audits reported zero known advisories after lockfile updates on 5 November 2026; rerun audits for current results. Subsequent demo seeds connected to the configured database, verified 3 hospitals/9 doctors/9 schedules, and verified login-controller behavior for 15 newly created accounts plus 9 doctor links. This was not a complete authenticated HTTP/browser or concurrency test. Browser preview was unavailable in the original environment.
+
+## Medical records and consent integration
+
+`npm --prefix server test` now runs 19 regression cases, including clinical ownership, safe serialization, date validation, supported signatures, encryption round trips, patient binding and tamper detection. `npm --prefix server run test:records` exercises 48 checks through real HTTP routes against a new uniquely named disposable database on the configured MongoDB server and a local SMTP fixture. It creates only fictional data and removes its test database/storage on completion. The database user needs permission to create/drop that isolated database. It never sends real email.
+
+Integration checks cover doctor-created and patient-uploaded visits, local-doctor association confirmation, protected files, own-doctor visibility, denied staff/admin/other-patient access, OTP delivery capture, incorrect/wrong-doctor/expired/exhausted/reused codes, consent, revocation, grant expiry, SMTP failure without an access grant, and retired public uploads. A fixture cannot establish Gmail delivery behavior or SMS support.
+
+Browser verification on 6 November 2026 used that disposable fixture: patient-created visit submission, doctor-specific history, email-OTP approval and patient revocation were observed through the UI. Camera hardware capture and real patient-email delivery were not exercised.

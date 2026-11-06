@@ -16,7 +16,8 @@ router.get("/patient/:id", require("../middlewares/auth"), async (req, res) => {
       .populate("hospitalId", "name")
       .sort({ visitDate: -1 });
 
-    res.json({ user, records });
+    res.set("Cache-Control", "no-store, private");
+    res.json({ user, records: records.map(require("../services/record-access").serializeRecord) });
   } catch (err) {
     res.status(500).json({ message: err.message });
   }

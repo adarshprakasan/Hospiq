@@ -8,7 +8,8 @@
     "test": "node --test",
     "check:upgrade": "node scripts/check-upgrade.js",
     "seed:demo": "node scripts/seed-demo.js",
-    "seed:accounts": "node scripts/seed-demo-accounts.js"
+    "seed:accounts": "node scripts/seed-demo-accounts.js",
+    "test:records": "node scripts/verify-medical-records.js"
   },
   "keywords": [
     "healthcare",

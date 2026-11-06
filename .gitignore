@@ -11,3 +11,6 @@ client/dist/
 client/.env
 client/.env.local
 *.stackdump
+
+# Encrypted medical files must never be committed or served statically
+server/storage/

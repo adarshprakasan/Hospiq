@@ -14,7 +14,7 @@
 | Controllers | Business operations and authorization filters | `server/controllers` |
 | Middleware | Authentication, roles, ownership, rate limit, uploads | `server/middlewares` |
 | Persistence | Mongoose schemas and query indexes | `server/models` |
-| Providers | Gmail email and Cloudinary storage | `server/utils` |
+| Providers | Gmail/custom SMTP email; medical-file service encrypts files on private storage | `server/utils` |
 | Maintenance | Read-only preflight and demo seeds | `server/scripts` |
 | Regression suite | HTTP boundary checks and mocked workflow tests | `server/test/security.test.js` |
 
@@ -30,7 +30,9 @@ The frontend and API run as separate processes. The API does not serve `client/d
 | DoctorSchedule | doctorId, weeklySchedule | One schedule per clinical doctor; weekday/time/availability entries |
 | Token | doctorId, patientId, patientName, departmentId, date, tokenNumber, status, isOffline | `departmentId` currently stores a department name, not a Department ObjectId; offline token may have no patient account |
 | QueueCounter | string _id, sequence | Counter key is doctorId + date |
-| MedicalRecord | patientId, doctorId, hospitalId, diagnosis, prescription, notes, testResults | Author is a clinical Doctor; results are URL strings |
+| MedicalRecord | patientId, optional doctorId/hospitalId, visitDate, department, medications, prescription, notes, source, attachments | Doctor or patient entered; new files use private encrypted storage metadata |
+| RecordAccessRequest | patientId, doctorId, tokenId, requestKey, otpHash, attempts, sentAt, expiresAt, consumedAt | Pair-unique, five-minute OTP with TTL and atomic consumption |
+| RecordAccessGrant | patientId, doctorId, tokenId, verifiedAt, expiresAt, revokedAt, version | Pair-unique read-only 30-minute access; revocation fences older proofs |
 | OtpRequest | email, hashed otp, expiresAt, attempts | Expiration index plus explicit application expiry checks |
 | Department | name, hospitalId, description | Legacy standalone model; current UI/seed use embedded Hospital strings |
 
@@ -40,7 +42,7 @@ The frontend and API run as separate processes. The API does not serve `client/d
 
 Login returns a seven-day JWT. The browser stores it in localStorage and sends it as `Authorization: Bearer ...`. Authentication verifies the signature and reloads the User from MongoDB, so role/hospital changes are checked against current account data. Frontend route guards are for navigation; server middleware and controller filters enforce access.
 
-Staff scope derives from `User.hospitalId`. Doctor scope derives from `Doctor.userId`, not equality between a User ID and a Doctor ID. Patients read/cancel their own tokens and records. Doctor record reads are restricted to authored records; creating a record requires a token relationship with the patient and the same hospital.
+Staff scope derives from `User.hospitalId`. Doctor scope derives from `Doctor.userId`, not equality between a User ID and a Doctor ID. Patients read/cancel their own tokens and records. Doctor record reads include their own associated visits; reading other records additionally requires an unexpired, unrevoked patient-approved grant. Creating a doctor record requires a called/completed token relationship; identity fields derive from the linked clinical profile. Patients may upload external records or explicitly associate an upload with a local treating doctor.
 
 The schema includes admin, but there is no complete admin UI and route role lists vary. Do not treat the schema role as granting every endpoint automatically; see [API](API.md).
 
@@ -61,3 +63,9 @@ Status changes use a conditional update on the previous status to detect stale w
 Public facility search currently filters the downloaded list in the browser. Staff queues query today's tokens for doctors in that hospital; patient history is unpaginated. Indexes support hospital/department doctor lookup, patient/date history, and doctor/day numbering. Avoid shared caches of patient data. Large datasets need API pagination, measured query plans, and server-side directory search.
 
 The system currently has one timezone and one in-memory auth rate limiter per API process. No WebSocket service, Redis cache, job queue, refresh-token service, or notification worker is implemented.
+
+## Clinical files and consent boundary
+
+New attachments are encrypted using AES-256-GCM with random IVs and patient/storage-key authenticated associated data. Only authorized API downloads decrypt them, and authentication tags are verified before plaintext is returned. Download authorization is rechecked after disk I/O; responses use private/no-store caching policy and attachment disposition. Record list responses omit storage paths, IVs, tags, and legacy public URLs. The separate encryption key must be backed up with appropriate separation from data. Visit text remains in MongoDB; this change does not implement application-level encryption of all database fields.
+
+Consent requests require today's pending/called appointment, a registered patient email and the requesting linked doctor. The code is never returned to the doctor API; actual email delivery or an explicit local SMTP test fixture is required. Incorrect attempts are counted atomically and successful codes are consumed atomically. Revoked/expired grants are excluded on each read. A patient can stop future access but cannot erase information already read or downloaded.

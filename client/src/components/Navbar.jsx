@@ -3,7 +3,7 @@ import { NavLink, useNavigate } from "react-router-dom";
 export default function Navbar({ user }) {
   const navigate = useNavigate();
   const patient = user?.role === "patient";
-  const links = patient ? [["/", "Find care"], ["/my-tokens", "My appointments"]] : [["/dashboard", "Queue overview"], ["/manage-doctors", "Doctors"], ["/schedule", "Schedules"]];
+  const links = patient ? [["/", "Find care"], ["/my-tokens", "My appointments"], ["/medical-records", "Medical records"]] : [["/dashboard", "Queue overview"], ["/manage-doctors", "Doctors"], ["/schedule", "Schedules"]];
   return <AppBar position="sticky" color="inherit" elevation={0} sx={{ borderBottom: "1px solid #e0e9e8" }}>
     <Toolbar sx={{ maxWidth: 1440, width: "100%", mx: "auto", gap: 2, flexWrap: "wrap", py: 1 }}>
       <Typography component={NavLink} to={patient ? "/" : "/dashboard"} variant="h5" sx={{ textDecoration: "none", color: "primary.main", mr: { sm: 3 } }}>✚ Hospiq</Typography>

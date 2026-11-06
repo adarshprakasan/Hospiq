@@ -56,3 +56,7 @@ Patients and staff have a `hospitalId` reference; all nine doctor accounts also 
 7. Sign in as Palm staff and verify Creekside queue data is not included.
 
 Never publish your generated password, reuse it outside testing, or run demo seeding against a real patient-data environment.
+
+## Medical-record consent testing
+
+The seeded example.invalid emails cannot receive real permission codes. Do not add a universal/demo OTP bypass. Use `npm --prefix server run test:records` for the isolated database/local SMTP consent scenarios, or use a real verified patient account for actual email delivery. Patient upload and the treating doctor's own visit records do not require the cross-doctor OTP workflow.

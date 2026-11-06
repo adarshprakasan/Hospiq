@@ -23,7 +23,7 @@ const Layout = ({ children }) => {
       <a href="#main-content" style={{ position: "absolute", left: -10000 }} onFocus={e => e.currentTarget.style.left = "12px"} onBlur={e => e.currentTarget.style.left = "-10000px"}>Skip to content</a>
       <Navbar user={user} />
       <main id="main-content" className="app-main">{children}</main>
-      <footer className="app-footer">Hospiq Â· Better care. Less waiting.</footer>
+      <footer className="app-footer">Hospiq · Better care. Less waiting.</footer>
     </>
   );
 };

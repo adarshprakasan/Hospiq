@@ -4,6 +4,16 @@ Changes are recorded here as they land. No semantic-version release tag has been
 
 ## Unreleased
 
+### Medical history and consent — 6 November 2026
+
+- Patient medical history and upload/camera intake; dated doctor visit notes, department, prescriptions, structured medications and lab files.
+- Automatic visibility for the treating doctor's own associated records; other history requires patient-email OTP consent for a revocable 30-minute read grant.
+- Single-use five-minute OTPs bound to patient/doctor/visit, attempt/resend limits, active-grant controls, and protected file downloads.
+- AES-256-GCM private attachment storage with a separate key, signature checks, no-store downloads and hidden legacy public links; old public upload route retired.
+- Seven additional regression cases and 48 isolated-database/local-SMTP integration checks, plus browser verification of patient entry, doctor consent and patient revocation.
+- Email is implemented; SMS and automated OCR remain future work. Historical public Cloudinary assets require separate migration.
+
+
 ### Added
 
 - Expanded README and setup, configuration, user, demo, architecture, API, testing, deployment, and roadmap guides.

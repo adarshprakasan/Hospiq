@@ -1,12 +1,7 @@
 const nodemailer = require("nodemailer");
 
-const transporter = nodemailer.createTransport({
-  service: "gmail",
-  auth: {
-    user: process.env.EMAIL_USER,
-    pass: process.env.EMAIL_PASS,
-  },
-});
+const transport = process.env.SMTP_URL ? { url: process.env.SMTP_URL } : { service: "gmail", auth: { user: process.env.EMAIL_USER, pass: process.env.EMAIL_PASS } };
+const transporter = nodemailer.createTransport({ ...transport, connectionTimeout: 10000, greetingTimeout: 10000, socketTimeout: 20000 });
 
 const sendOTPEmail = async (to, otp) => {
   const mailOptions = {
@@ -19,3 +14,12 @@ const sendOTPEmail = async (to, otp) => {
 };
 
 module.exports = sendOTPEmail;
+
+module.exports.sendRecordAccessEmail = (to, otp, doctorName, hospitalName) => transporter.sendMail({
+  from: process.env.EMAIL_USER, to, subject: "Hospiq: approve access to your medical history",
+  text: `${doctorName} at ${hospitalName} is requesting read-only access to your medical records from other doctors and hospitals for 30 minutes during your visit.
+
+Only share this code with that doctor if you approve: ${otp}
+
+This code expires in 5 minutes and can be used once. If you do not approve, do not share it. You can revoke approved access from Medical records in your Hospiq account. This does not give permission to change your records.`,
+});

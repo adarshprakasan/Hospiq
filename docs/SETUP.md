@@ -6,7 +6,7 @@
 
 - Node.js 22.12+ and npm. Check with `node --version` and `npm --version`.
 - MongoDB 7+ recommended, locally or through Atlas. Start the local database service before the API.
-- Git for cloning. Gmail app credentials are required for normal registration emails; Cloudinary credentials are required for uploads.
+- Git for cloning. Gmail app credentials are required for normal registration emails; A separate `MEDICAL_FILE_KEY` and private persistent storage are required for medical uploads.
 
 Use fictional information while evaluating the application. Seeded logins work without an email provider after account creation.
 
@@ -23,7 +23,7 @@ if (!(Test-Path client/.env)) { Copy-Item client/.env.example client/.env }
 
 For an existing checkout such as `C:\Adarsh\Projects\Hospiq`, open PowerShell there and skip cloning. Preserve existing `.env` values. Use `npm ci` rather than deleting lockfiles; the lockfiles select the tested dependency versions.
 
-Set `MONGO_URI`, a long random `JWT_SECRET`, and the provider values described in [Configuration](CONFIGURATION.md). A local database URI can be `mongodb://127.0.0.1:27017/hospiq`. For Atlas, use your own database name and a database user with access only to the intended database; configure network access for your PC.
+Set `MONGO_URI`, a long random `JWT_SECRET`, and the email and medical-file settings described in [Configuration](CONFIGURATION.md). A local database URI can be `mongodb://127.0.0.1:27017/hospiq`. For Atlas, use your own database name and a database user with access only to the intended database; configure network access for your PC.
 
 ## Run
 
@@ -77,6 +77,7 @@ Run facility seeding first. Capture the generated password from the account seed
 | Doctor sees an empty queue | Confirm `Doctor.userId` is linked and book a visit for that exact doctor today |
 | Booking unavailable | Doctor availability, configured timezone, weekday schedule, and consultation hours |
 | Seed rerun prints no password | Existing accounts are preserved; use the password from their creation run |
-| Upload fails | Cloudinary values, file format, five-file limit, and 10 MB per-file limit |
+| Upload fails | Medical-file key, private directory permissions, supported file signature, five-file limit, and 10 MB per-file limit |
+| Permission email cannot be sent for demo user | Demo example.invalid addresses cannot receive email; use the isolated local SMTP integration test or a real registered patient email |
 
 For unresolved errors, use [Support](../SUPPORT.md) with sanitized messages and reproduction steps.

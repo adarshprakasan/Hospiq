@@ -4,7 +4,7 @@
 
 ## Readiness
 
-This repository does not include a production deployment, Docker setup, infrastructure templates, or a CI workflow. The API and static frontend are separate services. Before processing real patient data, address private medical-file delivery, session/onboarding controls, operational logging/auditing, backups, and database integration verification in [Security](../SECURITY.md) and the [roadmap](ROADMAP.md).
+This repository does not include a production deployment, Docker setup, infrastructure templates, or a CI workflow. The API and static frontend are separate services. Before processing real patient data, configure private persistent medical-file storage and key backups, migrate historical public links, and address session/onboarding controls, operational logging/auditing, backups, and broader database integration verification in [Security](../SECURITY.md) and the [roadmap](ROADMAP.md).
 
 ## Frontend build
 
@@ -26,7 +26,7 @@ npm --prefix server ci --omit=dev
 npm --prefix server start
 ```
 
-Use `PORT` supplied by the host. Set `CLIENT_URL` to the exact frontend origin and `HOSPITAL_TIMEZONE` to the intended timezone. Provide database/provider credentials through the host's secret manager, not committed files. Configure HTTPS at the hosting layer. Configure proxy trust deliberately before relying on IP-based throttling; the application does not currently set `trust proxy`.
+Use `PORT` supplied by the host. Set `CLIENT_URL` to the exact frontend origin and `HOSPITAL_TIMEZONE` to the intended timezone. Provide database/provider credentials and `MEDICAL_FILE_KEY` through the host's secret manager, not committed files. Mount a private persistent directory at `MEDICAL_STORAGE_DIR`; do not serve it through the frontend or web server. Back up that volume and preserve the encryption key separately. Do not deploy these files on an ephemeral function filesystem. Configure HTTPS at the hosting layer. Configure proxy trust deliberately before relying on IP-based throttling; the application does not currently set `trust proxy`.
 
 The API connects to MongoDB and waits for required Token/Doctor/QueueCounter indexes before listening. Preflight historical data before deployment. Startup failure may indicate credentials, connectivity, unsupported database capabilities, or duplicate index data.
 

@@ -17,6 +17,8 @@ const BookingPage = lazy(() => import("./pages/BookingPage"));
 const ManageDoctorsPage = lazy(() => import("./pages/ManageDoctorsPage"));
 const DoctorProfilePage = lazy(() => import("./pages/DoctorProfilePage"));
 
+const MedicalRecordsPage = lazy(() => import("./pages/MedicalRecordsPage"));
+
 function App() {
   return (
     <Suspense fallback={<Box textAlign="center" p={8}><CircularProgress aria-label="Loading page" /></Box>}>
@@ -120,6 +122,8 @@ function App() {
         path="/unauthorized"
         element={<div style={{ padding: "2rem" }}>Access Denied</div>}
       />
+      <Route path="/medical-records" element={<ProtectedRoute allowedRoles={["patient"]}><Layout><MedicalRecordsPage /></Layout></ProtectedRoute>} />
+      <Route path="/patients/:patientId/records" element={<ProtectedRoute allowedRoles={["doctor"]}><Layout><MedicalRecordsPage /></Layout></ProtectedRoute>} />
       <Route path="*" element={<NotFound />} />
     </Routes>
     </Suspense>

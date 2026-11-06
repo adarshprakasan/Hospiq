@@ -30,7 +30,7 @@ A login account and a clinical profile are distinct records. A staff manager lin
 
 After signing in, the doctor queue includes visits for that linked profile. Doctors may change their own availability and schedule and call/skip/complete their own visits. The backend rejects changes to other doctors even when a UI lists profiles in the same hospital.
 
-Clinical record creation and retrieval are currently API workflows. There is no complete clinical-record entry interface. Doctor reads return only records they authored; patient reads return only that patient's records.
+Open **Medical records / visit notes** on a registered patient's queue card. You can add dated records after calling the patient or for an earlier completed visit, including medications, notes, prescriptions, and lab files. Your own associated visit history is visible automatically. Other doctors' records remain hidden until the patient shares an emailed permission code during a pending/called appointment today. Approval lasts 30 minutes and is read-only; the patient can revoke it. Offline walk-ins without a patient account cannot use the patient-owned record workflow.
 
 ## Queue statuses
 
@@ -49,3 +49,13 @@ Patients can cancel their own pending/called/skipped tokens. The API supports re
 The printable token QR encodes token ID, token number, and patient name. Treat printed copies as containing patient information. There is no validated scanner/check-in workflow yet. The separate profile QR API encodes a `hospiq://` link; the web app does not register that custom scheme.
 
 Booking is same-day, not future-slot scheduling. Consultation hours use the single configured hospital timezone; overnight shifts are not supported. Do not rely on unimplemented wait-time estimates or appointment reminders.
+
+## Patient medical records and permission
+
+Open **Medical records** in the patient navigation. Add the date/time of a past visit, treating doctor, facility, department, medications, prescription text, notes and lab/prescription files. Use **Scan / take photo** for supported device cameras or **Upload files** for JPEG/PNG/PDF; scanning stores the image and does not extract text automatically.
+
+For external visits, enter doctor/facility names. To associate an upload with an existing Hospiq doctor, select that doctor and explicitly confirm they treated you and may view this record. Matching a typed name alone does not establish a trusted doctor identity. Patient-entered records are labeled.
+
+When another doctor requests access, the email identifies that doctor and hospital and explains the 30-minute scope. Do not share the code unless you approve. **Doctors with temporary access** shows active grants and a **Revoke access** action. Revocation blocks future reads, but cannot retract information already viewed or downloaded. SMS delivery is not implemented.
+
+See [Medical records](MEDICAL_RECORDS.md) for the exact contract, storage setup, and legacy public-link migration notes.

@@ -1,39 +1,23 @@
-const express = require("express");
-const router = express.Router();
+const router = require("express").Router();
 const auth = require("../middlewares/auth");
-const checkRole = require("../middlewares/roles");
-const {
-  addMedicalRecord,
-  getPatientRecords,
-} = require("../controllers/record.controller");
-
-// Doctor adds a record
-router.post("/add", auth, checkRole(["doctor"]), addMedicalRecord);
-
-// Doctor or patient views record history
-router.get(
-  "/patient/:patientId",
-  auth,
-  checkRole(["doctor", "patient"]),
-  getPatientRecords
-);
-
-const upload = require("../middlewares/upload");
-
-// Upload file (doctor only)
-router.post(
-  "/upload",
-  auth,
-  checkRole(["doctor"]),
-  upload.array("files"),
-  (req, res) => {
-    try {
-      const fileUrls = req.files.map((file) => file.path);
-      res.status(200).json({ message: "Uploaded", urls: fileUrls });
-    } catch (err) {
-      res.status(500).json({ message: err.message });
-    }
-  }
-);
-
+const role = require("../middlewares/roles");
+const rateLimit = require("../middlewares/rateLimit");
+const upload = require("../middlewares/medicalUpload");
+const records = require("../controllers/record.controller");
+const access = require("../controllers/record-access.controller");
+router.use(auth);
+router.use((_req, res, next) => { res.set({ "Cache-Control": "no-store, private", "Pragma": "no-cache" }); next(); });
+const otpLimit = rateLimit({ limit: 20 });
+const uploadLimit = rateLimit({ limit: 20 });
+router.get("/mine", role(["patient"]), records.getPatientRecords);
+router.post("/mine", role(["patient"]), uploadLimit, upload, records.addPatientRecord);
+router.post("/add", role(["doctor"]), uploadLimit, upload, records.addMedicalRecord);
+router.post("/upload", role(["patient", "doctor"]), (_req, res) => res.status(410).json({ message: "Create a medical record with attachments; public medical file uploads have been retired" }));
+router.get("/access/grants", role(["patient"]), access.listGrants);
+router.delete("/access/grants/:grantId", role(["patient"]), access.revoke);
+router.get("/patient/:patientId/access", role(["doctor", "patient"]), access.status);
+router.post("/patient/:patientId/access/request", role(["doctor"]), otpLimit, access.request);
+router.post("/patient/:patientId/access/verify", role(["doctor"]), otpLimit, access.verify);
+router.get("/patient/:patientId", role(["doctor", "patient"]), records.getPatientRecords);
+router.get("/:recordId/attachments/:attachmentId", role(["doctor", "patient"]), records.downloadAttachment);
 module.exports = router;

@@ -147,17 +147,16 @@ Booking checks doctor availability and consultation hours for both online and of
 
 | Method | Path | Access / behavior |
 |---|---|---|
-| POST | `/records/add` | doctor; linked profile, same hospital, existing token relationship |
-| GET | `/records/patient/:patientId` | patient self, or doctor for authored records only |
-| POST | `/records/upload` | doctor role; multipart field `files` |
+| POST | `/records/add` | doctor; linked profile, called/completed token relationship; JSON or multipart record with files |
+| GET/POST | `/records/mine` | patient self; list/create records |
+| GET | `/records/patient/:patientId` | patient self; doctor-associated records plus other records under active patient consent |
+| POST | `/records/upload` | Retired, 410; use multipart record creation |
 | GET | `/profile/patient/:id` | Authenticated self only; returns `{user, records}` |
 | GET | `/profile/doctor/:id` | Public; hospital name populated |
 | GET | `/qr/:type/:id` | Public; type patient or doctor; returns `{qr, encoded}` |
 | GET | `/health` | Public; `{ "status": "ok" }`, liveness only |
 
-Record body: `patientId`, `hospitalId`, optional `notes`, `diagnosis`, `prescription`, `testResults: [url]`. The doctor author is derived from the logged-in account. The current visit relationship check accepts any existing token for that doctor/patient; it does not require a completed visit.
-
-Uploads allow up to five JPEG/PNG/PDF files of 10 MB each and return `{message, urls}`. Upload requires the doctor role but does not itself check a linked profile or patient relationship. **Returned Cloudinary URLs are not private medical-file delivery.** See [Security](../SECURITY.md).
+Medical-record requests now require `visitDate` with timezone and support structured medications and private attachments. Doctor/facility/department identities derive from the linked profile; patient external visits use explicit text fields or an explicitly approved local doctor association. Public `testResults` URL submission is not supported. See [Medical records](MEDICAL_RECORDS.md) for all consent/access/download routes, multipart payloads, legacy-link behavior and the updated contract.
 
 The QR route encodes a profile link, does not verify that the target profile exists, and does not confer permission to read it.
 
