@@ -17,7 +17,7 @@ function serialize(order) {
   return { _id: o._id, recordId: o.recordId, visitTokenId: o.visitTokenId, hospitalId: o.hospitalId, patientName: o.patientName, patientPublicId: require("../utils/user-id").publicUserId(o.patientId), hospitalName: o.hospitalName, doctorName: o.doctorName, date: o.date, tokenNumber: o.tokenNumber, tokenLabel: `P-${o.tokenNumber}`, lines: o.lines, status: o.status, version: o.version, currency: o.currency, totalMinor: o.totalMinor, paymentStatus: o.paymentStatus, paymentMethod: o.paymentMethod, paymentState: o.paymentState, readyAt: o.readyAt, paidAt: o.paidAt, createdAt: o.createdAt, updatedAt: o.updatedAt, onlinePaymentAvailable: Boolean(process.env.STRIPE_SECRET_KEY && process.env.STRIPE_WEBHOOK_SECRET) };
 }
 async function authorized(user, id) {
-  const filter = user.role === "patient" ? { patientId: user.id } : user.role === "pharmacist" && user.hospitalId ? { hospitalId: user.hospitalId } : null;
+  const filter = user.role === "patient" ? { patientId: user.id } : user.role === "admin" ? {} : ["pharmacist", "hospital_admin"].includes(user.role) && user.hospitalId ? { hospitalId: user.hospitalId } : null;
   if (!filter) throw fail(403, "Only the patient or assigned hospital pharmacist can view this order");
   const order = await Order.findOne({ _id: id, ...filter });
   if (!order) throw fail(404, "Pharmacy order not found");
@@ -30,4 +30,10 @@ function version(body) {
 function requireReady(order) {
   if (order.status !== "ready") throw fail(409, "The pharmacy must prepare the medication before payment");
 }
-module.exports = { amount, serialize, authorized, version, requireReady };
+async function configured(order) {
+  const billing = await require("../models/HospitalBilling").findOne({ hospitalId: order.hospitalId }).select("onlineEnabled");
+  const result = serialize(order);
+  result.onlinePaymentAvailable = result.onlinePaymentAvailable && billing?.onlineEnabled !== false;
+  return result;
+}
+module.exports = { amount, serialize, authorized, version, requireReady, configured };

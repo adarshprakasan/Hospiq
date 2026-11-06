@@ -58,7 +58,7 @@ async function run() {
   async function hospital(name) { return Hospital.create({ name, address: "Fictional", type: "Hospital", location: { lat: 0, lng: 0 } }); }
   const h = await hospital("Fictional Pharmacy Hospital"), otherHospital = await hospital("Other Fictional Hospital");
   async function user(role, name, hospitalId = h._id) { return User.create({ name, email: `${name}@demo.example.invalid`, password, role, hospitalId }); }
-  const patient = await user("patient", "patient"), otherPatient = await user("patient", "other-patient"), pharmacist = await user("pharmacist", "pharmacist"), foreignPharmacist = await user("pharmacist", "foreign-pharmacist", otherHospital._id), staff = await user("staff", "staff"), clinician = await user("doctor", "doctor");
+  const patient = await user("patient", "patient"), otherPatient = await user("patient", "other-patient"), pharmacist = await user("pharmacist", "pharmacist"), foreignPharmacist = await user("pharmacist", "foreign-pharmacist", otherHospital._id), staff = await user("staff", "staff"), clinician = await user("doctor", "doctor"), manager = await user("hospital_admin", "hospital-admin");
   const unlinked = await user("pharmacist", "unlinked", null);
   const doctor = await Doctor.create({ name: "Fictional Doctor", userId: clinician._id, hospitalId: h._id, department: "Medicine" });
   const date = require("../utils/queue").queueDate();
@@ -80,9 +80,10 @@ async function run() {
   response = await request(foreignPharmacist, `/medications/${medication._id}`, "PATCH", { unitPriceMinor: 1 }); check(response.status, 404);
   response = await request(pharmacist, "/medications", "POST", { name: "Invalid price", unitPriceMinor: 1.5 }); check(response.status, 400);
   response = await request(unlinked, "/pharmacy/orders"); check(response.status, 403);
-  response = await request(staff, "/pharmacy/team", "POST", { email: unlinked.email }); check(response.status, 200);
-  response = await request(staff, "/pharmacy/team", "POST", { email: foreignPharmacist.email }); check(response.status, 400);
-  response = await request(staff, "/pharmacy/team"); check((await response.json()).length, 2);
+  response = await request(staff, "/pharmacy/team", "POST", { email: unlinked.email }); check(response.status, 403);
+  response = await request(manager, "/pharmacy/team", "POST", { email: unlinked.email }); check(response.status, 200);
+  response = await request(manager, "/pharmacy/team", "POST", { email: foreignPharmacist.email }); check(response.status, 400);
+  response = await request(manager, "/pharmacy/team"); check((await response.json()).length, 2);
   let visitNumber = 0;
   async function makeOrder() {
     const visit = await Token.create({ doctorId: doctor._id, patientId: patient._id, departmentId: "Medicine", date, tokenNumber: ++visitNumber, status: "called" });
@@ -150,6 +151,13 @@ async function run() {
   const missingConfig = await readyOrder(), key = process.env.STRIPE_SECRET_KEY; delete process.env.STRIPE_SECRET_KEY;
   response = await request(patient, `/pharmacy/orders/${missingConfig._id}/checkout`, "POST"); check(response.status, 503); check((await Order.findById(missingConfig._id)).paymentState, "none");
   process.env.STRIPE_SECRET_KEY = key;
+  const Billing = require("../models/HospitalBilling");
+  await Billing.create({ hospitalId: h._id, onlineEnabled: false });
+  const beforeDisabledCheckout = calls.length;
+  response = await request(patient, `/pharmacy/orders/${missingConfig._id}`); check((await response.json()).onlinePaymentAvailable, false);
+  response = await request(patient, `/pharmacy/orders/${missingConfig._id}/checkout`, "POST"); check(response.status, 503); check(calls.length, beforeDisabledCheckout);
+  response = await request(patient, `/pharmacy/orders/${missingConfig._id}/counter`, "POST"); check(response.status, 200); check((await response.json()).paymentState, "counter");
+  await Billing.updateOne({ hospitalId: h._id }, { onlineEnabled: true });
   const uncertain = await readyOrder(); failAfterCreate = true;
   const sessionsBeforeUncertain = sessionNumber;
   response = await request(patient, `/pharmacy/orders/${uncertain._id}/checkout`, "POST"); check(response.status, 500); check(sessionNumber, sessionsBeforeUncertain + 1);

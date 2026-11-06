@@ -1,4 +1,3 @@
-const { ownsHospital } = require("../middlewares/ownership");
 const Hospital = require("../models/Hospital");
 const User = require("../models/User");
 
@@ -14,8 +13,9 @@ exports.createHospital = async (req, res) => {
       email,
       website,
     } = req.body;
+    if (departments !== undefined && (!Array.isArray(departments) || departments.length > 100 || departments.some(name => typeof name !== "string"))) return res.status(400).json({ message: "Departments must be a list of names" });
 
-    if (req.user.hospitalId) return res.status(409).json({ message: "An account can manage one hospital" });
+    if (req.user.role !== "admin" && req.user.hospitalId) return res.status(409).json({ message: "An account can manage one hospital" });
     const newHospital = new Hospital({
       name,
       address,
@@ -25,11 +25,16 @@ exports.createHospital = async (req, res) => {
       contact,
       email,
       website,
+      approvalStatus: "approved",
     });
 
     const userId = req.user.id;
-    await newHospital.save();
-    await User.findByIdAndUpdate(userId, { hospitalId: newHospital._id });
+    await require("../services/admin-policy").audit(req.user, "hospitals", "create", newHospital._id, newHospital._id, ["name", "type", "address"], async () => {
+      await newHospital.save();
+      for (const name of departments || []) await require("../services/departments").department(newHospital._id, name);
+      if (req.user.role !== "admin") await User.findByIdAndUpdate(userId, { hospitalId: newHospital._id });
+      return newHospital;
+    });
     res
       .status(201)
       .json({ message: "Hospital created", hospital: newHospital });
@@ -40,7 +45,7 @@ exports.createHospital = async (req, res) => {
 
 exports.getAllHospitals = async (req, res) => {
   try {
-    const hospitals = await Hospital.find();
+    const hospitals = await Hospital.find({ deletedAt: null, status: { $ne: "suspended" }, approvalStatus: { $ne: "pending" } });
     res.json(hospitals);
   } catch (err) {
     res.status(500).json({ message: err.message });
@@ -49,45 +54,10 @@ exports.getAllHospitals = async (req, res) => {
 
 exports.getHospitalById = async (req, res) => {
   try {
-    const hospital = await Hospital.findById(req.params.id);
+    const hospital = await Hospital.findOne({ _id: req.params.id, deletedAt: null, status: { $ne: "suspended" }, approvalStatus: { $ne: "pending" } });
     if (!hospital)
       return res.status(404).json({ message: "Hospital not found" });
     res.json(hospital);
-  } catch (err) {
-    res.status(500).json({ message: err.message });
-  }
-};
-
-// Update hospital
-exports.updateHospital = async (req, res) => {
-  try {
-    if (!ownsHospital(req.user, req.params.id)) return res.status(403).json({ message: "Access denied" });
-    const fields = ["name", "address", "location", "departments", "type", "contact", "email", "website"];
-    const updates = Object.fromEntries(fields.filter(key => req.body[key] !== undefined).map(key => [key, req.body[key]]));
-    const hospital = await Hospital.findByIdAndUpdate(req.params.id, updates, {
-      runValidators: true,
-      new: true,
-    });
-    if (!hospital) {
-      return res.status(404).json({ message: "Hospital not found" });
-    }
-    res.json({ message: "Hospital updated", hospital });
-  } catch (err) {
-    res.status(500).json({ message: err.message });
-  }
-};
-
-// Delete hospital
-exports.deleteHospital = async (req, res) => {
-  try {
-    if (!ownsHospital(req.user, req.params.id)) return res.status(403).json({ message: "Access denied" });
-    if (await require("../models/Doctor").exists({ hospitalId: req.params.id })) return res.status(409).json({ message: "Remove or transfer doctors before deleting this hospital" });
-    const hospital = await Hospital.findByIdAndDelete(req.params.id);
-    if (hospital) await User.updateMany({ hospitalId: hospital._id }, { $unset: { hospitalId: 1 } });
-    if (!hospital) {
-      return res.status(404).json({ message: "Hospital not found" });
-    }
-    res.json({ message: "Hospital deleted successfully" });
   } catch (err) {
     res.status(500).json({ message: err.message });
   }

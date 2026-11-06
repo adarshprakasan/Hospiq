@@ -10,13 +10,14 @@ From the repository root after installing dependencies:
 npm --prefix server test
 npm --prefix server run test:records
 npm --prefix server run test:pharmacy
+npm --prefix server run test:management
 npm --prefix client run build
 npm --prefix server audit
 npm --prefix client audit
 git diff --check
 ```
 
-The Node regression suite currently contains 30 cases. It starts an ephemeral localhost HTTP server for unauthenticated-route checks and uses mocked database methods for ownership/workflow rules. The regression suite does not require a seeded database, email delivery, or Cloudinary uploads. The separate integration commands need MongoDB access and create uniquely named disposable databases: 106 record/QR checks use local SMTP, and 130 pharmacy/payment checks use the official Stripe SDK against a local HTTP provider fixture and signed local webhooks. They send no real email or charges and clean up afterward. Allow local loopback connections in your test environment. Never load production secrets in CI. See [Pharmacy verification](PHARMACY.md#verification-evidence).
+The Node regression suite currently contains 32 cases. It starts an ephemeral localhost HTTP server for unauthenticated-route checks and uses mocked database methods for ownership/workflow rules. The regression suite does not require a seeded database, email delivery, or Cloudinary uploads. The separate integration commands need MongoDB access and create uniquely named disposable databases: 106 record/QR checks use local SMTP, and 136 pharmacy/payment checks use the official Stripe SDK against a local HTTP provider fixture and signed local webhooks. They send no real email or charges and clean up afterward. Allow local loopback connections in your test environment. Never load production secrets in CI. See [Pharmacy verification](PHARMACY.md#verification-evidence).
 
 Covered behaviors include authentication boundaries, rejection of admin signup and unsigned email proofs, hospital scope, linked-doctor ownership, midnight timezone alignment, health/404 responses, foreign-hospital token rejection, terminal state transitions, unavailable doctors, and invalid schedules.
 
@@ -79,3 +80,8 @@ The browser test used a generated QR image: patient homepage/dedicated card, doc
 The per-visit update additionally checks different codes for same-day appointments and changed visit dates, empty visit lists without a generic code, old permanent code rejection, completed-visit rejection, and unchanged clinical consent rules. The persistent large dataset is inserted by `seed:large`, separately from the disposable integration database. Its second run was verified to insert zero duplicates. See [the feature-testing walkthrough](TEST_TODAYS_FEATURES.md).
 
 On the actual large-demo dataset, the browser verified that Patient 001's two same-day visit QR strings differ while their HQ ID is unchanged. The Oasis doctor rejected the Harbour visit's code with an explicit wrong-visit message and accepted the correct Oasis code. This check did not change the seeded appointment statuses or medical history.
+
+
+## Scoped administration
+
+`npm --prefix server run test:management` verifies 113 checks across six roles and two facilities in a disposable database, including cross-hospital query/body/path restrictions, employee credentials, clinical privacy, archive/restore guards, canonical departments, bank encryption, paging and an indexed hospital-user query. Browser checks verified platform/facility dashboards, scoped employee lists, department creation, banking controls and queue-only staff navigation. See [Administration](ADMINISTRATION.md).

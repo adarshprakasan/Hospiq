@@ -91,8 +91,19 @@ exports.addPatientRecord = create;
 exports.getPatientRecords = async (req, res) => {
   const patientId = req.params.patientId || req.user.id;
   const context = await accessContext(req.user, patientId);
-  const records = await Record.find(recordFilter(patientId, context)).populate("doctorId", "name department").populate("hospitalId", "name").sort({ visitDate: -1 });
-  res.json(records.map(record => ({ ...serializeRecord(record), canSendToPharmacy: req.user.role === "doctor" && String(record.doctorId?._id || record.doctorId) === String(context.doctor?._id) && record.source === "doctor" && record.medications.length > 0 && Boolean(record.visitTokenId) })));
+  const filter = recordFilter(patientId, context);
+  if (["patient", "doctor"].includes(req.query.source)) filter.source = req.query.source;
+  if (typeof req.query.q === "string" && req.query.q.trim()) {
+    const escaped = req.query.q.trim().slice(0, 100).replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+    filter.$or = ["doctorName", "hospitalName", "department", "diagnosis", "notes", "prescription", "medications.name"].map(key => ({ [key]: new RegExp(escaped, "i") }));
+  }
+  const paginated = req.query.page !== undefined;
+  const page = Math.max(1, Math.min(Number.parseInt(req.query.page, 10) || 1, 10000)), limit = Math.max(1, Math.min(Number.parseInt(req.query.limit, 10) || 20, 100));
+  let query = Record.find(filter).populate("doctorId", "name department").populate("hospitalId", "name").sort({ visitDate: -1, _id: -1 });
+  if (paginated) query = query.skip((page - 1) * limit).limit(limit);
+  const records = await query;
+  const items = records.map(record => ({ ...serializeRecord(record), canSendToPharmacy: req.user.role === "doctor" && String(record.doctorId?._id || record.doctorId) === String(context.doctor?._id) && record.source === "doctor" && record.medications.length > 0 && Boolean(record.visitTokenId) }));
+  res.json(paginated ? { items, total: await Record.countDocuments(filter), page, limit } : items);
 };
 exports.downloadAttachment = async (req, res) => {
   const record = await Record.findById(req.params.recordId);

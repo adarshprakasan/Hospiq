@@ -20,10 +20,10 @@ All application routes require a bearer login. Roles and hospital/patient owners
 | `POST /api/pharmacy/orders/:id/checkout` | Patient | Create/reuse Stripe hosted checkout with server-calculated AED amount |
 | `POST /api/pharmacy/orders/:id/reconcile` | Patient | Retrieve Stripe session server-side and verify payment; URL parameters never mark paid |
 | `POST /api/pharmacy/stripe/webhook` | Signed Stripe event | Raw-body signature verification and idempotent paid update, with amount/currency/order/session checks |
-| `GET /api/pharmacy/team` | Staff | List pharmacists in own hospital |
-| `POST /api/pharmacy/team` | Staff | Link registered pharmacist by email; cannot take an account from another hospital |
+| `GET /api/pharmacy/team` | Hospital Admin | List pharmacists in own hospital |
+| `POST /api/pharmacy/team` | Hospital Admin | Link registered pharmacist by email; cannot take an account from another hospital |
 
-Catalogue reads remain available to linked doctors/staff/pharmacists. Only pharmacists can add, price, or remove medications. Prices are captured when sent; unpriced legacy entries must be priced by pharmacy before preparation completes. Removing catalogue entries preserves existing order and record snapshots.
+Catalogue reads remain available to linked doctors, pharmacists and administrators; queue staff do not manage medicines. Only pharmacists can add, price, or remove medications. Prices are captured when sent; unpriced legacy entries must be priced by pharmacy before preparation completes. Removing catalogue entries preserves existing order and record snapshots.
 
 Online payments require Stripe merchant configuration. Counter payments remain usable without it. Apple Pay and Google Pay availability depends on the Stripe account, payment methods, device, browser, and deployment; card details are entered only on Stripe's hosted checkout. No fake online-paid action exists in the application.
 
@@ -55,7 +55,7 @@ The pharmacy seed uses the existing large-demo password from the ignored `server
 | Other hospital pharmacist | `pharmacist03@demo.hospiq.invalid` | Oasis |
 | Patient | `patient001@demo.hospiq.invalid` | Harbour and Oasis example orders |
 | Doctor | `doctor01@demo.hospiq.invalid` | Harbour |
-| Staff | `staff01@demo.hospiq.invalid` | Harbour pharmacist assignment |
+| Hospital Admin | `hospitaladmin01@demo.hospiq.invalid` | Harbour employee provisioning (run seed:admins) |
 
 Retrieve the local demo password:
 
@@ -66,7 +66,7 @@ Retrieve the local demo password:
 Use independent browser sessions (normal versus incognito or another browser) for different users. Normal tabs share localStorage and overwrite each other's login.
 
 1. **Pharmacist:** sign in to the pharmacy dashboard. Open **Medications** to add entries with strength/form, AED price, and selling unit (`pack`, `tablet`, etc.). Existing unpriced medication entries can be priced here.
-2. **Staff:** existing verified pharmacist accounts can be assigned through **Pharmacy team**. Public registration never trusts a submitted hospital ID. An unassigned pharmacist cannot see hospital orders or change its catalogue.
+2. **Hospital Admin:** create pharmacist accounts and temporary credentials through **Accounts & access** in the hospital console. Public signup no longer creates employees. Queue staff cannot provision users; existing unassigned pharmacist accounts can be linked by an administrator.
 3. **Doctor:** call a registered patient's visit, open their record form, choose medicines, and save. The visit changes to completed. In the popup click **Send medication to pharmacy**. Its success message shows the new pharmacy token.
 4. **Patient:** open **My pharmacy**, or follow the **Collect your medicine at pharmacy** banner on the homepage/appointments page. The pharmacy token is distinct from the appointment token and QR. Preparation starts as pending.
 5. **Pharmacist:** find the patient/token. Confirm actual quantities in selling units and unit prices. Check medications as they are gathered. Use **Save checklist** for partial work; **Done — mark ready** enables only when every item is checked and the quantities/prices are valid. The server independently enforces this.
@@ -112,3 +112,6 @@ npm --prefix client run build
 The pharmacy integration suite runs real HTTP requests against the app and the official Stripe SDK against a local HTTP provider fixture in a disposable database. It checks completion, idempotent handoff, role/hospital isolation, checklist/version validation, prices/totals, counter payment, checkout reuse, switching payment method, signed/invalid/duplicate webhooks, amount/currency checks, provider failures, and missing configuration. It uses fictional credentials and never sends a real charge. The fixture is test-process-only; production code uses Stripe's real HTTPS endpoint.
 
 Browser verification covered pharmacist sign-in, disabled/enabled Done, readiness, shared patient token/total, counter instructions, automatic payment-dialog closure, and paid history. Live merchant checkout, actual wallet presentation, and real webhook delivery remain to be tested using your Stripe test environment.
+
+
+Role separation and current administrative testing instructions are in [Administration](ADMINISTRATION.md). Existing staff remain queue-only. The dedicated management suite also verifies encrypted bank settings and hospital-scoped online-payment controls.

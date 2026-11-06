@@ -7,6 +7,7 @@
 | Run the app | [Setup](SETUP.md), then [Configuration](CONFIGURATION.md) |
 | Test today's additions | [Large-data and feature walkthrough](TEST_TODAYS_FEATURES.md) |
 | Test pharmacy and payments | [Pharmacist accounts, queue, counter payments and Stripe setup](PHARMACY.md) |
+| Administer roles and upgrade the database | [Administration](ADMINISTRATION.md) |
 | Try each role | [Demo data](DEMO_DATA.md), then [User guide](USER_GUIDE.md) and [Patient QR](PATIENT_QR.md) |
 | Understand the code | [Architecture](ARCHITECTURE.md), [API reference](API.md), and [Medical records](MEDICAL_RECORDS.md) |
 | Change or test functionality | [Contributing](../CONTRIBUTING.md) and [Testing](TESTING.md) |

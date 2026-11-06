@@ -1,0 +1,16 @@
+const router = require("express").Router();
+const c = require("../controllers/management.controller");
+router.use(require("../middlewares/auth"), require("../middlewares/roles")(["admin", "hospital_admin"]));
+router.use((_req, res, next) => { res.set("Cache-Control", "no-store, private"); next(); });
+router.get("/summary", c.summary);
+router.get("/billing/:hospitalId", require("../controllers/billing.controller").get);
+router.put("/billing/:hospitalId", require("../controllers/billing.controller").save);
+router.post("/users/:id/reset-password", c.resetPassword);
+router.post("/pharmacy/:id/:action", c.pharmacyAction);
+router.patch("/pharmacy/:id/prepare", (req, res) => { req.params.action = "prepare"; return c.pharmacyAction(req, res); });
+router.get("/:entity", c.list);
+router.post("/:entity", c.create);
+router.patch("/:entity/:id", c.update);
+router.delete("/:entity/:id", c.archive);
+router.post("/:entity/:id/restore", c.restore);
+module.exports = router;

@@ -7,10 +7,12 @@ const { queueDate, queueClock } = require("../utils/queue");
 async function book(req, res, offline) {
   const { doctorId, patientName } = req.body;
   const doctor = await Doctor.findById(doctorId);
-  if (!doctor) return res.status(404).json({ message: "Doctor not found" });
+  if (!doctor || doctor.deletedAt) return res.status(404).json({ message: "Doctor not found" });
   if (offline && !await ownsDoctor(req.user, doctorId)) return res.status(403).json({ message: "Access denied" });
   if (offline && (typeof patientName !== "string" || !patientName.trim())) return res.status(400).json({ message: "Patient name is required" });
   if (doctor.availabilityStatus !== "available") return res.status(400).json({ message: "Doctor is unavailable" });
+  const hospital = await require("../models/Hospital").findOne({ _id: doctor.hospitalId, deletedAt: null, status: { $ne: "suspended" }, approvalStatus: { $ne: "pending" } });
+  if (!hospital) return res.status(400).json({ message: "Hospital is not available for booking" });
   const schedule = await DoctorSchedule.findOne({ doctorId });
   const clock = queueClock();
   const day = schedule?.weeklySchedule.find(d => d.day === clock.day);
@@ -22,7 +24,7 @@ async function book(req, res, offline) {
   const last = await Token.findOne({ doctorId, date }).sort({ tokenNumber: -1 }).select("tokenNumber").lean();
   try { await QueueCounter.updateOne({ _id: key }, { $setOnInsert: { sequence: last?.tokenNumber || 0 } }, { upsert: true }); } catch (err) { if (err.code !== 11000) throw err; }
   const counter = await QueueCounter.findByIdAndUpdate(key, { $inc: { sequence: 1 } }, { new: true });
-  const token = await Token.create({ doctorId, patientId: offline ? null : req.user.id, patientName: offline ? patientName.trim() : req.user.name, departmentId: doctor.department, isOffline: offline, tokenNumber: counter.sequence, date });
+  const token = await Token.create({ doctorId, patientId: offline ? null : req.user.id, patientName: offline ? patientName.trim() : req.user.name, departmentId: doctor.department, departmentRef: doctor.departmentId, isOffline: offline, tokenNumber: counter.sequence, date });
   res.status(201).json({ message: "Token booked successfully", token });
 }
 exports.bookToken = (req, res) => book(req, res, false);
@@ -31,7 +33,7 @@ function serialize(token) {
   return { _id: token._id, tokenNumber: token.tokenNumber, status: token.status, patientId: token.patientId?._id, patientPublicId: token.patientId?._id ? require("../utils/user-id").publicUserId(token.patientId._id) : null, patientName: token.patientId?.name || token.patientName || "Patient", doctorId: token.doctorId?._id, doctorName: token.doctorId?.name || "Doctor unavailable", departmentName: token.departmentId, date: token.date, isToday: token.date === queueDate(), createdAt: token.createdAt, isOffline: token.isOffline };
 }
 async function list(filter) {
-  return (await Token.find(filter).sort({ date: -1, tokenNumber: 1 }).populate("patientId", "name").populate("doctorId", "name").lean()).map(serialize);
+  return (await Token.find({ ...filter, deletedAt: null }).sort({ date: -1, tokenNumber: 1 }).populate("patientId", "name").populate("doctorId", "name").lean()).map(serialize);
 }
 exports.getDoctorTokens = async (req, res) => {
   if (!await ownsDoctor(req.user, req.params.doctorId)) return res.status(403).json({ message: "Access denied" });
@@ -39,7 +41,7 @@ exports.getDoctorTokens = async (req, res) => {
 };
 exports.getMyTokens = async (req, res) => {
   const filter = req.user.role === "doctor" ? { userId: req.user.id } : { hospitalId: req.user.hospitalId || null };
-  const doctors = await Doctor.find(filter).select("_id").lean();
+  const doctors = await Doctor.find({ ...filter, deletedAt: null }).select("_id").lean();
   res.json(await list({ doctorId: { $in: doctors.map(d => d._id) }, date: queueDate() }));
 };
 exports.getMyPatientTokens = async (req, res) => res.json(await list({ patientId: req.user.id }));
@@ -48,6 +50,7 @@ exports.updateTokenStatus = async (req, res) => {
   if (!token) return res.status(404).json({ message: "Token not found" });
   if (!await ownsDoctor(req.user, token.doctorId)) return res.status(403).json({ message: "Access denied" });
   const status = req.body.status;
+  if (req.user.role === "staff" && status === "completed") return res.status(403).json({ message: "The treating doctor completes the clinical visit. Staff manage arrival, calling, skipping and cancellation" });
   const transitions = { pending: ["called", "skipped", "cancelled"], called: ["completed", "skipped", "cancelled"], skipped: ["pending", "called", "cancelled"], completed: [], cancelled: [] };
   if (!transitions[token.status]?.includes(status)) return res.status(400).json({ message: "Invalid token status transition" });
   const updated = await Token.findOneAndUpdate({ _id: token._id, status: token.status }, { $set: { status } }, { new: true, runValidators: true });

@@ -5,7 +5,7 @@ export const money = minor => `AED ${(Number(minor || 0) / 100).toFixed(2)}`;
 export const schedule = m => [m.times?.length ? m.times.join(" / ") : m.frequency, m.startDate && m.endDate ? `${m.startDate} to ${m.endDate}` : m.duration, m.foodTiming === "before" ? "Before food" : m.foodTiming === "after" ? "After food" : "", m.dose, m.instructions].filter(Boolean).join(" · ");
 const draftLines = lines => lines.map(l => ({ ...l, price: l.unitPriceMinor == null ? "" : (l.unitPriceMinor / 100).toFixed(2) }));
 const minorPrice = value => /^\d+(\.\d{1,2})?$/.test(String(value)) ? Math.round(Number(value) * 100) : NaN;
-export default function PharmacyOrderCard({ order, pharmacist = false, onUpdated, onPay }) {
+export default function PharmacyOrderCard({ order, pharmacist = false, onUpdated, onPay, apiBase = "/pharmacy/orders" }) {
   const [lines, setLines] = useState(() => draftLines(order.lines));
   const [baseVersion, setBaseVersion] = useState(order.version);
   const [dirty, setDirty] = useState(false);
@@ -19,15 +19,15 @@ export default function PharmacyOrderCard({ order, pharmacist = false, onUpdated
   async function prepare(ready) {
     setBusy(true); setError("");
     try {
-      const { data } = await axios.patch(`/pharmacy/orders/${order._id}/prepare`, { version: baseVersion, lines: lines.map(l => ({ _id: l._id, gathered: l.gathered, quantity: Number(l.quantity), unitPriceMinor: minorPrice(l.price) })) });
+      const { data } = await axios.patch(`${apiBase}/${order._id}/prepare`, { version: baseVersion, lines: lines.map(l => ({ _id: l._id, gathered: l.gathered, quantity: Number(l.quantity), unitPriceMinor: minorPrice(l.price) })) });
       setDirty(false); onUpdated(data);
-      if (ready) { const result = await axios.post(`/pharmacy/orders/${order._id}/ready`, { version: data.version }); onUpdated(result.data); }
+      if (ready) { const result = await axios.post(`${apiBase}/${order._id}/ready`, { version: data.version }); onUpdated(result.data); }
     } catch (err) { setError(err.response?.data?.message || "Unable to save preparation"); }
     finally { setBusy(false); }
   }
   async function paid() {
     setBusy(true); setError("");
-    try { const { data } = await axios.post(`/pharmacy/orders/${order._id}/paid`, { version: order.version }); onUpdated(data); }
+    try { const { data } = await axios.post(`${apiBase}/${order._id}/paid`, { version: order.version }); onUpdated(data); }
     catch (err) { setError(err.response?.data?.message || "Unable to confirm counter payment"); }
     finally { setBusy(false); }
   }

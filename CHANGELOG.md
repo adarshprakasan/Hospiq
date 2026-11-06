@@ -4,6 +4,15 @@ Changes are recorded here as they land. No semantic-version release tag has been
 
 ## Unreleased
 
+### Scoped administration and role/database restructuring — 6 November 2026
+
+- Added Hospiq and Hospital/Clinic Admin dashboards for operational records, team provisioning with temporary credentials, department management, banking settings and redacted audits.
+- Kept existing staff queue-only; moved personnel/departments/banking to admins, schedules to staff/admins, medicine to pharmacists and clinical availability/visits to doctors.
+- Kept clinical history patient-controlled, protected patient credential resets from admin impersonation, added first-login password changes/session revocation, and recoverable archives with referential guards.
+- Applied additive canonical department/reference migration and query indexes without deleting records or changing existing staff roles/passwords. Added separate demo administrator accounts.
+- Added scoped paginated account/operational lists and searchable paginated medical history, plus isolated authorization/bank/query-plan tests and dashboard browser verification.
+
+
 ### Hospital pharmacy handoff and payments — 6 November 2026
 
 - Added pharmacist registration, staff-controlled hospital assignment, a pharmacy dashboard, and pharmacist-owned medication availability, selling units, and AED pricing.

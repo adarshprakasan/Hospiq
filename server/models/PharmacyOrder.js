@@ -11,6 +11,7 @@ const line = new mongoose.Schema({
 });
 const schema = new mongoose.Schema({
   recordId: { type: mongoose.Schema.Types.ObjectId, ref: "MedicalRecord", required: true },
+  deletedAt: { type: Date, default: null },
   visitTokenId: { type: mongoose.Schema.Types.ObjectId, ref: "Token", required: true },
   hospitalId: { type: mongoose.Schema.Types.ObjectId, ref: "Hospital", required: true },
   patientId: { type: mongoose.Schema.Types.ObjectId, ref: "User", required: true },
@@ -32,4 +33,5 @@ schema.index({ visitTokenId: 1 }, { unique: true });
 schema.index({ hospitalId: 1, date: 1, tokenNumber: 1 }, { unique: true });
 schema.index({ patientId: 1, createdAt: -1 });
 schema.index({ hospitalId: 1, paymentStatus: 1, createdAt: -1 });
+schema.index({ deletedAt: 1, status: 1, paymentStatus: 1, createdAt: -1 });
 module.exports = mongoose.model("PharmacyOrder", schema);

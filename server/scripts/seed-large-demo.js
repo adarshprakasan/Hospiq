@@ -115,7 +115,7 @@ async function run() {
   const primary = ["patient001@demo.hospiq.invalid", "patient002@demo.hospiq.invalid", "doctor01@demo.hospiq.invalid", "doctor06@demo.hospiq.invalid", "staff01@demo.hospiq.invalid", "staff03@demo.hospiq.invalid"];
   const { loginUser } = require("../controllers/auth.controller");
   for (const email of primary) { let code = 200, response; await loginUser({ body: { email, password } }, { status(c) { code = c; return this; }, json(value) { response = value; return this; } }); if (code !== 200 || !response?.token) throw new Error("A preserved demo password differs; no passwords were reset"); }
-  const credentials = { dataset: "hospiq-large-demo-v1", updatedAt: new Date().toISOString(), visitDate: today, password, primaryLogins: primary, accounts: accounts.map(a => ({ name: a.name, role: a.role, email: a.email, publicId: require("../utils/user-id").publicUserId(a._id) })), notes: "Fictional data only. No email is sent. Existing passwords and edits are preserved." };
+  const credentials = { dataset: "hospiq-large-demo-v1", updatedAt: new Date().toISOString(), visitDate: today, password, primaryLogins: primary, accounts: [...(manifest?.accounts || []).filter(old => !accounts.some(a => a.email === old.email)), ...accounts.map(a => ({ name: a.name, role: a.role, email: a.email, publicId: require("../utils/user-id").publicUserId(a._id) }))], notes: "Fictional data only. No email is sent. Existing passwords and edits are preserved." };
   await fs.writeFile(privateFile, JSON.stringify(credentials, null, 2) + "\n", { mode: 0o600 });
   console.log(JSON.stringify({ inserted, verified, dailyVisitDate: today, passwordForDemoAccounts: password, primaryLogins: primary, privateCredentialsFile: privateFile }, null, 2));
 }

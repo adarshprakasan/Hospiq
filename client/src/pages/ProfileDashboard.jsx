@@ -1,4 +1,6 @@
 import PatientIdentityCard from "../components/PatientIdentityCard";
+import { Link } from "react-router-dom";
+import { roleLabel } from "../utils";
 import React, { useEffect, useState } from "react";
 import axios from "../api/axios";
 import {
@@ -53,7 +55,8 @@ const ProfileDashboard = () => {
         </Typography>
         <Typography sx={{ overflowWrap: "anywhere", fontFamily: "monospace", mb: 1 }}>User ID: {user?.publicId}</Typography>
         <Typography>Email: {user?.email}</Typography>
-        <Typography>Role: {user?.role}</Typography>
+        <Typography>Role: {roleLabel(user?.role)}</Typography>
+        <Button component={Link} to="/change-password" sx={{ mt: 2 }}>Change password</Button>
       </Paper>
       {user?.role === "patient" && <Box mt={3}><PatientIdentityCard /></Box>}
     </Container>

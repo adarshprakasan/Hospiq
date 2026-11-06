@@ -66,3 +66,8 @@ The seeded example.invalid emails cannot receive real permission codes. Do not a
 Run `npm --prefix server run seed:large` for 6 additional facilities, 30 doctors, 12 staff, 120 patients, 30 schedules, 1,440 historical visits/records, 480 encrypted PDF lab attachments and 240 appointments for the seed date. This namespace is separate from the earlier smaller seed. It reserves token numbers with atomic counters, uses stable IDs and insert-only data writes, preserves passwords/edits, and stores generated credentials in the ignored `server/.demo-large-credentials.json`. A rerun on the same date creates no duplicates; a different date adds new daily visits without deleting prior history.
 
 Use [Test today's features](TEST_TODAYS_FEATURES.md) for the account patterns, concrete primary logins, visit rotation and consent tests. All email addresses are fictional `.invalid` addresses and cannot receive real OTP messages. No consent grant or universal OTP bypass is seeded. The sample report is [demo-lab-report.pdf](../server/fixtures/demo-lab-report.pdf), contains no clinical results, and is encrypted separately for each seeded attachment.
+
+
+## Administrator accounts and role separation
+
+The earlier small/large seeds preserve their staff as queue-only users. Run `npm --prefix server run upgrade:roles -- --apply` and `npm --prefix server run seed:admins` to add one demo Hospiq Admin and six facility admins, using the existing private large-demo password. See [Administration](ADMINISTRATION.md) for all login patterns, scope tests and provisioning instructions. No existing staff are promoted.

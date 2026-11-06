@@ -16,6 +16,7 @@ import {
   Grid,
 } from "@mui/material";
 import axios from "../api/axios";
+import { useSearchParams } from "react-router-dom";
 
 const daysOfWeek = [
   "Monday",
@@ -28,6 +29,7 @@ const daysOfWeek = [
 ];
 
 export default function DoctorScheduleForm() {
+  const [params] = useSearchParams();
   const [doctors, setDoctors] = useState([]);
   const [selectedDoctor, setSelectedDoctor] = useState("");
   const [schedule, setSchedule] = useState(
@@ -49,10 +51,12 @@ export default function DoctorScheduleForm() {
     const fetchDoctors = async () => {
       try {
         const profile = await axios.get("/auth/me");
-        const hospitalId = profile.data.hospitalId;
+        const selected = params.get("doctorId") ? (await axios.get(`/doctors/${params.get("doctorId")}`)).data : null;
+        const hospitalId = profile.data.role === "admin" ? params.get("hospitalId") || selected?.hospitalId : profile.data.hospitalId;
         if (!hospitalId) { setSnack({ open: true, severity: "info", message: "Create a hospital or link your account first" }); return; }
         const res = await axios.get(`/doctors/hospital/${hospitalId}`);
-        setDoctors(profile.data.role === "doctor" ? res.data.filter(d => d.userId === profile.data._id) : res.data);
+        setDoctors(res.data);
+        if (selected) setSelectedDoctor(selected._id);
       } catch (err) {
         console.error("Failed to fetch doctors:", err);
         setDoctors([]);
@@ -60,7 +64,7 @@ export default function DoctorScheduleForm() {
     };
 
     fetchDoctors();
-  }, []);
+  }, [params]);
 
   useEffect(() => {
     let live = true;

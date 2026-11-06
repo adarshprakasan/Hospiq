@@ -25,6 +25,8 @@ async function checkout(order) {
   requireReady(order);
   if (order.paymentStatus === "paid") return { paid: true };
   if (!order.totalMinor || order.totalMinor < 200) throw fail(400, "Use counter payment for bills below AED 2.00");
+  const billing = await require("../models/HospitalBilling").findOne({ hospitalId: order.hospitalId });
+  if (billing && !billing.onlineEnabled) throw fail(503, "This hospital has disabled online checkout. Please pay at the counter");
   const stripe = stripeClient();
   if (order.paymentState === "online" && order.stripeSessionId) {
     const session = await stripe.checkout.sessions.retrieve(order.stripeSessionId);

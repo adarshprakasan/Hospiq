@@ -2,7 +2,7 @@
 
 ## Manage available medications
 
-Sign in as a hospital-linked **pharmacist** and open **Medications** from the pharmacy dashboard. Add a medicine's name, strength, and form together, for example `Example medicine 500 mg tablet`, plus its AED price and selling unit (pack, tablet, etc.). Different strengths must be separate entries. Only pharmacists manage the catalogue; doctors read the list from their linked clinical hospital. Staff assign pharmacist accounts through **Pharmacy team**.
+Sign in as a hospital-linked **pharmacist** and open **Medications** from the pharmacy dashboard. Add a medicine's name, strength, and form together, for example `Example medicine 500 mg tablet`, plus its AED price and selling unit (pack, tablet, etc.). Different strengths must be separate entries. Only pharmacists manage the catalogue; doctors read the list from their linked clinical hospital. Hospital/Clinic Admins create and assign employee accounts through their console.
 
 Search the list or remove entries that are no longer available. Removal deactivates the entry for new prescriptions, preserving its identity and earlier prescription snapshots. Adding the same exact name again reactivates it. This is an availability catalogue, not stock counts, dispensing, or interaction checking.
 

@@ -54,9 +54,11 @@ export default function CreateHospital() {
         },
       });
 
-      alert("Hospital created successfully!");
+      const profile = await axios.get("/auth/me");
+      localStorage.setItem("user", JSON.stringify(profile.data));
+      alert("Hospital created successfully.");
       setOpen(false);
-      navigate("/dashboard");
+      navigate("/hospital-admin");
     } catch (error) {
       console.error("Error creating hospital:", error);
       alert("Failed to create hospital.");
@@ -69,7 +71,7 @@ export default function CreateHospital() {
         open={open}
         onClose={() => {
           setOpen(false);
-          navigate("/dashboard");
+          navigate("/hospital-admin");
         }}
         fullWidth
         maxWidth="sm"
@@ -156,7 +158,7 @@ export default function CreateHospital() {
           <Button
             onClick={() => {
               setOpen(false);
-              navigate("/dashboard");
+              navigate("/hospital-admin");
             }}
           >
             Cancel

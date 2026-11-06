@@ -23,7 +23,7 @@ This is a reference to implemented Express routes, not a generated OpenAPI contr
 | POST | `/auth/login` | Public, rate-limited | `{email, password}`; returns `{token, user}` |
 | GET | `/auth/me` | Authenticated | Current user without password |
 
-Registration roles: patient (default), staff, doctor. Admin is rejected. Password validation requires at least 8 characters and at most 72 UTF-8 bytes. The verification proof must match the email and the OTP row can be consumed once. OTP rows expire after five minutes; proof JWT lifetime is ten minutes but row consumption still depends on the row existing.
+Registration roles: patient (default) and hospital_admin. Employee and platform-admin public signup is rejected; administrators provision employees with temporary credentials. Password validation requires at least 8 characters and at most 72 UTF-8 bytes. The verification proof must match the email and the OTP row can be consumed once. OTP rows expire after five minutes; proof JWT lifetime is ten minutes but row consumption still depends on the row existing.
 
 Example login, using your own credentials:
 
@@ -58,11 +58,11 @@ Login response fields:
 |---|---|---|
 | GET | `/hospitals` | Public; list facilities |
 | GET | `/hospitals/:id` | Public; one facility |
-| POST | `/hospitals/create` | staff or doctor; caller must not already have a hospital |
-| PUT | `/hospitals/:id` | staff or admin; matching hospital or admin ownership bypass |
-| DELETE | `/hospitals/:id` | staff or admin; matching hospital/admin; refuses when doctors still reference it |
-| GET | `/departments?hospitalId=<id>` | Public; returns an array of embedded department strings |
-| POST | `/departments/add` | staff, doctor, admin; matching hospital or admin |
+| POST | `/hospitals/create` | hospital_admin (one facility) or admin; new self-service facilities are active |
+| PUT | `/hospitals/:id` | hospital_admin (own hospital) or admin; allowlisted fields and audit |
+| DELETE | `/hospitals/:id` | hospital_admin (own hospital) or admin; recoverable archive, historical references preserved |
+| GET | `/departments?hospitalId=<id>` | Public; returns canonical active department names (legacy projection fallback) |
+| POST | `/departments/add` | hospital_admin (own hospital) or admin |
 
 Hospital create/update fields: `name`, `address`, `location: {lat, lng}`, `departments: [string]`, `type: "Hospital" | "Clinic"`, and optional `contact`, `email`, `website`. Name, address, coordinates, and type are required by the schema. Valid latitude is -90 to 90; longitude -180 to 180. Creation associates the caller with the new hospital.
 
@@ -72,7 +72,7 @@ Department creation body:
 {"hospitalId":"<hospital-id>","name":"Cardiology"}
 ```
 
-Case-insensitive duplicate checking is application-level; `$addToSet` only guarantees exact-string uniqueness under concurrent writes.
+A normalized active department key has a unique hospital-scoped database index. Updates synchronize current doctor labels and the compatibility hospital-name projection.
 
 ## Doctors and schedules
 
@@ -81,14 +81,14 @@ Case-insensitive duplicate checking is application-level; `$addToSet` only guara
 | GET | `/doctors?hospitalId=<id>&department=<name>` | Public; both query parameters required |
 | GET | `/doctors/hospital/:hospitalId` | Public |
 | GET | `/doctors/:id` | Public |
-| POST | `/doctors/create` | staff, admin, doctor; hospital ownership |
-| PUT | `/doctors/:id/availability` | staff or doctor; owned hospital doctor or own linked profile |
-| PATCH | `/doctors/:id/account` | staff or admin; hospital ownership; profile must be unlinked |
+| POST | `/doctors/create` | hospital_admin or admin; scoped managed doctor provisioning |
+| PUT | `/doctors/:id/availability` | doctor (own availability) or hospital_admin/admin (operational override) |
+| PATCH | `/doctors/:id/account` | hospital_admin or admin; owned hospital; profile must be unlinked |
 | GET | `/schedule/:doctorId` | Public |
 | GET | `/schedule/doctor/:doctorId` | Public alias |
 | POST | `/schedule/set` | staff or doctor; owned hospital doctor or own linked profile |
 
-Doctor creation requires `name`, `hospitalId`, and `department` matching a hospital department. Optional `specialization`, `qualifications` (array or comma-separated string), and `accountEmail` are supported. Doctor callers link to themselves. Do not use the creation handler's unused `availability` field to set status; use the dedicated endpoint.
+Doctor provisioning uses the management account service: name, login email, hospital scope and canonical department ID are required. Temporary credentials are generated/chosen and a linked clinical profile is created. Doctor self-provisioning is disabled. `GET /doctors/me` returns the current doctor's linked profile.
 
 Availability body uses a string, not a boolean:
 
@@ -166,10 +166,15 @@ Patient QR resolution is purpose-signed and checks the linked doctor, exact acti
 
 ## Pharmacy and medication catalogue
 
-The `pharmacist` role is now supported for verified registration and hospital assignment by staff. Pharmacists maintain medication availability/prices and use hospital-scoped pharmacy orders; patients see only their own pharmacy tokens. Saving a doctor's record completes its appointment and returns `visitCompleted`; the subsequent pharmacy handoff is explicit and idempotent per appointment. See [Pharmacy API contract](PHARMACY.md#api-contract) and [Medication API](MEDICATIONS.md#api) for endpoints, order versions, integer-fils totals, counter payment, Stripe checkout, and signed webhooks. Pharmacists have no general medical-history or attachment access.
+The `pharmacist` role is provisioned and assigned by Hospital/Clinic Admins; queue staff cannot assign accounts. Pharmacists maintain medication availability/prices and use hospital-scoped pharmacy orders; patients see only their own pharmacy tokens. Saving a doctor's record completes its appointment and returns `visitCompleted`; the subsequent pharmacy handoff is explicit and idempotent per appointment. See [Pharmacy API contract](PHARMACY.md#api-contract) and [Medication API](MEDICATIONS.md#api) for endpoints, order versions, integer-fils totals, counter payment, Stripe checkout, and signed webhooks. Pharmacists have no general medical-history or attachment access.
 
 ## Error handling and limits
 
 Common statuses are 400 invalid request/transition, 401 missing/invalid session or credentials, 403 denied ownership/role, 404 missing resource, 409 duplicate/stale change, 413 oversized body/file, 429 auth limit, 503 email unavailable, and 500 unexpected failure. Some legacy controller catch blocks return 500 for malformed IDs or validation failures; clients should not assume every validation failure is 400. Error normalization is a remaining improvement.
 
-Auth requests share a process-local 20-request/IP/15-minute limit. A `Retry-After` header accompanies 429. JSON bodies are limited to 100 KB; normal API requests are not all covered by this auth limiter. No API version negotiation, pagination, or idempotency-key contract is currently implemented.
+Auth requests share a process-local 20-request/IP/15-minute limit. A `Retry-After` header accompanies 429. JSON bodies are limited to 100 KB; normal API requests are not all covered by this auth limiter. Management and medical-history lists now support bounded pagination; other legacy list endpoints retain their array format. Pharmacy handoff is idempotent per appointment and Stripe checkout attempts use provider idempotency keys.
+
+
+## Administration and credential lifecycle
+
+See [Administration API](ADMINISTRATION.md#management-api-contract) for paginated/scoped operational CRUD, archive/restore, employee credentials, private billing settings and audit history. Public signup supports only patients and unassigned hospital admins. `POST /auth/change-password` requires current/new passwords, revokes existing sessions and clears the first-login gate. Medical-record GET routes optionally accept page/limit/q/source and return `{items,total,page,limit}` for authorized history. Staff cannot create facilities/departments/employees or complete clinical visits; schedules are owned by staff/admins and doctors own their availability.

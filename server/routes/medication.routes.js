@@ -3,7 +3,7 @@ const Doctor = require("../models/Doctor");
 const Medication = require("../models/Medication");
 const { fail } = require("../services/record-access");
 const role = require("../middlewares/roles");
-router.use(require("../middlewares/auth"), role(["doctor", "staff", "pharmacist"]));
+router.use(require("../middlewares/auth"), role(["doctor", "pharmacist", "hospital_admin", "admin"]));
 router.use(async (req, res, next) => {
   const doctor = req.user.role === "doctor" ? await Doctor.findOne({ userId: req.user.id }) : null;
   req.medicationHospital = req.user.role === "doctor" ? doctor?.hospitalId : req.user.hospitalId;
@@ -27,7 +27,7 @@ function pricing(body) {
 router.post("/", role(["pharmacist"]), async (req, res) => {
   const name = req.body.name;
   if (typeof name !== "string" || !name.trim() || name.trim().length > 200) throw fail(400, "Enter a medication name and strength (up to 200 characters)");
-  const item = await Medication.findOneAndUpdate({ hospitalId: req.medicationHospital, name: name.trim() }, { $set: { active: true, ...pricing(req.body) } }, { upsert: true, new: true, runValidators: true });
+  const item = await Medication.findOneAndUpdate({ hospitalId: req.medicationHospital, name: name.trim() }, { $set: { active: true, deletedAt: null, ...pricing(req.body) } }, { upsert: true, new: true, runValidators: true });
   res.status(201).json(item);
 });
 router.patch("/:id", role(["pharmacist"]), async (req, res) => {

@@ -15,6 +15,8 @@ const tokenSchema = new mongoose.Schema(
       },
     },
     patientName: { type: String },
+    departmentRef: { type: mongoose.Schema.Types.ObjectId, ref: "Department" },
+    deletedAt: { type: Date, default: null },
     departmentId: {
       type: String,
       ref: "Department",
@@ -42,5 +44,6 @@ const tokenSchema = new mongoose.Schema(
 tokenSchema.index({ doctorId: 1, date: 1, tokenNumber: 1 }, { unique: true });
 tokenSchema.index({ doctorId: 1, patientId: 1, date: 1 }, { unique: true, partialFilterExpression: { isOffline: false, status: { $in: ["pending", "called", "skipped"] } } });
 tokenSchema.index({ patientId: 1, date: -1 });
+tokenSchema.index({ date: 1, deletedAt: 1, status: 1 });
 
 module.exports = mongoose.model("Token", tokenSchema);

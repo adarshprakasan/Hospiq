@@ -1,9 +1,11 @@
 import React, { useEffect, useState } from "react";
 import Navbar from "./Navbar";
 import axios from "../api/axios";
+import { useNavigate } from "react-router-dom";
 
 const Layout = ({ children }) => {
   const [user, setUser] = useState(null);
+  const navigate = useNavigate();
 
   useEffect(() => {
     const fetch = async () => {
@@ -11,6 +13,7 @@ const Layout = ({ children }) => {
         const res = await axios.get("/auth/me");
         setUser(res.data);
         localStorage.setItem("user", JSON.stringify(res.data));
+        if (res.data.mustChangePassword) navigate("/change-password", { replace: true });
       } catch (err) {
         console.error(err);
       }

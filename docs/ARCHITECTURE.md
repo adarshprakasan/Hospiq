@@ -24,12 +24,12 @@ The frontend and API run as separate processes. The API does not serve `client/d
 
 The pharmacy extension adds `PharmacyOrder` snapshots linked to a medical record, patient, doctor, hospital and appointment. A unique appointment index prevents duplicate bills; a hospital/date/token index distinguishes pharmacy tokens. Orders carry prescription lines, preparation checklist, explicit dispensing quantities and integer-fils prices, version, ready state, frozen total, independent payment state, and payment audit details. `Medication` stores hospital-scoped catalogue entries with strength/form in the name, optional AED unit price, selling unit and availability.
 
-Only hospital-assigned pharmacists can write medication catalogues or prepare/settle pharmacy orders. Patients read/pay their own orders, doctors explicitly hand off their own doctor-authored prescriptions, and staff link pharmacist accounts. Clinical access remains under its separate patient/doctor consent policy. The Stripe webhook route uses raw-body parsing before JSON middleware; checkout creation/reuse, signed events and server-side reconciliation live in `server/services/pharmacy-payments.js`. See [Pharmacy contract](PHARMACY.md).
+Only hospital-assigned pharmacists can write medication catalogues or prepare/settle pharmacy orders. Patients read/pay their own orders, doctors explicitly hand off their own doctor-authored prescriptions, and hospital administrators create/link employee accounts. Clinical access remains under its separate patient/doctor consent policy. The Stripe webhook route uses raw-body parsing before JSON middleware; checkout creation/reuse, signed events and server-side reconciliation live in `server/services/pharmacy-payments.js`. See [Pharmacy contract](PHARMACY.md).
 
 | Entity | Important fields | Relationships / notes |
 |---|---|---|
 | User | name, email, password hash, role, hospitalId, virtual publicId | Login identity; HQ-prefixed publicId uses the full account ObjectId and needs no migration; public signup excludes admin |
-| Hospital | name, address, coordinates, type, departments | Departments are embedded strings; type Hospital or Clinic |
+| Hospital | name, address, coordinates, type, departments | Department strings are a compatibility projection of canonical Department documents; type Hospital or Clinic |
 | Doctor | name, hospitalId, department, userId, qualifications, availabilityStatus | Clinical profile; optional unique userId links to a doctor login |
 | DoctorSchedule | doctorId, weeklySchedule | One schedule per clinical doctor; weekday/time/availability entries |
 | Token | doctorId, patientId, patientName, departmentId, date, tokenNumber, status, isOffline | `departmentId` currently stores a department name, not a Department ObjectId; offline token may have no patient account |
@@ -38,9 +38,9 @@ Only hospital-assigned pharmacists can write medication catalogues or prepare/se
 | RecordAccessRequest | patientId, doctorId, tokenId, requestKey, otpHash, attempts, sentAt, expiresAt, consumedAt | Pair-unique, five-minute OTP with TTL and atomic consumption |
 | RecordAccessGrant | patientId, doctorId, tokenId, verifiedAt, expiresAt, revokedAt, version | Pair-unique read-only 30-minute access; revocation fences older proofs |
 | OtpRequest | email, hashed otp, expiresAt, attempts | Expiration index plus explicit application expiry checks |
-| Department | name, hospitalId, description | Legacy standalone model; current UI/seed use embedded Hospital strings |
+| Department | name, hospitalId, description | Canonical hospital-scoped department identity with a unique normalized active key |
 
-`User.departmentId` still references the standalone Department model. Do not infer that it is the same type as `Token.departmentId`. Consolidating this dual representation is a roadmap item.
+`Doctor.departmentId` references canonical departments. `User.departmentId` is a compatibility mirror for linked doctor accounts. Historical `Token.departmentId` remains a department-name snapshot; `Token.departmentRef` stores the canonical relationship when available. An additive migration backfills matching references without changing snapshot names or token numbers.
 
 ## Authentication and access
 
@@ -48,7 +48,7 @@ Login returns a seven-day JWT. The browser stores it in localStorage and sends i
 
 Staff scope derives from `User.hospitalId`. Doctor scope derives from `Doctor.userId`, not equality between a User ID and a Doctor ID. Patients read/cancel their own tokens and records. Doctor record reads include their own associated visits; reading other records additionally requires an unexpired, unrevoked patient-approved grant. Creating a doctor record requires a called/completed token relationship; identity fields derive from the linked clinical profile. Patients may upload external records or explicitly associate an upload with a local treating doctor.
 
-The schema includes admin, but there is no complete admin UI and route role lists vary. Do not treat the schema role as granting every endpoint automatically; see [API](API.md).
+The Hospiq Admin and Hospital/Clinic Admin consoles enforce current database roles and tenant scope. Managed employees require a first-login password change; session versions invalidate old credentials. Suspended/archived users lose access. Admins retain operational access while clinical records remain patient/doctor controlled. See [Administration](ADMINISTRATION.md) for the full policy and migration.
 
 ## Booking and queue consistency
 

@@ -25,6 +25,9 @@ const hospitalSchema = new mongoose.Schema({
   contact: { type: String },
   email: { type: String },
   website: { type: String },
+  status: { type: String, enum: ["active", "suspended"], default: "active" },
+  approvalStatus: { type: String, enum: ["pending", "approved"], default: "approved" },
+  deletedAt: { type: Date, default: null },
 
   createdAt: {
     type: Date,
@@ -32,4 +35,5 @@ const hospitalSchema = new mongoose.Schema({
   },
 });
 
+hospitalSchema.index({ deletedAt: 1, status: 1, type: 1, name: 1 });
 module.exports = mongoose.model("Hospital", hospitalSchema);

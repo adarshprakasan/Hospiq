@@ -171,4 +171,4 @@ npm --prefix server run test:records
 npm --prefix client run build
 ```
 
-The current baseline has 27 regression tests and 106 isolated integration checks, including hospital medication isolation and structured prescription schedules. Hardware camera capture and real email delivery need manual verification. See [Patient QR](PATIENT_QR.md), [Medical records](MEDICAL_RECORDS.md), and [Configuration](CONFIGURATION.md).
+The current baseline has 32 regression tests, 106 medical-record/QR checks, 136 pharmacy/payment checks and 113 management checks. See [Administration](ADMINISTRATION.md) for the latest role changes, which keep staff queue-only and move employee/department management to hospital admins. Hardware camera capture and real email delivery need manual verification. See [Patient QR](PATIENT_QR.md), [Medical records](MEDICAL_RECORDS.md), and [Configuration](CONFIGURATION.md).

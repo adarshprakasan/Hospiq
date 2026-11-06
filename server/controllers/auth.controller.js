@@ -39,7 +39,7 @@ exports.registerUser = async (req, res) => {
   try {
     const { name, password, role = "patient", verificationToken } = req.body;
     const email = normalizeEmail(req.body.email);
-    if (typeof name !== "string" || !name.trim() || !validEmail(email) || typeof password !== "string" || password.length < 8 || Buffer.byteLength(password, "utf8") > 72 || !["patient", "doctor", "staff", "pharmacist"].includes(role)) return res.status(400).json({ message: "Provide a name, email, password of at least 8 characters (maximum 72 UTF-8 bytes) and valid role" });
+    if (typeof name !== "string" || !name.trim() || !validEmail(email) || typeof password !== "string" || password.length < 8 || Buffer.byteLength(password, "utf8") > 72 || !["patient", "hospital_admin"].includes(role)) return res.status(400).json({ message: "Public signup supports patient and Hospital/Clinic Admin accounts. Employees are created by their hospital administrator" });
     let verified;
     try { verified = jwt.verify(verificationToken, process.env.JWT_SECRET); } catch { return res.status(400).json({ message: "Verify your email before registering" }); }
     if (verified.purpose !== "registration" || verified.email !== email) return res.status(400).json({ message: "Email verification does not match" });
@@ -69,13 +69,14 @@ exports.loginUser = async (req, res) => {
 
     const user = await User.findOne({ email });
     if (!user) return res.status(401).json({ message: "Invalid credentials" });
+    if (user.deletedAt || user.status === "suspended") return res.status(401).json({ message: "Account is inactive" });
 
     const isMatch = await bcrypt.compare(password, user.password);
     if (!isMatch)
       return res.status(401).json({ message: "Invalid credentials" });
 
     const token = jwt.sign(
-      { id: user._id, role: user.role },
+      { id: user._id, role: user.role, sessionVersion: user.sessionVersion || 0 },
       process.env.JWT_SECRET,
       { expiresIn: "7d" }
     );
@@ -88,6 +89,7 @@ exports.loginUser = async (req, res) => {
         name: user.name,
         email: user.email,
         role: user.role,
+        mustChangePassword: user.mustChangePassword,
         hospitalId: user.hospitalId,
         departmentId: user.departmentId,
       },
@@ -105,4 +107,14 @@ exports.getCurrentUser = async (req, res) => {
   } catch (err) {
     res.status(500).json({ message: "Server error" });
   }
+};
+
+exports.changePassword = async (req, res) => {
+  const { currentPassword, password } = req.body;
+  if (typeof currentPassword !== "string" || typeof password !== "string" || password.length < 8 || Buffer.byteLength(password) > 72 || password === currentPassword) return res.status(400).json({ message: "Choose a different password of at least 8 characters (maximum 72 UTF-8 bytes)" });
+  const user = await User.findById(req.user.id);
+  if (!await bcrypt.compare(currentPassword, user.password)) return res.status(400).json({ message: "Current password is incorrect" });
+  const updated = await User.findOneAndUpdate({ _id: user._id, sessionVersion: user.sessionVersion || { $in: [0, null] } }, { $set: { password: await bcrypt.hash(password, 10), mustChangePassword: false }, $inc: { sessionVersion: 1 } }, { new: true });
+  if (!updated) return res.status(409).json({ message: "Account changed. Sign in again" });
+  res.json({ message: "Password changed. Sign in with your new password" });
 };

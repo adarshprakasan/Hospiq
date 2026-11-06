@@ -17,13 +17,13 @@ const {
 router.post("/book", auth, checkRole(["patient"]), bookToken);
 
 // Staff can book offline token
-router.post("/offline", auth, checkRole(["staff"]), bookOfflineToken);
+router.post("/offline", auth, checkRole(["staff", "hospital_admin", "admin"]), bookOfflineToken);
 
 // Get all tokens for a doctor
 router.get(
   "/doctor/:doctorId",
   auth,
-  checkRole(["staff", "doctor"]),
+  checkRole(["staff", "doctor", "hospital_admin", "admin"]),
   getDoctorTokens
 );
 
@@ -31,19 +31,19 @@ router.get(
 router.put(
   "/:tokenId/status",
   auth,
-  checkRole(["staff", "doctor"]),
+  checkRole(["staff", "doctor", "hospital_admin", "admin"]),
   updateTokenStatus
 );
 
 // Get tokens for logged-in doctor or staff
-router.get("/my", auth, checkRole(["doctor", "staff"]), getMyTokens);
+router.get("/my", auth, checkRole(["doctor", "staff", "hospital_admin", "admin"]), getMyTokens);
 router.get("/mine", auth, checkRole(["patient"]), getMyPatientTokens);
 
 // Mark token as completed
 router.patch(
   "/:id/complete",
   auth,
-  checkRole(["doctor", "staff"]),
+  checkRole(["doctor", "staff", "hospital_admin", "admin"]),
   tokenComplete
 );
 

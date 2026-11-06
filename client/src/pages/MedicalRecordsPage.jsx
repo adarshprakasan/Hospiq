@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useLocation, useParams } from "react-router-dom";
-import { Alert, Box, Button, Chip, CircularProgress, Container, Dialog, DialogActions, DialogContent, DialogTitle, MenuItem, Paper, Stack, TextField, Typography } from "@mui/material";
+import { Alert, Box, Button, Chip, CircularProgress, Container, Dialog, DialogActions, DialogContent, DialogTitle, MenuItem, Paper, Stack, TextField, Typography, TablePagination } from "@mui/material";
 import axios from "../api/axios";
 import MedicalRecordForm from "../components/MedicalRecordForm";
 export default function MedicalRecordsPage() {
@@ -10,6 +10,9 @@ export default function MedicalRecordsPage() {
   const scannedVisit = patientId && candidateVisit?.patient?.patientId === patientId ? candidateVisit : null;
   const isDoctor = Boolean(patientId);
   const [records, setRecords] = useState([]);
+  const [page, setPage] = useState(0);
+  const [total, setTotal] = useState(0);
+  const [query, setQuery] = useState("");
   const [grants, setGrants] = useState([]);
   const [access, setAccess] = useState(null);
   const [error, setError] = useState("");
@@ -29,19 +32,21 @@ export default function MedicalRecordsPage() {
     finally { setBusy(""); }
   }
   const [source, setSource] = useState("");
+  useEffect(() => { const timer = setTimeout(() => { setQuery(search); setPage(0); }, 300); return () => clearTimeout(timer); }, [search]);
+  useEffect(() => { setPage(0); }, [source]);
   const generation = useRef(0);
   const base = `/records/patient/${patientId}`;
   const refresh = useCallback(async () => {
     const current = ++generation.current;
     try {
-      const [history, status] = await Promise.all([axios.get(isDoctor ? `/records/patient/${patientId}` : "/records/mine"), axios.get(isDoctor ? `/records/patient/${patientId}/access` : "/records/access/grants")]);
+      const [history, status] = await Promise.all([axios.get(isDoctor ? `/records/patient/${patientId}` : "/records/mine", { params: { page: page + 1, limit: 20, q: query || undefined, source: source || undefined } }), axios.get(isDoctor ? `/records/patient/${patientId}/access` : "/records/access/grants")]);
       if (current !== generation.current) return;
-      setRecords(history.data);
+      setRecords(history.data.items || history.data); setTotal(history.data.total ?? history.data.length);
       if (isDoctor) setAccess(status.data); else setGrants(status.data);
       setError("");
     } catch (err) { if (current !== generation.current) return; setRecords([]); setAccess(null); setError(err.response?.data?.message || "Unable to load medical records"); }
     finally { if (current === generation.current) setLoading(false); }
-  }, [isDoctor, patientId]);
+  }, [isDoctor, patientId, page, query, source]);
   useEffect(() => { setRecords([]); setLoading(true); setRequest(null); setOtp(""); refresh(); const interval = setInterval(refresh, 30000); return () => { clearInterval(interval); generation.current++; }; }, [refresh]);
   useEffect(() => {
     if (!isDoctor || !access?.expiresAt) return;
@@ -84,6 +89,7 @@ export default function MedicalRecordsPage() {
     <Stack direction={{ xs: "column", sm: "row" }} gap={2} mb={3}><TextField fullWidth label="Search doctor, hospital, medication, or diagnosis" value={search} onChange={e => setSearch(e.target.value)} /><TextField select label="Added by" value={source} onChange={e => setSource(e.target.value)} sx={{ minWidth: 180 }}><MenuItem value="">Everyone</MenuItem><MenuItem value="doctor">Doctor</MenuItem><MenuItem value="patient">Patient upload</MenuItem></TextField></Stack>
     {loading ? <CircularProgress aria-label="Loading medical history" /> : <Stack gap={3}>{visible.map(record => <Paper key={record._id} sx={{ p: 3 }}><Stack direction="row" gap={1} justifyContent="space-between" flexWrap="wrap"><Typography variant="h6">{new Date(record.visitDate).toLocaleString()}</Typography><Chip size="small" label={record.source === "patient" ? "Patient-entered" : "Doctor-entered"} color={record.source === "patient" ? "default" : "primary"} variant="outlined" /></Stack><Typography sx={{ mt: 1 }}>{record.doctorName} · {record.department}</Typography><Typography color="text.secondary" gutterBottom>{record.hospitalName}</Typography>{record.diagnosis && <Typography sx={{ mt: 2, whiteSpace: "pre-wrap" }}><strong>Diagnosis / reason:</strong> {record.diagnosis}</Typography>}{record.medications.length > 0 && <Box mt={2}><Typography fontWeight={700}>Medications</Typography>{record.medications.map((m, i) => <Typography key={i} sx={{ mt: .5 }}>{[m.name, m.dose, m.times?.length ? m.times.map(t => t[0].toUpperCase() + t.slice(1)).join(" / ") : m.frequency, m.startDate && m.endDate ? `${m.startDate} to ${m.endDate}` : m.duration, m.foodTiming === "before" ? "Before food" : m.foodTiming === "after" ? "After food" : "", m.instructions].filter(Boolean).join(" · ")}</Typography>)}</Box>}{record.canSendToPharmacy && <Button variant="outlined" sx={{ mt: 2 }} onClick={() => { setPharmacyError(""); setPharmacyRecord(record); }}>Send medication to pharmacy</Button>}{record.prescription && <Typography sx={{ mt: 2, whiteSpace: "pre-wrap" }}><strong>Prescription:</strong> {record.prescription}</Typography>}{record.notes && <Typography sx={{ mt: 2, whiteSpace: "pre-wrap" }}><strong>Visit notes:</strong> {record.notes}</Typography>}<Stack direction="row" gap={1} flexWrap="wrap" mt={2}>{record.attachments.map(file => <Button key={file._id} variant="outlined" disabled={busy === file._id} onClick={() => download(record, file)} sx={{ overflowWrap: "anywhere" }}>{file.kind === "prescription" ? "Prescription" : "Lab report"}: {file.originalName}</Button>)}</Stack>{record.legacyAttachmentCount > 0 && <Alert severity="warning" sx={{ mt: 2 }}>This record has older public-link attachments. Re-upload them using protected storage; old URLs are hidden here.</Alert>}</Paper>)}</Stack>}
     {!loading && !visible.length && <Alert severity="info">{isDoctor && !access?.fullAccess ? "No matching records from your own visits. Other records remain private until the patient approves." : "No medical records match this view. Add a visit or upload a prescription/lab report to get started."}</Alert>}
+    {!loading && <TablePagination component="div" count={total} page={page} rowsPerPage={20} rowsPerPageOptions={[20]} onPageChange={(_event, value) => setPage(value)} />}
     <Dialog open={open} onClose={() => setOpen(false)} fullWidth maxWidth="md"><DialogTitle>{isDoctor ? "Record patient visit" : "Add visit or scanned document"}</DialogTitle>{open && <MedicalRecordForm visitTokenId={scannedVisit?.appointment.tokenId} patientId={patientId} isDoctor={isDoctor} onCancel={() => setOpen(false)} onSaved={data => { setOpen(false); setNotice(isDoctor ? data.visitCompleted ? "Medical record saved. Visit completed." : "Medical record saved. Visit completion needs retry; sending to pharmacy will retry it." : "Medical record saved"); if (isDoctor && data.record.medications.length) { setPharmacyError(""); setPharmacyRecord(data.record); } refresh(); }} />}</Dialog>
     <Dialog open={Boolean(pharmacyRecord)} onClose={busy === "pharmacy" ? undefined : () => setPharmacyRecord(null)} fullWidth maxWidth="sm"><DialogTitle>Send medication to pharmacy?</DialogTitle><DialogContent><Typography>The medical record is saved. Send the prescribed medications to your hospital pharmacy and generate the patient's pharmacy token.</Typography>{pharmacyError && <Alert severity="error" sx={{ mt: 2 }}>{pharmacyError}</Alert>}</DialogContent><DialogActions><Button disabled={busy === "pharmacy"} onClick={() => setPharmacyRecord(null)}>Later</Button><Button variant="contained" disabled={busy === "pharmacy"} onClick={sendPharmacy}>{busy === "pharmacy" ? "Sending…" : "Send medication to pharmacy"}</Button></DialogActions></Dialog>
   </Container>;

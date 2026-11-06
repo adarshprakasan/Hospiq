@@ -2,7 +2,7 @@ import { useState } from "react";
 import { Link, Navigate, useNavigate } from "react-router-dom";
 import { Container, Typography, TextField, Button, Alert } from "@mui/material";
 import axios from "../api/axios";
-import { storedUser } from "../utils";
+import { storedUser, roleHome } from "../utils";
 export default function LoginPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -10,13 +10,13 @@ export default function LoginPage() {
   const [error, setError] = useState("");
   const navigate = useNavigate();
   const user = storedUser();
-  if (user && localStorage.getItem("token")) return <Navigate to={user.role === "patient" ? "/" : user.role === "pharmacist" ? "/pharmacy" : "/dashboard"} replace />;
+  if (user && localStorage.getItem("token")) return <Navigate to={roleHome(user)} replace />;
   async function submit(e) {
     e.preventDefault(); setBusy(true); setError("");
     try {
       const { data } = await axios.post("/auth/login", { email, password });
       localStorage.setItem("token", data.token); localStorage.setItem("user", JSON.stringify(data.user));
-      navigate(data.user.role === "patient" ? "/" : data.user.role === "pharmacist" ? "/pharmacy" : "/dashboard", { replace: true });
+      navigate(roleHome(data.user), { replace: true });
     } catch (err) { setError(err.response?.data?.message || "Unable to sign in. Please try again."); }
     finally { setBusy(false); }
   }

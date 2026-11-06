@@ -24,16 +24,16 @@ Built and maintained by [Adarsh](https://github.com/adarshprakasan).
 
 ## Features
 
-| Patients | Hospital staff | Doctors |
-|---|---|---|
-| Email-verified registration | Hospital/clinic setup | Registered account linked to a clinical profile |
-| Search facilities by name, address, or department | Departments, doctor profiles, and account linking | Queue scoped to the linked doctor |
-| Filter hospitals and clinics | Weekly consultation schedules | Call, skip, and complete visits |
-| Book same-day tokens during consultation hours | Walk-in bookings and hospital queue search | Manage own availability and schedule |
-| Appointment history, cancellation, printable tickets | Queue counts and status filters | Dated visit records and prescriptions |
-| Visit-specific QR selector and stable user ID | User ID on Profile | Scan patient QR, confirm matched appointment, and start record entry |
-| Medical history, scanned documents, lab uploads, consent revocation | No access to clinical records | Own earlier visit records; other records with patient-approved email OTP |
-| Medication schedules, course dates, food timing and instructions in visit history | Assign registered pharmacists to the hospital | Search medicines by name/strength; prescribe with time-of-day checkboxes and calendar dates |
+| Role | Scope and primary duties |
+|---|---|
+| Hospiq Admin | Platform console: facilities, patient identity/contact data, team accounts, departments, operations, billing and audit history |
+| Patient | Own discovery/bookings, visit QR, private medical records, consent and pharmacy payments |
+| Hospital / Clinic Admin | Own facility, departments, staff/doctor/pharmacist accounts and credentials, operational data and banking/payment settings |
+| Hospital staff | Own hospital queue, walk-ins and doctor schedules only |
+| Pharmacist | Own hospital medication catalogue, prices, preparation checklist and counter payments |
+| Doctor | Own clinical queue/profile/availability, patient QR, records, consent requests and pharmacy handoff |
+
+Clinical records and lab files remain patient-controlled. Administrators receive operational access rather than a bypass to medical history. Existing staff remain queue-only; separate facility admins manage employees and departments. See [Administration and database upgrade](docs/ADMINISTRATION.md).
 
 The interface includes responsive navigation, a shared teal/neutral theme, loading and empty states, guarded routes, and lazy-loaded pages. The medical-record page includes dated visits, structured medications, protected prescription/lab files, camera capture, and patient-controlled temporary doctor access. Automatic OCR, SMS OTP, future-date slots, live queue notifications, and patient queue-position estimates are not implemented.
 
@@ -58,7 +58,7 @@ See [Patient QR](docs/PATIENT_QR.md), [Medical records](docs/MEDICAL_RECORDS.md)
 
 ### Pharmacy collection and payments
 
-- **Pharmacist** accounts have a hospital-scoped dashboard and maintain medication availability, selling units, and AED prices. Staff assign verified pharmacists through **Pharmacy team**.
+- **Pharmacist** accounts have a hospital-scoped dashboard and maintain medication availability, selling units, and AED prices. Hospital/Clinic Admins create and assign pharmacist accounts through their console.
 - Saving a doctor's record completes the appointment and prompts **Send medication to pharmacy**. Sending generates a separate pharmacy token, visible to the patient and pharmacist; retrying the same handoff preserves the token.
 - Pharmacists check medicines as gathered, confirm dispensing quantities/prices, and select **Done — mark ready** only after every item is ready. The server freezes the bill and the patient sees **Collect your medicine at pharmacy**, pending/ready status, and the same total.
 - Patients choose **Proceed to payment → Pay at counter** or **Pay Online**. Counter payments are confirmed by the pharmacist's **Paid at counter** action. The patient payment dialog shows confirmation and closes automatically, while a receipt remains in paid history.
@@ -66,6 +66,14 @@ See [Patient QR](docs/PATIENT_QR.md), [Medical records](docs/MEDICAL_RECORDS.md)
 - Pharmacists receive only the sent prescription/dispensing snapshot, without access to general clinical history or lab files. Status views refresh every five seconds. Online checkout remains unavailable until Stripe keys and its webhook are configured; counter payments work independently.
 
 See [Pharmacy testing and Stripe setup](docs/PHARMACY.md) for accounts, preparation, pricing, payment flow, and provider setup.
+
+### Administration and data organization
+
+- Dedicated platform and hospital/clinic dashboards with scoped search, bounded pagination, details, team provisioning, temporary credentials, archive/restore and redacted audits.
+- First-login password changes and session revocation for console-created/reset employee accounts. Public signup is limited to patients and unassigned hospital admins.
+- Canonical department IDs, linked clinical profiles, indexed hospital/role/status/date queries and additive migration that preserves historical records and existing staff roles.
+- Encrypted hospital bank identifiers and administrator-only billing settings; online checkout can be disabled per facility. Bank records do not change the existing platform Stripe settlement routing.
+- Server-side medical-history search/filtering and 20-record pages for patient/doctor views. Doctors own clinical availability; staff/admins own weekly schedules.
 
 ## Technology
 
@@ -114,6 +122,15 @@ Open [the app](http://localhost:5173) and check [API health](http://localhost:50
 
 ## Demo data and accounts
 
+For an existing installation, run the read-only role/database preflight before applying the additive upgrade, then restart both services:
+
+```powershell
+npm --prefix server run upgrade:roles
+npm --prefix server run upgrade:roles -- --apply
+```
+
+The upgrade preserves existing accounts, passwords, clinical records, payments and token numbers; existing staff remain queue-only. It backfills canonical department relationships and creates indexes without dropping collections or existing indexes. New demo administrators are added separately by `seed:admins`. For a fresh deployment without demo data, follow the [first administrator bootstrap instructions](docs/ADMINISTRATION.md#fresh-deployment-without-demo-data).
+
 These commands write to the MongoDB database selected by `server/.env`. Use a dedicated demo database:
 
 ### Large feature-testing dataset
@@ -122,6 +139,8 @@ These commands write to the MongoDB database selected by `server/.env`. Use a de
 npm --prefix server run seed:large
 npm --prefix server run seed:medications
 npm --prefix server run seed:pharmacy
+npm --prefix server run upgrade:roles -- --apply
+npm --prefix server run seed:admins
 ```
 
 This adds **6 facilities, 30 doctors with linked accounts, 12 staff, 120 patients, 30 schedules, 1,440 historical visits and medical records, 480 encrypted sample lab reports, and 240 appointments for the seed date**. The five departments are General Medicine, Cardiology, Paediatrics, Dermatology, and Orthopaedics.
@@ -137,6 +156,8 @@ The pharmacy seed adds **12 pharmacists**, fills missing demo prices, and create
 | Patient | `patient001@demo.hospiq.invalid` | Two initial active visits and 12 historical records |
 | Harbour doctor | `doctor01@demo.hospiq.invalid` | Patient001's Harbour visit and associated history |
 | Oasis doctor | `doctor06@demo.hospiq.invalid` | Separate visit QR and cross-doctor permission checks |
+| Hospiq Admin | `admin@demo.hospiq.invalid` | Platform administration |
+| Harbour Hospital Admin | `hospitaladmin01@demo.hospiq.invalid` | Personnel, departments, operations and banking |
 | Harbour staff | `staff01@demo.hospiq.invalid` | Hospital queue and doctor management |
 | Harbour pharmacist | `pharmacist01@demo.hospiq.invalid` | Medication prices, preparation checklist and counter payments |
 | Oasis pharmacist | `pharmacist03@demo.hospiq.invalid` | Separate hospital pharmacy queue |
@@ -174,6 +195,9 @@ For Creekside testing, use `patient.creekside@example.invalid`, `staff.creekside
 | `npm --prefix server run check:upgrade` | Read-only database upgrade preflight |
 | `npm --prefix server run seed:large` | 6 facilities, 162 users, 1,680 visits, 1,440 records and 480 encrypted demo files |
 | `npm --prefix server run seed:medications` | Add 48 fictional catalogue choices across the six large-demo facilities |
+| `npm --prefix server run upgrade:roles` / `npm --prefix server run upgrade:roles -- --apply` | Read-only preflight / additive department-reference and index migration |
+| `npm --prefix server run seed:admins` | Add one demo Hospiq Admin and six facility admins; preserve staff roles |
+| `npm --prefix server run test:management` | Disposable role/scope, credentials, archive, bank and indexed-query tests |
 | `npm --prefix server run seed:pharmacy` | Add 12 pharmacist accounts, prices and 24 fictional pharmacy orders |
 | `npm --prefix server run test:pharmacy` | Disposable pharmacy + local Stripe HTTP/webhook fixture; no real charges |
 | `npm --prefix server run seed:demo` | Insert demo facilities/doctors/schedules |
@@ -189,6 +213,7 @@ For Creekside testing, use `patient.creekside@example.invalid`, `staff.creekside
 | [Configuration](docs/CONFIGURATION.md) | Environment variables and provider settings |
 | [User guide](docs/USER_GUIDE.md) | Patient, staff, doctor and pharmacist workflows |
 | [Demo data](docs/DEMO_DATA.md) | Fictional facilities, accounts, and smoke test |
+| [Administration](docs/ADMINISTRATION.md) | Role hierarchy, scoped consoles, credentials, banking, migration and improvement recommendations |
 | [Architecture](docs/ARCHITECTURE.md) | Components, data model, and access boundaries |
 | [API reference](docs/API.md) | Routes, authorization, requests, and responses |
 | [Medical records](docs/MEDICAL_RECORDS.md) | Visit records, private attachments, and patient consent |
@@ -204,6 +229,23 @@ For Creekside testing, use `patient.creekside@example.invalid`, `staff.creekside
 
 ## Verification
 
+For administrator testing, sign in as `admin@demo.hospiq.invalid` or `hospitaladmin01@demo.hospiq.invalid` using your existing private large-demo password. Verify facility scope, create a team member, save the one-time temporary credentials, and confirm the first-login password change. Existing `staff01` accounts now show only queues and schedules. Follow [Administration](docs/ADMINISTRATION.md) for bank settings, archive/restore, privacy checks and prioritized improvement suggestions.
+
+| Role test | Expected result |
+|---|---|
+| Hospiq Admin opens the platform console | Facility/account/operational lists support search, details and pagination |
+| Hospital Admin opens accounts or changes a resource | Only their facility's employees/resources are accessible; cross-hospital requests are rejected |
+| Newly provisioned employee signs in | Must change temporary password before accessing the workspace; resets revoke older sessions |
+| Staff opens their workspace | Queue, walk-ins and schedules; no department/account/catalogue/banking management |
+| Doctor opens clinical workspace | Own queue/profile/availability and records; staff/admins own weekly schedule edits |
+| Pharmacist opens their workspace | Own hospital's medicine catalogue, dispensing checklist and counter payments |
+| Patient opens medical history | Own records, server-side search/filtering and 20-record pages; consent remains patient-controlled |
+| Admin archives/restores an operational record | Related medical/payment history remains; active-visit and account-lockout guards apply |
+| Admin saves bank settings | IBAN is validated/encrypted and masked by default; bank records do not reroute Stripe settlement |
+
+Use independent browser sessions when switching roles. Administrative control does not bypass private clinical-history rules or allow arbitrary rewriting of paid bills/audit trails.
+
+
 For a quick pharmacy test, start the API/frontend and use separate browser sessions for the patient, doctor and pharmacist:
 
 1. As `doctor01@demo.hospiq.invalid`, save a called patient's medical record with medications, then select **Send medication to pharmacy**. Saving completes the visit; sending shows the new pharmacy token.
@@ -218,10 +260,11 @@ The pharmacy seed also provides ready-made pending/ready/paid cases for `patient
 npm --prefix server test
 npm --prefix server run test:records
 npm --prefix server run test:pharmacy
+npm --prefix server run test:management
 npm --prefix client run build
 ```
 
-The latest feature baseline passed **30 backend regression tests, 106 isolated medical-record/QR/medication checks, 130 isolated pharmacy/payment checks, and the frontend production build**. Integration suites use disposable databases and local SMTP/Stripe HTTP fixtures, send no real email or charges, and clean up their temporary data. Browser checks cover medication controls, pharmacist checklists/readiness, shared patient tokens/totals, counter instructions, automatic payment-dialog closure, and paid history. Hardware camera capture, real-provider email delivery, and live merchant/wallet checkout still need manual verification.
+The latest feature baseline passed **32 regression tests, 106 medical-record checks, 136 pharmacy/payment checks, 113 management checks, and the frontend production build**. Integration suites use disposable databases and local SMTP/Stripe HTTP fixtures, send no real email or charges, and clean up their temporary data. Browser checks cover medication controls, pharmacist checklists/readiness, shared patient tokens/totals, counter instructions, automatic payment-dialog closure, and paid history. Hardware camera capture, real-provider email delivery, and live merchant/wallet checkout still need manual verification.
 
 ## Contributing and support
 

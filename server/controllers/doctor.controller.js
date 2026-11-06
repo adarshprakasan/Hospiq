@@ -2,81 +2,11 @@ const { ownsHospital, ownsDoctor } = require("../middlewares/ownership");
 const Doctor = require("../models/Doctor");
 const Hospital = require("../models/Hospital");
 
-exports.createDoctor = async (req, res) => {
-  try {
-    const {
-      name,
-      department,
-      hospitalId,
-      specialization,
-      qualifications,
-      availability,
-    } = req.body;
-
-    if (!name || !department || !hospitalId) {
-      return res
-        .status(400)
-        .json({ message: "Name, Department, and Hospital ID are required" });
-    }
-
-    if (!ownsHospital(req.user, hospitalId)) return res.status(403).json({ message: "Access denied" });
-    const hospital = await Hospital.findById(hospitalId);
-    if (!hospital) {
-      return res.status(404).json({ message: "Hospital not found" });
-    }
-
-    const deptExists = hospital.departments.some((dept) => {
-      if (typeof dept === "string") return dept === department;
-      return dept.name === department; // in case stored as objects
-    });
-
-    if (!deptExists) {
-      return res
-        .status(400)
-        .json({ message: "Selected department not found in hospital" });
-    }
-    const qualificationArray = Array.isArray(qualifications)
-      ? qualifications
-      : typeof qualifications === "string"
-      ? qualifications
-          .split(",")
-          .map((q) => q.trim())
-          .filter(Boolean)
-      : [];
-
-    let account;
-    if (req.body.accountEmail || req.user.role === "doctor") {
-      account = req.user.role === "doctor" ? req.user : await require("../models/User").findOne({ email: String(req.body.accountEmail).trim().toLowerCase(), role: "doctor" });
-      if (!account || (account.hospitalId && String(account.hospitalId) !== String(hospitalId))) return res.status(400).json({ message: "Doctor must have a registered account and cannot belong to another hospital" });
-      if (await Doctor.exists({ userId: account._id })) return res.status(409).json({ message: "This account already has a doctor profile" });
-    }
-    const newDoctor = new Doctor({
-      userId: account?._id,
-      name,
-      department,
-      hospitalId,
-      specialization,
-      qualifications: qualificationArray,
-      availability,
-    });
-
-    await newDoctor.save();
-    if (account) await require("../models/User").findByIdAndUpdate(account._id, { hospitalId });
-
-    res
-      .status(201)
-      .json({ message: "Doctor created successfully", doctor: newDoctor });
-  } catch (err) {
-    console.error("Error creating doctor:", err);
-    res.status(500).json({ message: "Failed to create doctor" });
-  }
-};
-
 // GET /api/doctors/hospital/:hospitalId
 exports.getDoctorsByHospital = async (req, res) => {
   try {
     const { hospitalId } = req.params;
-    const doctors = await Doctor.find({ hospitalId });
+    const doctors = await Doctor.find({ hospitalId, deletedAt: null });
     res.json(doctors);
   } catch (err) {
     res.status(500).json({ message: err.message });
@@ -112,6 +42,7 @@ exports.getDoctorsByHospitalAndDepartment = async (req, res) => {
     const doctors = await Doctor.find({
       hospitalId,
       department,
+      deletedAt: null,
     });
     res.json(doctors);
   } catch (err) {
@@ -123,7 +54,7 @@ exports.getDoctorsByHospitalAndDepartment = async (req, res) => {
 exports.getDoctorById = async (req, res) => {
   try {
     const { id } = req.params;
-    const doctor = await Doctor.findById(id);
+    const doctor = await Doctor.findOne({ _id: id, deletedAt: null });
     
     if (!doctor) {
       return res.status(404).json({ message: "Doctor not found" });

@@ -41,9 +41,11 @@ exports.list = async (req, res) => {
   // Keep all unpaid orders visible across midnight. Paid history is limited to the latest 100.
   const [unpaid, paid] = await Promise.all([Order.find({ ...filter, paymentStatus: "unpaid" }).sort({ createdAt: 1 }), Order.find({ ...filter, paymentStatus: "paid" }).sort({ paidAt: -1 }).limit(100)]);
   const unique = new Map([...unpaid, ...paid].map(order => [String(order._id), order]));
-  res.json([...unique.values()].map(serialize));
+  const billing = await require("../models/HospitalBilling").find({ hospitalId: { $in: [...unique.values()].map(order => order.hospitalId) } }).select("hospitalId onlineEnabled");
+  const disabled = new Set(billing.filter(row => row.onlineEnabled === false).map(row => String(row.hospitalId)));
+  res.json([...unique.values()].map(order => ({ ...serialize(order), onlinePaymentAvailable: Boolean(process.env.STRIPE_SECRET_KEY && process.env.STRIPE_WEBHOOK_SECRET) && !disabled.has(String(order.hospitalId)) })));
 };
-exports.get = async (req, res) => res.json(serialize(await authorized(req.user, req.params.id)));
+exports.get = async (req, res) => res.json(await require("../services/pharmacy").configured(await authorized(req.user, req.params.id)));
 exports.prepare = async (req, res) => {
   const order = await authorized(req.user, req.params.id);
   if (order.status !== "pending") throw fail(409, "Ready orders cannot be edited");

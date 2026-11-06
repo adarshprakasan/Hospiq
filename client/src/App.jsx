@@ -14,7 +14,6 @@ const ProfileDashboard = lazy(() => import("./pages/ProfileDashboard"));
 const MyTokensPage = lazy(() => import("./pages/MyTokensPage"));
 const DoctorScheduleForm = lazy(() => import("./pages/DoctorScheduleForm"));
 const BookingPage = lazy(() => import("./pages/BookingPage"));
-const ManageDoctorsPage = lazy(() => import("./pages/ManageDoctorsPage"));
 const DoctorProfilePage = lazy(() => import("./pages/DoctorProfilePage"));
 
 const MedicalRecordsPage = lazy(() => import("./pages/MedicalRecordsPage"));
@@ -24,6 +23,8 @@ const PharmacyPaymentPage = lazy(() => import("./pages/PharmacyPaymentPage"));
 const PharmacyTeamPage = lazy(() => import("./pages/PharmacyTeamPage"));
 
 const PatientQrPage = lazy(() => import("./pages/PatientQrPage"));
+const AdministrationPage = lazy(() => import("./pages/AdministrationPage"));
+const ChangePasswordPage = lazy(() => import("./pages/ChangePasswordPage"));
 
 function App() {
   return (
@@ -32,11 +33,14 @@ function App() {
       <Route path="/hospital-register" element={<HospitalRegister />} />
       <Route path="/register" element={<RegisterForm />} />
       <Route path="/login" element={<LoginPage />} />
+      <Route path="/admin" element={<ProtectedRoute allowedRoles={["admin"]}><Layout><AdministrationPage /></Layout></ProtectedRoute>} />
+      <Route path="/hospital-admin" element={<ProtectedRoute allowedRoles={["hospital_admin"]}><Layout><AdministrationPage /></Layout></ProtectedRoute>} />
+      <Route path="/change-password" element={<ProtectedRoute><ChangePasswordPage /></ProtectedRoute>} />
 
       <Route
         path="/dashboard"
         element={
-          <ProtectedRoute allowedRoles={["doctor", "staff"]}>
+          <ProtectedRoute allowedRoles={["doctor", "staff", "hospital_admin"]}>
             <Layout>
               <DashboardPage />
             </Layout>
@@ -58,7 +62,7 @@ function App() {
       <Route
         path="/create-hospital"
         element={
-          <ProtectedRoute allowedRoles={["staff", "doctor"]}>
+          <ProtectedRoute allowedRoles={["hospital_admin", "admin"]}>
             <Layout>
               <CreateHospital />
             </Layout>
@@ -69,7 +73,7 @@ function App() {
       <Route
         path="/schedule"
         element={
-          <ProtectedRoute allowedRoles={["staff", "doctor"]}>
+          <ProtectedRoute allowedRoles={["staff", "hospital_admin", "admin"]}>
             <Layout>
               <DoctorScheduleForm />
             </Layout>
@@ -80,9 +84,9 @@ function App() {
       <Route
         path="/manage-doctors"
         element={
-          <ProtectedRoute allowedRoles={["staff", "doctor"]}>
+          <ProtectedRoute allowedRoles={["hospital_admin", "admin"]}>
             <Layout>
-              <ManageDoctorsPage />
+              <AdministrationPage />
             </Layout>
           </ProtectedRoute>
         }
@@ -91,7 +95,7 @@ function App() {
       <Route
         path="/doctor/:doctorId"
         element={
-          <ProtectedRoute allowedRoles={["staff", "doctor", "patient"]}>
+          <ProtectedRoute allowedRoles={["staff", "doctor", "patient", "hospital_admin", "admin"]}>
             <Layout>
               <DoctorProfilePage />
             </Layout>
@@ -102,7 +106,7 @@ function App() {
       <Route
         path="/profile"
         element={
-          <ProtectedRoute allowedRoles={["patient", "doctor", "staff", "pharmacist"]}>
+          <ProtectedRoute allowedRoles={["patient", "doctor", "staff", "pharmacist", "hospital_admin", "admin"]}>
             <Layout>
               <ProfileDashboard />
             </Layout>
@@ -133,7 +137,7 @@ function App() {
       <Route path="/medications" element={<ProtectedRoute allowedRoles={["pharmacist"]}><Layout><MedicationsPage /></Layout></ProtectedRoute>} />
       <Route path="/pharmacy" element={<ProtectedRoute allowedRoles={["pharmacist", "patient"]}><Layout><PharmacyPage /></Layout></ProtectedRoute>} />
       <Route path="/pharmacy/payment/:orderId" element={<ProtectedRoute allowedRoles={["patient"]}><Layout><PharmacyPaymentPage /></Layout></ProtectedRoute>} />
-      <Route path="/pharmacy-team" element={<ProtectedRoute allowedRoles={["staff"]}><Layout><PharmacyTeamPage /></Layout></ProtectedRoute>} />
+      <Route path="/pharmacy-team" element={<ProtectedRoute allowedRoles={["hospital_admin", "admin"]}><Layout><PharmacyTeamPage /></Layout></ProtectedRoute>} />
       <Route path="/patients/:patientId/records" element={<ProtectedRoute allowedRoles={["doctor"]}><Layout><MedicalRecordsPage /></Layout></ProtectedRoute>} />
       <Route path="*" element={<NotFound />} />
     </Routes>

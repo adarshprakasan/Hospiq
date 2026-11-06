@@ -20,6 +20,7 @@
 | `DEMO_ACCOUNT_PASSWORD` | Optional initial password for newly seeded accounts | Otherwise generated; no reset of existing accounts |
 | `STRIPE_SECRET_KEY` | Stripe secret key for hosted pharmacy checkout | Optional; counter payments work without it; use test keys for development |
 | `STRIPE_WEBHOOK_SECRET` | Signing secret for the pharmacy checkout webhook | Required alongside Stripe secret key to enable online checkout |
+| `HOSPIQ_ADMIN_EMAIL`, `HOSPIQ_ADMIN_PASSWORD` | Optional first administrator bootstrap credentials | Used only by `bootstrap:admin`; remove after setup; existing admin creation goes through the console |
 
 Email transport is configured in `server/utils/mailer.js`. Set `SMTP_URL` to use a custom SMTP provider; arbitrary SMTP host variables are not read. New medical files use `server/services/medical-files.js`, not public Cloudinary delivery. Never include real credentials in documentation, issues, screenshots, shell history, or commits.
 

@@ -11,5 +11,6 @@ router.post("/verify-otp", auth.verifyOtp);
 router.post("/register", auth.registerUser);
 router.post("/login", auth.loginUser);
 router.get("/me", authMiddleware, auth.getCurrentUser);
+router.post("/change-password", authMiddleware, rateLimit({ limit: 10 }), auth.changePassword);
 
 module.exports = router;

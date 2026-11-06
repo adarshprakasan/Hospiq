@@ -11,6 +11,7 @@ mongoose
   .then(async () => {
     await Promise.all([require("./models/Token").init(), require("./models/Doctor").init(), require("./models/QueueCounter").init(), require("./models/RecordAccessRequest").init(), require("./models/RecordAccessGrant").init(), require("./models/MedicalRecord").init()]);
     await Promise.all([require("./models/Medication").init(), require("./models/PharmacyOrder").init()]);
+    await Promise.all([require("./models/Department").init(), require("./models/AdminAudit").init(), require("./models/HospitalBilling").init(), require("./models/AdminLock").init()]);
     console.log("MongoDB connected");
     app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
   })

@@ -2,7 +2,7 @@
 
 ## Pharmacy access and payments
 
-Pharmacists must be assigned to a hospital by its staff. They can manage that hospital's medication catalogue and see only explicitly sent prescription/dispensing snapshots, not general medical history or attachments. Patient pharmacy orders are scoped to the patient. Preparation and counter-payment updates enforce hospital ownership, order versions, and allowed states.
+Pharmacists must be assigned to a hospital by its Hospital/Clinic Admin. They can manage that hospital's medication catalogue and see only explicitly sent prescription/dispensing snapshots, not general medical history or attachments. Patient pharmacy orders are scoped to the patient. Preparation and counter-payment updates enforce hospital ownership, order versions, and allowed states.
 
 Stripe checkout uses server-calculated, frozen AED totals and sends generic pharmacy order labels rather than clinical medicine names. Online paid status requires a signature-verified webhook or server-retrieved session with matching amount, currency, order, attempt and session. Counter settlement is blocked while an online session can still charge. Keep `STRIPE_SECRET_KEY` and `STRIPE_WEBHOOK_SECRET` server-only; use test-mode credentials for evaluation. See [Pharmacy setup](docs/PHARMACY.md).
 
@@ -45,3 +45,10 @@ Keep `.env` files, generated passwords, JWTs, and provider credentials out of Gi
 ## Patient QR identity boundary
 
 The per-visit patient QR is a signed identity pointer, not a login credential, OTP, or medical-access grant. It contains only the patient identifier, appointment identifier and visit date, not medical or contact data. Doctors must have the exact matching active registered appointment today; another visit, patient, ended visit or previous-day code is rejected. A copied card is not proof of liveness; the doctor should still confirm the person and patient ID in the visit. Account deletion or signing-secret rotation can make a card unusable; the public user ID remains stable. Never treat a successful scan as approval for another doctor's clinical history.
+
+
+## Administrative role separation
+
+Hospiq Admins manage platform operations; Hospital/Clinic Admins manage their own facility. Staff cannot provision users, create departments/facilities, edit banking/catalogues or complete clinical visits. Doctors control their own availability but not weekly schedules. Employee provisioning/reset issues temporary credentials with a first-login gate and session version invalidation. Existing patient credentials cannot be issued by administrator reset endpoints to bypass history privacy.
+
+Management APIs derive hospital scope from the authenticated account and allowlist fields. Clinical-history routes retain patient/doctor consent rules; admins cannot use a generic records CRUD endpoint. Archives preserve related clinical/payment data. Administrative changes and bank reveals have redacted audit intent/result events. Bank identifiers are AES-GCM encrypted under a hospital-bound key derived separately from the existing medical master key, and are stored outside public hospital documents. Back up that master securely; rotating it requires data migration. See [Administration](docs/ADMINISTRATION.md).

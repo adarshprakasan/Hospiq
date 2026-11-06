@@ -191,7 +191,7 @@ export default function DoctorProfilePage() {
     );
   }
 
-  const isStaffOrDoctor = user && ((user.role === "staff" && String(user.hospitalId) === String(doctor.hospitalId)) || (user.role === "doctor" && String(doctor.userId) === String(user._id)));
+  const canChangeAvailability = user && ((user.role === "hospital_admin" && String(user.hospitalId) === String(doctor.hospitalId)) || user.role === "admin" || (user.role === "doctor" && String(doctor.userId) === String(user._id)));
 
   return (
     <Container maxWidth="lg" sx={{ mt: 6, mb: 4 }}>
@@ -244,7 +244,7 @@ export default function DoctorProfilePage() {
                   />
                 </Typography>
                 
-                {isStaffOrDoctor && (
+                {canChangeAvailability && (
                   <FormControlLabel
                     control={
                       <Switch
@@ -325,7 +325,7 @@ export default function DoctorProfilePage() {
                 </Typography>
               )}
               
-              {isStaffOrDoctor && (
+              {user && ["staff", "hospital_admin", "admin"].includes(user.role) && (
                 <Box textAlign="center" mt={2}>
                   <Button 
                     variant="contained" 

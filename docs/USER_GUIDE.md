@@ -12,29 +12,25 @@
 
 A patient cannot hold a second active token for the same doctor on the same date. Cancelled and completed visits stay in history. A patient account's optional hospital reference does not restrict discovery or booking to that hospital.
 
+## Hospital / Clinic Admin
+
+Register through /hospital-register and verify your email, or use a demo facility administrator. An unassigned admin sets up a facility; the Hospiq Admin retains platform-wide oversight and suspension controls. The /hospital-admin console manages the facility's staff, pharmacist and doctor accounts, temporary login credentials, departments, operational data and encrypted banking settings. See [Administration](ADMINISTRATION.md) for the complete guide.
+
 ## Hospital staff
 
-1. Register through `/hospital-register` with the staff role and verify your email, or use seeded staff credentials.
-2. Create a hospital/clinic if your account has no facility. One account manages one hospital reference.
-3. Add departments, then open **Doctors** to add clinical profiles and optionally link a registered doctor email.
-4. For an existing unlinked profile, choose **Link doctor account**. The account must be a registered doctor and must not belong to another hospital.
-5. Configure weekly schedules. Select a doctor to load the existing schedule before editing.
-6. Open **Queue overview** (`/dashboard`). Search by patient, doctor, department, or token; filter active/all/status; refresh for current data.
-7. Register walk-in patients with **Walk-in patient**. Call waiting patients, skip a visit when appropriate, and complete a called visit.
-
-Staff queue data is restricted to their hospital. Refresh is manual; queue changes do not stream live to other sessions.
+Use credentials issued by your hospital administrator and change the temporary password at first login. Queue staff can register walk-ins, call/skip/cancel arrivals and edit their hospital's doctor schedules. They cannot create hospitals/departments, manage employee accounts, change medicines/prices/banking, read clinical records, or complete clinical visits. The queue refreshes every ten seconds and includes a manual Refresh button.
 
 ## Doctors
 
-A login account and a clinical profile are distinct records. A staff manager links them using the doctor's registered email. Doctors creating their own facility can create a profile linked to themselves.
+A login account and clinical profile are distinct records. Hospital administrators create and link them together from the account console; existing unlinked profiles can be linked by an administrator. Doctors do not create facilities or employees.
 
-After signing in, the doctor queue includes visits for that linked profile. Doctors may change their own availability and schedule and call/skip/complete their own visits. The backend rejects changes to other doctors even when a UI lists profiles in the same hospital.
+After signing in, the doctor queue includes visits for that linked profile. Doctors may change their own availability and call/skip/complete their own visits. Their weekly schedule is managed by hospital staff/admins. The backend rejects changes to other doctors even when a UI lists profiles in the same hospital.
 
 Open **Medical records / visit notes** on a registered patient's queue card. You can add dated records after calling the patient or for an earlier completed visit, including medications, notes, prescriptions, and lab files. Your own associated visit history is visible automatically. Other doctors' records remain hidden until the patient shares an emailed permission code during a pending/called appointment today. Approval lasts 30 minutes and is read-only; the patient can revoke it. Offline walk-ins without a patient account cannot use the patient-owned record workflow.
 
 ## Pharmacists and pharmacy collection
 
-Register with the **Pharmacist** role through `/hospital-register` and verify your email. Hospital staff assign the account through **Pharmacy team**; unassigned pharmacists cannot view hospital orders. Pharmacists sign in to `/pharmacy`, maintain medication availability/AED prices through **Medications**, and prepare prescriptions sent by doctors. They receive the prescription/dispensing snapshot, not the patient's full clinical history.
+Use the **Pharmacist** account created by your hospital administrator and replace its temporary password on first login; unassigned pharmacists cannot view hospital orders. Pharmacists sign in to `/pharmacy`, maintain medication availability/AED prices through **Medications**, and prepare prescriptions sent by doctors. They receive the prescription/dispensing snapshot, not the patient's full clinical history.
 
 Saving a doctor's record completes its appointment and opens **Send medication to pharmacy**. Sending creates a distinct pharmacy token shared by patient and pharmacist. The patient sees **Collect your medicine at pharmacy**, with pending/ready status, on **My pharmacy** and in homepage/appointment banners.
 
