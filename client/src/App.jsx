@@ -19,6 +19,9 @@ const DoctorProfilePage = lazy(() => import("./pages/DoctorProfilePage"));
 
 const MedicalRecordsPage = lazy(() => import("./pages/MedicalRecordsPage"));
 const MedicationsPage = lazy(() => import("./pages/MedicationsPage"));
+const PharmacyPage = lazy(() => import("./pages/PharmacyPage"));
+const PharmacyPaymentPage = lazy(() => import("./pages/PharmacyPaymentPage"));
+const PharmacyTeamPage = lazy(() => import("./pages/PharmacyTeamPage"));
 
 const PatientQrPage = lazy(() => import("./pages/PatientQrPage"));
 
@@ -99,7 +102,7 @@ function App() {
       <Route
         path="/profile"
         element={
-          <ProtectedRoute allowedRoles={["patient", "doctor", "staff"]}>
+          <ProtectedRoute allowedRoles={["patient", "doctor", "staff", "pharmacist"]}>
             <Layout>
               <ProfileDashboard />
             </Layout>
@@ -127,7 +130,10 @@ function App() {
       />
       <Route path="/my-qr" element={<ProtectedRoute allowedRoles={["patient"]}><Layout><PatientQrPage /></Layout></ProtectedRoute>} />
       <Route path="/medical-records" element={<ProtectedRoute allowedRoles={["patient"]}><Layout><MedicalRecordsPage /></Layout></ProtectedRoute>} />
-      <Route path="/medications" element={<ProtectedRoute allowedRoles={["staff", "doctor"]}><Layout><MedicationsPage /></Layout></ProtectedRoute>} />
+      <Route path="/medications" element={<ProtectedRoute allowedRoles={["pharmacist"]}><Layout><MedicationsPage /></Layout></ProtectedRoute>} />
+      <Route path="/pharmacy" element={<ProtectedRoute allowedRoles={["pharmacist", "patient"]}><Layout><PharmacyPage /></Layout></ProtectedRoute>} />
+      <Route path="/pharmacy/payment/:orderId" element={<ProtectedRoute allowedRoles={["patient"]}><Layout><PharmacyPaymentPage /></Layout></ProtectedRoute>} />
+      <Route path="/pharmacy-team" element={<ProtectedRoute allowedRoles={["staff"]}><Layout><PharmacyTeamPage /></Layout></ProtectedRoute>} />
       <Route path="/patients/:patientId/records" element={<ProtectedRoute allowedRoles={["doctor"]}><Layout><MedicalRecordsPage /></Layout></ProtectedRoute>} />
       <Route path="*" element={<NotFound />} />
     </Routes>

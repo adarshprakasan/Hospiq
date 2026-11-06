@@ -1,5 +1,11 @@
 # Security policy
 
+## Pharmacy access and payments
+
+Pharmacists must be assigned to a hospital by its staff. They can manage that hospital's medication catalogue and see only explicitly sent prescription/dispensing snapshots, not general medical history or attachments. Patient pharmacy orders are scoped to the patient. Preparation and counter-payment updates enforce hospital ownership, order versions, and allowed states.
+
+Stripe checkout uses server-calculated, frozen AED totals and sends generic pharmacy order labels rather than clinical medicine names. Online paid status requires a signature-verified webhook or server-retrieved session with matching amount, currency, order, attempt and session. Counter settlement is blocked while an online session can still charge. Keep `STRIPE_SECRET_KEY` and `STRIPE_WEBHOOK_SECRET` server-only; use test-mode credentials for evaluation. See [Pharmacy setup](docs/PHARMACY.md).
+
 ## Status and supported development line
 
 The default branch is the maintained development line. There are no versioned release-support guarantees or published response-time commitments. Hospiq is not currently represented as ready to handle real patient data.

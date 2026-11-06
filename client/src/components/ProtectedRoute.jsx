@@ -11,7 +11,7 @@ const ProtectedRoute = ({ children, allowedRoles }) => {
   }
 
   if (allowedRoles && !allowedRoles.includes(user.role)) {
-    return <Navigate to={user.role === "patient" ? "/" : ["staff", "doctor"].includes(user.role) ? "/dashboard" : "/unauthorized"} replace />;
+    return <Navigate to={user.role === "patient" ? "/" : user.role === "pharmacist" ? "/pharmacy" : ["staff", "doctor"].includes(user.role) ? "/dashboard" : "/unauthorized"} replace />;
   }
 
   return children;

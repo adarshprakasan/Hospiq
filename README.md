@@ -14,7 +14,7 @@
 
 ## Overview
 
-Hospiq gives patients and hospital teams a shared appointment workflow. Patients find a hospital or clinic, choose a department and doctor, and book a same-day queue token. Staff register walk-ins and manage the queue; doctors see visits assigned to their linked clinical profiles.
+Hospiq gives patients and hospital teams a shared appointment workflow. Patients find a hospital or clinic, choose a department and doctor, and book a same-day queue token. Staff register walk-ins and manage the queue; doctors see visits assigned to their linked clinical profiles. Pharmacists manage hospital medication availability/prices and prepare doctor-sent prescriptions using separate pharmacy tokens.
 
 Patients keep their visit history, medications, prescriptions, and lab reports in one place. A signed QR connects each appointment to the correct patient and doctor. Doctors can read their own associated records; access to another clinician's records requires the patient's approval.
 
@@ -33,7 +33,7 @@ Built and maintained by [Adarsh](https://github.com/adarshprakasan).
 | Appointment history, cancellation, printable tickets | Queue counts and status filters | Dated visit records and prescriptions |
 | Visit-specific QR selector and stable user ID | User ID on Profile | Scan patient QR, confirm matched appointment, and start record entry |
 | Medical history, scanned documents, lab uploads, consent revocation | No access to clinical records | Own earlier visit records; other records with patient-approved email OTP |
-| Medication schedules, course dates, food timing and instructions in visit history | Manage the hospital's available medication catalogue | Search medicines by name/strength; prescribe with time-of-day checkboxes and calendar dates |
+| Medication schedules, course dates, food timing and instructions in visit history | Assign registered pharmacists to the hospital | Search medicines by name/strength; prescribe with time-of-day checkboxes and calendar dates |
 
 The interface includes responsive navigation, a shared teal/neutral theme, loading and empty states, guarded routes, and lazy-loaded pages. The medical-record page includes dated visits, structured medications, protected prescription/lab files, camera capture, and patient-controlled temporary doctor access. Automatic OCR, SMS OTP, future-date slots, live queue notifications, and patient queue-position estimates are not implemented.
 
@@ -47,7 +47,7 @@ The interface includes responsive navigation, a shared teal/neutral theme, loadi
 ### Medical history and patient permission
 
 - Records capture visit date/time, doctor, hospital, department, diagnosis/reason, notes, prescription text, and structured medication details.
-- Doctors search their hospital's medication catalogue, where each strength/form is a separate entry. Prescriptions use Morning/Noon/Night checkboxes, start/end date calendars (start defaults to today), optional Before food/After food selection, and instructions. Staff and doctors manage the available list in **Medications**; removing an entry preserves existing prescriptions.
+- Doctors search their hospital's medication catalogue, where each strength/form is a separate entry. Prescriptions use Morning/Noon/Night checkboxes, start/end date calendars (start defaults to today), optional Before food/After food selection, and instructions. Pharmacists manage the available list and AED prices in **Medications**; removing an entry preserves existing prescriptions.
 - Doctors create records for their visits. Patients can add earlier visits and upload or photograph JPEG, PNG, or PDF prescriptions and lab reports, with up to five files per record and 10 MB per file.
 - New attachments use AES-256-GCM encrypted private storage and authenticated downloads. Patients can view their own history; staff cannot read clinical records.
 - Treating doctors can view their own associated history. Patient uploads may explicitly be associated with a Hospiq doctor after confirmation.
@@ -55,6 +55,17 @@ The interface includes responsive navigation, a shared teal/neutral theme, loadi
 - Histories support search and filtering by who added the record. Patients can open Medical records directly from navigation or its URL without scanning a QR first.
 
 See [Patient QR](docs/PATIENT_QR.md), [Medical records](docs/MEDICAL_RECORDS.md), and the [complete feature-testing walkthrough](docs/TEST_TODAYS_FEATURES.md).
+
+### Pharmacy collection and payments
+
+- **Pharmacist** accounts have a hospital-scoped dashboard and maintain medication availability, selling units, and AED prices. Staff assign verified pharmacists through **Pharmacy team**.
+- Saving a doctor's record completes the appointment and prompts **Send medication to pharmacy**. Sending generates a separate pharmacy token, visible to the patient and pharmacist; retrying the same handoff preserves the token.
+- Pharmacists check medicines as gathered, confirm dispensing quantities/prices, and select **Done — mark ready** only after every item is ready. The server freezes the bill and the patient sees **Collect your medicine at pharmacy**, pending/ready status, and the same total.
+- Patients choose **Proceed to payment → Pay at counter** or **Pay Online**. Counter payments are confirmed by the pharmacist's **Paid at counter** action. The patient payment dialog shows confirmation and closes automatically, while a receipt remains in paid history.
+- Stripe hosted checkout supports cards and eligible Apple Pay/Google Pay wallets after merchant configuration. Paid status is verified server-side through signed webhooks or session retrieval; no success URL can mark an order paid. Active online checkout is expired before switching to counter payment.
+- Pharmacists receive only the sent prescription/dispensing snapshot, without access to general clinical history or lab files. Status views refresh every five seconds. Online checkout remains unavailable until Stripe keys and its webhook are configured; counter payments work independently.
+
+See [Pharmacy testing and Stripe setup](docs/PHARMACY.md) for accounts, preparation, pricing, payment flow, and provider setup.
 
 ## Technology
 
@@ -110,6 +121,7 @@ These commands write to the MongoDB database selected by `server/.env`. Use a de
 ```powershell
 npm --prefix server run seed:large
 npm --prefix server run seed:medications
+npm --prefix server run seed:pharmacy
 ```
 
 This adds **6 facilities, 30 doctors with linked accounts, 12 staff, 120 patients, 30 schedules, 1,440 historical visits and medical records, 480 encrypted sample lab reports, and 240 appointments for the seed date**. The five departments are General Medicine, Cardiology, Paediatrics, Dermatology, and Orthopaedics.
@@ -118,12 +130,16 @@ The seed preserves existing records, passwords, and test edits. Repeating it on 
 
 The medication seed adds eight fictional medicine/strength/form choices per large-demo facility (48 total). It preserves existing entries and removed availability. See [Medication prescribing](docs/MEDICATIONS.md) for the redesigned form and catalogue workflow.
 
+The pharmacy seed adds **12 pharmacists**, fills missing demo prices, and creates **24 pharmacy orders with dedicated fictional completed visits/records**, covering pending, partially gathered, ready, and counter-paid cases. It preserves existing passwords, prices, statuses, and payments. Pharmacists use the same locally generated large-demo password.
+
 | Demo role | Email | Scenario |
 |---|---|---|
 | Patient | `patient001@demo.hospiq.invalid` | Two initial active visits and 12 historical records |
 | Harbour doctor | `doctor01@demo.hospiq.invalid` | Patient001's Harbour visit and associated history |
 | Oasis doctor | `doctor06@demo.hospiq.invalid` | Separate visit QR and cross-doctor permission checks |
 | Harbour staff | `staff01@demo.hospiq.invalid` | Hospital queue and doctor management |
+| Harbour pharmacist | `pharmacist01@demo.hospiq.invalid` | Medication prices, preparation checklist and counter payments |
+| Oasis pharmacist | `pharmacist03@demo.hospiq.invalid` | Separate hospital pharmacy queue |
 
 The seed saves its generated password and complete roster in the ignored local file `server/.demo-large-credentials.json`. Retrieve your local demo password with:
 
@@ -158,6 +174,8 @@ For Creekside testing, use `patient.creekside@example.invalid`, `staff.creekside
 | `npm --prefix server run check:upgrade` | Read-only database upgrade preflight |
 | `npm --prefix server run seed:large` | 6 facilities, 162 users, 1,680 visits, 1,440 records and 480 encrypted demo files |
 | `npm --prefix server run seed:medications` | Add 48 fictional catalogue choices across the six large-demo facilities |
+| `npm --prefix server run seed:pharmacy` | Add 12 pharmacist accounts, prices and 24 fictional pharmacy orders |
+| `npm --prefix server run test:pharmacy` | Disposable pharmacy + local Stripe HTTP/webhook fixture; no real charges |
 | `npm --prefix server run seed:demo` | Insert demo facilities/doctors/schedules |
 | `npm --prefix server run seed:accounts` | Insert and link demo login accounts |
 | `npm --prefix server audit` / `npm --prefix client audit` | Current dependency advisories |
@@ -169,12 +187,13 @@ For Creekside testing, use `patient.creekside@example.invalid`, `staff.creekside
 | [Documentation index](docs/README.md) | Reading paths by role |
 | [Setup](docs/SETUP.md) | Install, run, upgrade, and troubleshoot |
 | [Configuration](docs/CONFIGURATION.md) | Environment variables and provider settings |
-| [User guide](docs/USER_GUIDE.md) | Patient, staff, and doctor workflows |
+| [User guide](docs/USER_GUIDE.md) | Patient, staff, doctor and pharmacist workflows |
 | [Demo data](docs/DEMO_DATA.md) | Fictional facilities, accounts, and smoke test |
 | [Architecture](docs/ARCHITECTURE.md) | Components, data model, and access boundaries |
 | [API reference](docs/API.md) | Routes, authorization, requests, and responses |
 | [Medical records](docs/MEDICAL_RECORDS.md) | Visit records, private attachments, and patient consent |
 | [Medication prescribing](docs/MEDICATIONS.md) | Hospital catalogue, strengths, frequency checkboxes, date ranges and food timing |
+| [Pharmacy and payments](docs/PHARMACY.md) | Pharmacist assignment, pharmacy tokens, checklists, billing and Stripe configuration |
 | [Patient QR](docs/PATIENT_QR.md) | Per-appointment codes, doctor scanning, and matched visit records |
 | [Test today's features](docs/TEST_TODAYS_FEATURES.md) | Large dataset, account roles, QR, clinical records and OTP walkthrough |
 | [Testing](docs/TESTING.md) | Automated checks and manual scenarios |
@@ -185,13 +204,24 @@ For Creekside testing, use `patient.creekside@example.invalid`, `staff.creekside
 
 ## Verification
 
+For a quick pharmacy test, start the API/frontend and use separate browser sessions for the patient, doctor and pharmacist:
+
+1. As `doctor01@demo.hospiq.invalid`, save a called patient's medical record with medications, then select **Send medication to pharmacy**. Saving completes the visit; sending shows the new pharmacy token.
+2. As `pharmacist01@demo.hospiq.invalid`, find that token, confirm selling quantities/prices, check each gathered medicine, then select **Done — mark ready**.
+3. As the matching patient, open **My pharmacy**, confirm the same token/total, then choose **Proceed to payment → Pay at counter**.
+4. After collecting the amount, the pharmacist selects **Paid at counter**. The patient sees confirmation, the payment dialog closes automatically, and the receipt remains in paid history.
+5. For online tests, configure `STRIPE_SECRET_KEY` and `STRIPE_WEBHOOK_SECRET` in the ignored backend environment file and follow the [Stripe test setup](docs/PHARMACY.md#stripe-test-configuration). Use Stripe test mode; dummy orders do not constitute real payments.
+
+The pharmacy seed also provides ready-made pending/ready/paid cases for `patient001@demo.hospiq.invalid`. All demo login passwords come from your local credential file described above. Run the automated checks from the repository root:
+
 ```powershell
 npm --prefix server test
 npm --prefix server run test:records
+npm --prefix server run test:pharmacy
 npm --prefix client run build
 ```
 
-The latest feature baseline passed **27 backend regression tests, 106 isolated medical-record/QR/medication integration checks, and the frontend production build**. The integration suite uses a disposable database and local SMTP fixture, sends no real email, and cleans up its temporary data. Browser checks cover the searchable medication picker, frequency checkboxes, date fields, and mutually exclusive food timing. The direct medical-record page fix was also checked across six patient/doctor navigation cases. Hardware camera capture and real-provider email delivery still need manual verification.
+The latest feature baseline passed **30 backend regression tests, 106 isolated medical-record/QR/medication checks, 130 isolated pharmacy/payment checks, and the frontend production build**. Integration suites use disposable databases and local SMTP/Stripe HTTP fixtures, send no real email or charges, and clean up their temporary data. Browser checks cover medication controls, pharmacist checklists/readiness, shared patient tokens/totals, counter instructions, automatic payment-dialog closure, and paid history. Hardware camera capture, real-provider email delivery, and live merchant/wallet checkout still need manual verification.
 
 ## Contributing and support
 

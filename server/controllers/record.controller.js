@@ -76,7 +76,15 @@ async function create(req, res) {
     await Promise.allSettled(stored.map(files.remove));
     throw err;
   }
-  res.status(201).json({ message: "Medical record saved", record: serializeRecord(record) });
+  let visitCompleted = false;
+  if (req.user.role === "doctor" && values.visitTokenId) {
+    // The record is durable first. If the completion write fails, keep its files
+    // and expose a retryable state instead of reporting a failed/unsaved record.
+    try {
+      visitCompleted = Boolean(await Token.findOneAndUpdate({ _id: values.visitTokenId, doctorId: doctor._id, status: { $in: ["called", "completed"] } }, { $set: { status: "completed" } }));
+    } catch { console.error("Visit completion requires retry after saved medical record"); }
+  }
+  res.status(201).json({ message: "Medical record saved", record: serializeRecord(record), visitCompleted });
 }
 exports.addMedicalRecord = create;
 exports.addPatientRecord = create;
@@ -84,7 +92,7 @@ exports.getPatientRecords = async (req, res) => {
   const patientId = req.params.patientId || req.user.id;
   const context = await accessContext(req.user, patientId);
   const records = await Record.find(recordFilter(patientId, context)).populate("doctorId", "name department").populate("hospitalId", "name").sort({ visitDate: -1 });
-  res.json(records.map(serializeRecord));
+  res.json(records.map(record => ({ ...serializeRecord(record), canSendToPharmacy: req.user.role === "doctor" && String(record.doctorId?._id || record.doctorId) === String(context.doctor?._id) && record.source === "doctor" && record.medications.length > 0 && Boolean(record.visitTokenId) })));
 };
 exports.downloadAttachment = async (req, res) => {
   const record = await Record.findById(req.params.recordId);

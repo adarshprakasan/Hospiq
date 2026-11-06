@@ -4,6 +4,15 @@ Changes are recorded here as they land. No semantic-version release tag has been
 
 ## Unreleased
 
+### Hospital pharmacy handoff and payments — 6 November 2026
+
+- Added pharmacist registration, staff-controlled hospital assignment, a pharmacy dashboard, and pharmacist-owned medication availability, selling units, and AED pricing.
+- Saving a doctor's medical record completes its visit and prompts an explicit pharmacy handoff, with one shared pharmacy token per appointment.
+- Added medication gathering checkboxes, dispensing quantities, version-checked partial work, ready status, frozen totals, and patient pharmacy status/payment views.
+- Added audited counter payment and Stripe hosted checkout with server-verified paid status, signed webhooks, checkout idempotency/recovery, and guards against simultaneous cash/online charging.
+- Seeded 12 fictional pharmacists and 24 pharmacy orders across six demo hospitals; existing prices, statuses, passwords, records and files are preserved.
+- Added isolated pharmacy/payment HTTP tests and browser verification. Live Stripe/Apple Pay/Google Pay testing requires merchant test keys and a configured webhook.
+
 ### Hospital medication catalogue and prescription form — 6 November 2026
 
 - Added hospital-scoped medication management for staff and linked doctors, with separate medicine strength/form entries and availability removal that preserves old prescriptions.

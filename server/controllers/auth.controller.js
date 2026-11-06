@@ -39,7 +39,7 @@ exports.registerUser = async (req, res) => {
   try {
     const { name, password, role = "patient", verificationToken } = req.body;
     const email = normalizeEmail(req.body.email);
-    if (typeof name !== "string" || !name.trim() || !validEmail(email) || typeof password !== "string" || password.length < 8 || Buffer.byteLength(password, "utf8") > 72 || !["patient", "doctor", "staff"].includes(role)) return res.status(400).json({ message: "Provide a name, email, password of at least 8 characters (maximum 72 UTF-8 bytes) and valid role" });
+    if (typeof name !== "string" || !name.trim() || !validEmail(email) || typeof password !== "string" || password.length < 8 || Buffer.byteLength(password, "utf8") > 72 || !["patient", "doctor", "staff", "pharmacist"].includes(role)) return res.status(400).json({ message: "Provide a name, email, password of at least 8 characters (maximum 72 UTF-8 bytes) and valid role" });
     let verified;
     try { verified = jwt.verify(verificationToken, process.env.JWT_SECRET); } catch { return res.status(400).json({ message: "Verify your email before registering" }); }
     if (verified.purpose !== "registration" || verified.email !== email) return res.status(400).json({ message: "Email verification does not match" });

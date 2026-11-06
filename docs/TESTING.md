@@ -8,13 +8,15 @@ From the repository root after installing dependencies:
 
 ```powershell
 npm --prefix server test
+npm --prefix server run test:records
+npm --prefix server run test:pharmacy
 npm --prefix client run build
 npm --prefix server audit
 npm --prefix client audit
 git diff --check
 ```
 
-The Node test suite currently contains 24 cases. It starts an ephemeral localhost HTTP server for unauthenticated-route checks and uses mocked database methods for ownership/workflow rules. It does not require a seeded database, email delivery, or Cloudinary uploads. Allow local loopback connections in your test environment. Never load a production `.env` in CI; these tests do not need real secrets.
+The Node regression suite currently contains 30 cases. It starts an ephemeral localhost HTTP server for unauthenticated-route checks and uses mocked database methods for ownership/workflow rules. The regression suite does not require a seeded database, email delivery, or Cloudinary uploads. The separate integration commands need MongoDB access and create uniquely named disposable databases: 106 record/QR checks use local SMTP, and 130 pharmacy/payment checks use the official Stripe SDK against a local HTTP provider fixture and signed local webhooks. They send no real email or charges and clean up afterward. Allow local loopback connections in your test environment. Never load production secrets in CI. See [Pharmacy verification](PHARMACY.md#verification-evidence).
 
 Covered behaviors include authentication boundaries, rejection of admin signup and unsigned email proofs, hospital scope, linked-doctor ownership, midnight timezone alignment, health/404 responses, foreign-hospital token rejection, terminal state transitions, unavailable doctors, and invalid schedules.
 

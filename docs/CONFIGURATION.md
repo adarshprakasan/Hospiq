@@ -18,6 +18,8 @@
 | `SMTP_URL` | Optional SMTP connection URL for another provider or local test mailbox | Otherwise the Gmail transport is used; contains secrets if credentials are included |
 | `CLOUD_NAME`, `CLOUD_API_KEY`, `CLOUD_API_SECRET` | Legacy Cloudinary configuration | Not used by the new medical-record upload/download routes |
 | `DEMO_ACCOUNT_PASSWORD` | Optional initial password for newly seeded accounts | Otherwise generated; no reset of existing accounts |
+| `STRIPE_SECRET_KEY` | Stripe secret key for hosted pharmacy checkout | Optional; counter payments work without it; use test keys for development |
+| `STRIPE_WEBHOOK_SECRET` | Signing secret for the pharmacy checkout webhook | Required alongside Stripe secret key to enable online checkout |
 
 Email transport is configured in `server/utils/mailer.js`. Set `SMTP_URL` to use a custom SMTP provider; arbitrary SMTP host variables are not read. New medical files use `server/services/medical-files.js`, not public Cloudinary delivery. Never include real credentials in documentation, issues, screenshots, shell history, or commits.
 

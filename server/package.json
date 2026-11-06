@@ -11,7 +11,9 @@
     "seed:accounts": "node scripts/seed-demo-accounts.js",
     "test:records": "node scripts/verify-medical-records.js",
     "seed:large": "node scripts/seed-large-demo.js",
-    "seed:medications": "node scripts/seed-medications.js"
+    "seed:medications": "node scripts/seed-medications.js",
+    "seed:pharmacy": "node scripts/seed-pharmacy.js",
+    "test:pharmacy": "node scripts/verify-pharmacy.js"
   },
   "keywords": [
     "healthcare",
@@ -40,7 +42,8 @@
     "mongoose": "^8.16.2",
     "multer": "^2.0.1",
     "nodemailer": "^10.3.1",
-    "qrcode": "^1.5.4"
+    "qrcode": "^1.5.4",
+    "stripe": "^23.1.0"
   },
   "devDependencies": {
     "nodemon": "^3.1.10"

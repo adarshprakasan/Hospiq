@@ -32,6 +32,14 @@ After signing in, the doctor queue includes visits for that linked profile. Doct
 
 Open **Medical records / visit notes** on a registered patient's queue card. You can add dated records after calling the patient or for an earlier completed visit, including medications, notes, prescriptions, and lab files. Your own associated visit history is visible automatically. Other doctors' records remain hidden until the patient shares an emailed permission code during a pending/called appointment today. Approval lasts 30 minutes and is read-only; the patient can revoke it. Offline walk-ins without a patient account cannot use the patient-owned record workflow.
 
+## Pharmacists and pharmacy collection
+
+Register with the **Pharmacist** role through `/hospital-register` and verify your email. Hospital staff assign the account through **Pharmacy team**; unassigned pharmacists cannot view hospital orders. Pharmacists sign in to `/pharmacy`, maintain medication availability/AED prices through **Medications**, and prepare prescriptions sent by doctors. They receive the prescription/dispensing snapshot, not the patient's full clinical history.
+
+Saving a doctor's record completes its appointment and opens **Send medication to pharmacy**. Sending creates a distinct pharmacy token shared by patient and pharmacist. The patient sees **Collect your medicine at pharmacy**, with pending/ready status, on **My pharmacy** and in homepage/appointment banners.
+
+Pharmacists confirm selling quantities/prices and check medicines as gathered. **Done — mark ready** is enabled only for a complete valid checklist. Patients then choose **Proceed to payment → Pay at counter** or configured Stripe online checkout. Counter instructions stay visible until the pharmacist confirms **Paid at counter**. The patient payment dialog confirms payment and closes automatically, retaining a receipt in paid history. See [Pharmacy walkthrough](PHARMACY.md) for dummy accounts, full tests and Stripe setup.
+
 ## Queue statuses
 
 | Current state | Allowed staff/doctor transitions |

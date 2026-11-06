@@ -2,7 +2,7 @@
 
 ## Manage available medications
 
-Sign in as hospital staff or a linked doctor and open **Medications**. Add a medicine's name, strength, and form together, for example `Example medicine 500 mg tablet`. Different strengths must be separate entries. The list belongs to the account's hospital; a doctor's hospital is resolved from the linked clinical profile.
+Sign in as a hospital-linked **pharmacist** and open **Medications** from the pharmacy dashboard. Add a medicine's name, strength, and form together, for example `Example medicine 500 mg tablet`, plus its AED price and selling unit (pack, tablet, etc.). Different strengths must be separate entries. Only pharmacists manage the catalogue; doctors read the list from their linked clinical hospital. Staff assign pharmacist accounts through **Pharmacy team**.
 
 Search the list or remove entries that are no longer available. Removal deactivates the entry for new prescriptions, preserving its identity and earlier prescription snapshots. Adding the same exact name again reactivates it. This is an availability catalogue, not stock counts, dispensing, or interaction checking.
 
@@ -15,7 +15,7 @@ Search the list or remove entries that are no longer available. Removal deactiva
 5. Optionally check **Before food** or **After food**. Choosing one clears the other; both can be cleared.
 6. Enter instructions as before. Add more medicines or remove a row, then save the visit.
 
-Use **Manage hospital medications** to open the catalogue in a new tab without losing the draft. Return and select **Refresh medication list** after catalogue changes. If a selected medicine becomes unavailable before saving, the server rejects it and asks for a refresh.
+Ask the pharmacist to maintain the catalogue, then use **Refresh medication list** after catalogue changes without losing the draft. If a selected medicine becomes unavailable before saving, the server rejects it and asks for a refresh. Saving completes the doctor's visit and opens a pharmacy handoff popup; see [Pharmacy](PHARMACY.md).
 
 Patients adding historical/external visits can enter a medicine name and strength manually, with the same schedule controls. They are not limited to medicines currently available at a hospital. Older records retain their previous dose, frequency, and duration text in history.
 
@@ -27,16 +27,17 @@ npm --prefix server run seed:medications
 
 After the large demo dataset exists, this adds 48 explicitly fictional entries, eight per demo hospital, including two strengths of the same named medicine. Repeated runs preserve existing availability and do not duplicate entries. It does not populate real hospitals.
 
-Sign in as `doctor01@demo.hospiq.invalid`, open **Medications**, and search `Alpha` to see separate 250 mg and 500 mg test entries. From a called or completed patient visit, add a medicine with Morning/Night, a date range, After food, and fictional instructions. Save and check the schedule from the patient history. Verify an end date before the start date is rejected. Remove the medicine from the catalogue and confirm the saved history remains readable.
+Run `npm --prefix server run seed:pharmacy` after the medication seed to add pharmacist accounts and prices. Sign in as `pharmacist01@demo.hospiq.invalid`, open **Medications**, and search `Alpha` to see separate 250 mg and 500 mg test entries. As `doctor01@demo.hospiq.invalid`, open a called or completed patient visit and add a medicine with Morning/Night, a date range, After food, and fictional instructions. Save and check the schedule from the patient history. Verify an end date before the start date is rejected. As the pharmacist, remove the medicine from the catalogue and confirm saved histories/bills remain readable.
 
 ## API
 
-All catalogue routes require a doctor/staff login and derive the hospital from that account; callers cannot select another hospital in the request.
+Catalogue reads require a doctor/staff/pharmacist login and derive the hospital from that account; callers cannot select another hospital in the request. Writes require the pharmacist role.
 
 | Route | Purpose |
 |---|---|
 | `GET /api/medications` | Sorted active catalogue for the account's hospital |
-| `POST /api/medications` | Add/reactivate `{ "name": "Medicine name strength form" }` |
+| `POST /api/medications` | Pharmacist: add/reactivate `{ "name": "Medicine name strength form", "unitPriceMinor": 1250, "sellingUnit": "pack" }` |
+| `PATCH /api/medications/:id` | Pharmacist: update integer-fils price and selling unit |
 | `DELETE /api/medications/:id` | Deactivate an entry owned by this hospital |
 
 New prescription entries include `name`, `medicationId` (hospital selection), `times` (one or more of `morning`, `noon`, `night`), `startDate`, `endDate` (calendar strings `YYYY-MM-DD`), `foodTiming` (`before`, `after`, or empty), and `instructions`. When a catalogue ID is supplied, the server requires an active entry from the treating doctor's hospital and stores its authoritative name/strength as a historical snapshot. Older API clients may still submit legacy free-text medication entries; saved legacy data remains readable.

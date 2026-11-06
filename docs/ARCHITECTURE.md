@@ -22,6 +22,10 @@ The frontend and API run as separate processes. The API does not serve `client/d
 
 ## Entities and relationships
 
+The pharmacy extension adds `PharmacyOrder` snapshots linked to a medical record, patient, doctor, hospital and appointment. A unique appointment index prevents duplicate bills; a hospital/date/token index distinguishes pharmacy tokens. Orders carry prescription lines, preparation checklist, explicit dispensing quantities and integer-fils prices, version, ready state, frozen total, independent payment state, and payment audit details. `Medication` stores hospital-scoped catalogue entries with strength/form in the name, optional AED unit price, selling unit and availability.
+
+Only hospital-assigned pharmacists can write medication catalogues or prepare/settle pharmacy orders. Patients read/pay their own orders, doctors explicitly hand off their own doctor-authored prescriptions, and staff link pharmacist accounts. Clinical access remains under its separate patient/doctor consent policy. The Stripe webhook route uses raw-body parsing before JSON middleware; checkout creation/reuse, signed events and server-side reconciliation live in `server/services/pharmacy-payments.js`. See [Pharmacy contract](PHARMACY.md).
+
 | Entity | Important fields | Relationships / notes |
 |---|---|---|
 | User | name, email, password hash, role, hospitalId, virtual publicId | Login identity; HQ-prefixed publicId uses the full account ObjectId and needs no migration; public signup excludes admin |

@@ -27,6 +27,7 @@ Hospiq source is licensed under ISC. Dependencies retain their own licenses and 
 | react | 19.1.0 | MIT | client |
 | react-dom | 19.1.0 | MIT | client |
 | react-router-dom | 7.18.5 | MIT | client |
+| stripe | 23.1.0 | MIT | server |
 | vite | 7.3.7 | MIT | client |
 
 The browser QR scanner uses ZXing browser, loaded on demand. Inspect each installed package's LICENSE/COPYING/NOTICE files and include applicable notices when redistributing source or bundles. Exact dependency trees are in the committed client and server lockfiles. Dependencies are not endorsements. Demo people and facilities are fictional. The application logo is the local SVG; external README badge images are served by Shields.io.

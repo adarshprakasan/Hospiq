@@ -164,6 +164,10 @@ Medical-record requests now require `visitDate` with timezone and support struct
 
 Patient QR resolution is purpose-signed and checks the linked doctor, exact active appointment, exact patient and visit date. The patient endpoint returns a visit list; codes are not reusable across visits, even on the same date. It does not create clinical consent or act as a login token. Doctor profile links retain the older public format. See [Patient QR](PATIENT_QR.md) for the contract and camera/image/paste flow.
 
+## Pharmacy and medication catalogue
+
+The `pharmacist` role is now supported for verified registration and hospital assignment by staff. Pharmacists maintain medication availability/prices and use hospital-scoped pharmacy orders; patients see only their own pharmacy tokens. Saving a doctor's record completes its appointment and returns `visitCompleted`; the subsequent pharmacy handoff is explicit and idempotent per appointment. See [Pharmacy API contract](PHARMACY.md#api-contract) and [Medication API](MEDICATIONS.md#api) for endpoints, order versions, integer-fils totals, counter payment, Stripe checkout, and signed webhooks. Pharmacists have no general medical-history or attachment access.
+
 ## Error handling and limits
 
 Common statuses are 400 invalid request/transition, 401 missing/invalid session or credentials, 403 denied ownership/role, 404 missing resource, 409 duplicate/stale change, 413 oversized body/file, 429 auth limit, 503 email unavailable, and 500 unexpected failure. Some legacy controller catch blocks return 500 for malformed IDs or validation failures; clients should not assume every validation failure is 400. Error normalization is a remaining improvement.

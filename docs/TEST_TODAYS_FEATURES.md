@@ -2,6 +2,10 @@
 
 This guide covers the features added on 6 November 2026. Use fictional data only. Patient IDs are stable; QR codes now belong to individual visits and are signed over patient ID, appointment ID, and visit date. Two appointments on the same day therefore have different codes.
 
+The newer **[Pharmacy walkthrough](PHARMACY.md)** covers pharmacist accounts, medication pricing, doctor handoff, pharmacy tokens, preparation checkboxes, counter payments and Stripe setup. Saving a doctor's visit now completes the appointment; request any needed clinical-history OTP permission before saving.
+
+Counts below describe the original large dataset. The separate pharmacy seed adds 24 prescription records/visits; Patient001 receives eight extra pharmacy examples across Harbour and Oasis. Expect higher history counts after running that seed or adding your own records.
+
 ## 1. Start the app
 
 From the repository root, start the backend and frontend in separate terminals:

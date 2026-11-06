@@ -71,6 +71,7 @@ async function run() {
   const clinician = await user("doctor", "doctor-a");
   const secondClinician = await user("doctor", "doctor-b");
   const staff = await user("staff", "staff");
+  const pharmacist = await user("pharmacist", "pharmacist");
   const admin = await user("admin", "admin");
   const doctor = await Doctor.create({ name: "Doctor A", hospitalId: hospital._id, department: "Medicine", userId: clinician._id });
   const otherDoctor = await Doctor.create({ name: "Doctor B", hospitalId: hospital._id, department: "Medicine", userId: secondClinician._id });
@@ -109,7 +110,7 @@ async function run() {
   const pending = await response.json(); check(messages.length, 1); check(JSON.stringify(pending).includes("otpHash"), false);
   const decodedMail = messages[0].replace(/=\r?\n/g, "").replace(/=([0-9A-F]{2})/gi, (_match, hex) => String.fromCharCode(parseInt(hex, 16)));
   const code = decodedMail.match(/approve:\s*(\d{6})/)[1];
-  response = await request(clinician, `/records/patient/${patient._id}/access/verify`, "POST", { requestId: pending.requestId, otp: code }); check(response.status, 400);
+  response = await request(clinician, `/records/patient/${patient._id}/access/verify`, "POST", { requestId: pending.requestId, otp: code }); check(response.status, 403); // Saving this doctor's record has completed the visit.
   response = await request(secondClinician, `/records/patient/${otherPatient._id}/access/verify`, "POST", { requestId: pending.requestId, otp: code }); check(response.status, 403);
   response = await request(secondClinician, `/records/patient/${patient._id}/access/verify`, "POST", { requestId: pending.requestId, otp: "000000" === code ? "111111" : "000000" }); check(response.status, 400);
   response = await request(secondClinician, `/records/patient/${patient._id}/access/verify`, "POST", { requestId: pending.requestId, otp: code }); check(response.status, 200);
@@ -148,6 +149,7 @@ async function run() {
   check(await Record.countDocuments({ patientId: patient._id }), 3);
   const onDisk = await fs.readFile(path.join(storage, (await Record.findById(external._id)).attachments[0].storageKey)); check(onDisk.includes(Buffer.from("Fictional lab report")), false);
   // Permanent patient cards identify exactly the patient on the doctor's own visit.
+  await Token.updateOne({ _id: firstVisit._id }, { $set: { status: "called" } }); // Reset this disposable appointment for the independent QR scenarios.
   response = await request(patient, "/qr/me"); check(response.status, 200); const cardList = await response.json();
   const card = cardList.visits.find(v => v.tokenId === String(firstVisit._id));
   const secondCard = cardList.visits.find(v => v.tokenId === String(secondVisit._id));
@@ -195,13 +197,13 @@ async function run() {
   // Hospital formulary, authoritative strength snapshot, structured schedule, and tenant boundaries.
   const Medication = require("../models/Medication");
   await Medication.init();
-  response = await request(staff, "/medications", "POST", { name: "Fictional Alpha 250 mg tablet" }); check(response.status, 201);
+  response = await request(pharmacist, "/medications", "POST", { name: "Fictional Alpha 250 mg tablet" }); check(response.status, 201);
   const medicine = await response.json();
-  response = await request(staff, "/medications", "POST", { name: medicine.name }); check((await response.json())._id, medicine._id);
+  response = await request(pharmacist, "/medications", "POST", { name: medicine.name }); check((await response.json())._id, medicine._id);
   response = await request(clinician, "/medications"); check((await response.json()).length, 1);
   response = await request(patient, "/medications"); check(response.status, 403);
   const foreignHospital = await Hospital.create({ name: "Other Fictional Hospital", address: "Test", location: { lat: 0, lng: 0 }, type: "Hospital" });
-  const foreignStaff = await user("staff", "foreign-staff"); foreignStaff.hospitalId = foreignHospital._id; await foreignStaff.save();
+  const foreignStaff = await user("pharmacist", "foreign-pharmacist"); foreignStaff.hospitalId = foreignHospital._id; await foreignStaff.save();
   const foreignMedicine = await Medication.create({ hospitalId: foreignHospital._id, name: "Other hospital medicine" });
   response = await request(foreignStaff, "/medications"); check((await response.json()).length, 1);
   response = await request(foreignStaff, `/medications/${medicine._id}`, "DELETE"); check(response.status, 404);
@@ -215,10 +217,10 @@ async function run() {
   check(savedPrescription.medications[0].foodTiming, "after");
   response = await request(clinician, "/records/add", "POST", { ...prescription, medications: [{ ...scheduled, medicationId: String(foreignMedicine._id) }] }); check(response.status, 400);
   response = await request(clinician, "/records/add", "POST", { ...prescription, medications: [{ ...scheduled, endDate: "2000-01-01" }] }); check(response.status, 400);
-  response = await request(staff, `/medications/${medicine._id}`, "DELETE"); check(response.status, 200);
+  response = await request(pharmacist, `/medications/${medicine._id}`, "DELETE"); check(response.status, 200);
   response = await request(clinician, "/records/add", "POST", prescription); check(response.status, 400);
   response = await request(patient, "/records/mine"); check((await response.json()).find(r => r._id === savedPrescription._id).medications[0].name, medicine.name);
-  response = await request(staff, "/medications", "POST", { name: medicine.name }); check((await response.json())._id, medicine._id);
+  response = await request(pharmacist, "/medications", "POST", { name: medicine.name }); check((await response.json())._id, medicine._id);
   console.log(JSON.stringify({ result: "passed", checks: assertions, smtpMessagesCaptured: messages.length, database: "isolated disposable database", patientData: "fictional only" }));
   if (previewMode) {
     mailFailure = false;

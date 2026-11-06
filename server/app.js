@@ -12,6 +12,7 @@ app.use(
   })
 );
 app.disable("x-powered-by");
+app.post("/api/pharmacy/stripe/webhook", express.raw({ type: "application/json", limit: "100kb" }), require("./services/pharmacy-payments").webhook);
 app.use(express.json({ limit: "100kb" }));
 app.get("/api/health", (_req, res) => res.json({ status: "ok" }));
 
@@ -23,6 +24,7 @@ app.use("/api/doctors", require("./routes/doctor.routes"));
 app.use("/api/tokens", require("./routes/token.routes"));
 app.use("/api/records", require("./routes/record.routes"));
 app.use("/api/medications", require("./routes/medication.routes"));
+app.use("/api/pharmacy", require("./routes/pharmacy.routes"));
 app.use("/api/qr", require("./routes/qr.routes"));
 app.use("/api/profile", require("./routes/profile.routes"));
 app.use("/api/schedule", require("./routes/schedule.routes"));

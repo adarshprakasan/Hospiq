@@ -55,7 +55,7 @@ export default function MedicalRecordForm({ patientId, visitTokenId, isDoctor, o
     const data = { ...form, visitDate: visitDate.toISOString(), medications, ...(isDoctor ? { patientId, visitTokenId } : associate ? { doctorId, shareWithDoctor: share } : {}) };
     const body = new FormData(); body.append("data", JSON.stringify(data)); files.forEach(file => body.append("files", file));
     setBusy(true);
-    try { await axios.post(isDoctor ? "/records/add" : "/records/mine", body, { headers: { "Content-Type": undefined }, timeout: 60000 }); onSaved(); }
+    try { const { data } = await axios.post(isDoctor ? "/records/add" : "/records/mine", body, { headers: { "Content-Type": undefined }, timeout: 60000 }); onSaved(data); }
     catch (err) { setError(err.response?.data?.message || "Record could not be saved. Please retry"); }
     finally { setBusy(false); }
   }
@@ -70,7 +70,7 @@ export default function MedicalRecordForm({ patientId, visitTokenId, isDoctor, o
       </>}
       <TextField label="Diagnosis / reason for visit" name="diagnosis" value={form.diagnosis} onChange={change} multiline minRows={2} />
       <Typography variant="h6">Prescribed medications</Typography>
-      {isDoctor && <Box><Typography variant="body2" color="text.secondary">Choose a medicine with its strength from your hospital's available list.</Typography>{catalogueError && <Alert severity="error">{catalogueError}</Alert>}{!catalogueLoading && !catalogueError && !catalogue.length && <Alert severity="info">No medications available. Add them in the Medications page, then refresh this list.</Alert>}<Button size="small" onClick={() => window.open("/medications", "_blank", "noopener,noreferrer")}>Manage hospital medications</Button><Button size="small" disabled={catalogueLoading} onClick={() => setCatalogueVersion(v => v + 1)}>Refresh medication list</Button></Box>}
+      {isDoctor && <Box><Typography variant="body2" color="text.secondary">Choose a medicine with its strength from your hospital's list, maintained by pharmacy.</Typography>{catalogueError && <Alert severity="error">{catalogueError}</Alert>}{!catalogueLoading && !catalogueError && !catalogue.length && <Alert severity="info">No medications available. Ask your hospital pharmacist to add them, then refresh this list.</Alert>}<Button size="small" disabled={catalogueLoading} onClick={() => setCatalogueVersion(v => v + 1)}>Refresh medication list</Button></Box>}
       {medications.map((medication, index) => <Box key={index} sx={{ border: "1px solid #e0e9e8", borderRadius: 2, p: 2 }}><Stack gap={2}>
         <Typography fontWeight={700}>Medication {index + 1}</Typography>
         {isDoctor ? <Autocomplete options={catalogue} loading={catalogueLoading} value={catalogue.find(item => item._id === medication.medicationId) || null} getOptionLabel={item => item.name} isOptionEqualToValue={(a, b) => a._id === b._id} onChange={(_event, item) => updateMedication(index, { medicationId: item?._id, name: item?.name || "" })} renderInput={params => <TextField {...params} required label="Search hospital medication and strength" />} /> : <TextField required label="Medication name and strength" value={medication.name} onChange={e => updateMedication(index, { name: e.target.value })} />}
