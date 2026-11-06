@@ -4,6 +4,14 @@ Changes are recorded here as they land. No semantic-version release tag has been
 
 ## Unreleased
 
+### Hospital medication catalogue and prescription form — 6 November 2026
+
+- Added hospital-scoped medication management for staff and linked doctors, with separate medicine strength/form entries and availability removal that preserves old prescriptions.
+- Replaced doctor medication free text with a searchable catalogue picker and removed the separate dose input.
+- Added Morning/Noon/Night checkboxes, calendar start/end dates with today's default start, mutually exclusive Before food/After food checkboxes, and unchanged instructions.
+- Added authoritative medicine snapshots, structured schedule validation, patient history display, legacy compatibility, and 48 fictional demo catalogue entries.
+- Verified 27 regression tests, 106 isolated integration checks, frontend build, and medication form controls in the browser.
+
 ### Visit QR rotation and expanded demo data — 6 November 2026
 
 - Replaced the permanent patient QR with signed visit-specific codes based on patient ID, appointment ID and visit date; stable user IDs remain unchanged.

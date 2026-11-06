@@ -33,6 +33,7 @@ Built and maintained by [Adarsh](https://github.com/adarshprakasan).
 | Appointment history, cancellation, printable tickets | Queue counts and status filters | Dated visit records and prescriptions |
 | Visit-specific QR selector and stable user ID | User ID on Profile | Scan patient QR, confirm matched appointment, and start record entry |
 | Medical history, scanned documents, lab uploads, consent revocation | No access to clinical records | Own earlier visit records; other records with patient-approved email OTP |
+| Medication schedules, course dates, food timing and instructions in visit history | Manage the hospital's available medication catalogue | Search medicines by name/strength; prescribe with time-of-day checkboxes and calendar dates |
 
 The interface includes responsive navigation, a shared teal/neutral theme, loading and empty states, guarded routes, and lazy-loaded pages. The medical-record page includes dated visits, structured medications, protected prescription/lab files, camera capture, and patient-controlled temporary doctor access. Automatic OCR, SMS OTP, future-date slots, live queue notifications, and patient queue-position estimates are not implemented.
 
@@ -46,6 +47,7 @@ The interface includes responsive navigation, a shared teal/neutral theme, loadi
 ### Medical history and patient permission
 
 - Records capture visit date/time, doctor, hospital, department, diagnosis/reason, notes, prescription text, and structured medication details.
+- Doctors search their hospital's medication catalogue, where each strength/form is a separate entry. Prescriptions use Morning/Noon/Night checkboxes, start/end date calendars (start defaults to today), optional Before food/After food selection, and instructions. Staff and doctors manage the available list in **Medications**; removing an entry preserves existing prescriptions.
 - Doctors create records for their visits. Patients can add earlier visits and upload or photograph JPEG, PNG, or PDF prescriptions and lab reports, with up to five files per record and 10 MB per file.
 - New attachments use AES-256-GCM encrypted private storage and authenticated downloads. Patients can view their own history; staff cannot read clinical records.
 - Treating doctors can view their own associated history. Patient uploads may explicitly be associated with a Hospiq doctor after confirmation.
@@ -107,11 +109,14 @@ These commands write to the MongoDB database selected by `server/.env`. Use a de
 
 ```powershell
 npm --prefix server run seed:large
+npm --prefix server run seed:medications
 ```
 
 This adds **6 facilities, 30 doctors with linked accounts, 12 staff, 120 patients, 30 schedules, 1,440 historical visits and medical records, 480 encrypted sample lab reports, and 240 appointments for the seed date**. The five departments are General Medicine, Cardiology, Paediatrics, Dermatology, and Orthopaedics.
 
 The seed preserves existing records, passwords, and test edits. Repeating it on the same day does not duplicate data; running it on another date adds that day's appointments. All appointment date checks use `HOSPITAL_TIMEZONE` (Asia/Dubai by default).
+
+The medication seed adds eight fictional medicine/strength/form choices per large-demo facility (48 total). It preserves existing entries and removed availability. See [Medication prescribing](docs/MEDICATIONS.md) for the redesigned form and catalogue workflow.
 
 | Demo role | Email | Scenario |
 |---|---|---|
@@ -152,6 +157,7 @@ For Creekside testing, use `patient.creekside@example.invalid`, `staff.creekside
 | `npm --prefix server run test:records` | Isolated database + local SMTP medical-record integration checks |
 | `npm --prefix server run check:upgrade` | Read-only database upgrade preflight |
 | `npm --prefix server run seed:large` | 6 facilities, 162 users, 1,680 visits, 1,440 records and 480 encrypted demo files |
+| `npm --prefix server run seed:medications` | Add 48 fictional catalogue choices across the six large-demo facilities |
 | `npm --prefix server run seed:demo` | Insert demo facilities/doctors/schedules |
 | `npm --prefix server run seed:accounts` | Insert and link demo login accounts |
 | `npm --prefix server audit` / `npm --prefix client audit` | Current dependency advisories |
@@ -168,6 +174,7 @@ For Creekside testing, use `patient.creekside@example.invalid`, `staff.creekside
 | [Architecture](docs/ARCHITECTURE.md) | Components, data model, and access boundaries |
 | [API reference](docs/API.md) | Routes, authorization, requests, and responses |
 | [Medical records](docs/MEDICAL_RECORDS.md) | Visit records, private attachments, and patient consent |
+| [Medication prescribing](docs/MEDICATIONS.md) | Hospital catalogue, strengths, frequency checkboxes, date ranges and food timing |
 | [Patient QR](docs/PATIENT_QR.md) | Per-appointment codes, doctor scanning, and matched visit records |
 | [Test today's features](docs/TEST_TODAYS_FEATURES.md) | Large dataset, account roles, QR, clinical records and OTP walkthrough |
 | [Testing](docs/TESTING.md) | Automated checks and manual scenarios |
@@ -184,7 +191,7 @@ npm --prefix server run test:records
 npm --prefix client run build
 ```
 
-The latest feature baseline passed **24 backend regression tests, 89 isolated medical-record/QR integration checks, and the frontend production build**. The integration suite uses a disposable database and local SMTP fixture, sends no real email, and cleans up its temporary data. The direct medical-record page fix was also checked across six patient/doctor navigation cases. Hardware camera capture and real-provider email delivery still need manual verification.
+The latest feature baseline passed **27 backend regression tests, 106 isolated medical-record/QR/medication integration checks, and the frontend production build**. The integration suite uses a disposable database and local SMTP fixture, sends no real email, and cleans up its temporary data. Browser checks cover the searchable medication picker, frequency checkboxes, date fields, and mutually exclusive food timing. The direct medical-record page fix was also checked across six patient/doctor navigation cases. Hardware camera capture and real-provider email delivery still need manual verification.
 
 ## Contributing and support
 

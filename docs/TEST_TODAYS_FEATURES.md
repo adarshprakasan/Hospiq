@@ -66,7 +66,7 @@ The first seeded Harbour visit is pending and the Oasis visit is called. If earl
 4. Choose **Upload QR image** and use the Harbour PNG, or paste the Harbour code and select **Verify pasted QR**. Camera scanning is another option, but requires browser permission plus HTTPS or localhost.
 5. Confirm the matched patient's name/ID, doctor, facility, department, date, and appointment number.
 6. Choose **Start visit & add medical record**. The pending visit becomes called and its record form opens. A called visit opens entry directly.
-7. Enter a visit reason, add one or more **Demo medications**, and fill in fictional prescription/visit notes. Date/time uses your browser's local time and is stored as an ISO timestamp.
+7. Enter a visit reason, add one or more medications from the searchable hospital list, select Morning/Noon/Night, choose an end date (start defaults to today), optionally choose Before food or After food, and fill in instructions and fictional prescription/visit notes. Run `npm --prefix server run seed:medications` if the list is empty. See [Medication prescribing](MEDICATIONS.md). Visit date/time uses your browser's local time and is stored as an ISO timestamp.
 8. Optionally upload `server/fixtures/demo-lab-report.pdf` as a lab report, then save.
 9. Verify **Medical record saved**, the matching patient/doctor context, and your new record.
 10. In the patient session, open **Medical records** and refresh. The new record and files should be visible.
@@ -167,4 +167,4 @@ npm --prefix server run test:records
 npm --prefix client run build
 ```
 
-The current baseline has 24 regression tests and 89 isolated integration checks. Hardware camera capture and real email delivery need manual verification. See [Patient QR](PATIENT_QR.md), [Medical records](MEDICAL_RECORDS.md), and [Configuration](CONFIGURATION.md).
+The current baseline has 27 regression tests and 106 isolated integration checks, including hospital medication isolation and structured prescription schedules. Hardware camera capture and real email delivery need manual verification. See [Patient QR](PATIENT_QR.md), [Medical records](MEDICAL_RECORDS.md), and [Configuration](CONFIGURATION.md).

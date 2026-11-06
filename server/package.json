@@ -10,7 +10,8 @@
     "seed:demo": "node scripts/seed-demo.js",
     "seed:accounts": "node scripts/seed-demo-accounts.js",
     "test:records": "node scripts/verify-medical-records.js",
-    "seed:large": "node scripts/seed-large-demo.js"
+    "seed:large": "node scripts/seed-large-demo.js",
+    "seed:medications": "node scripts/seed-medications.js"
   },
   "keywords": [
     "healthcare",

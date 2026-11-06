@@ -22,6 +22,7 @@ app.use("/api/departments", require("./routes/department.routes"));
 app.use("/api/doctors", require("./routes/doctor.routes"));
 app.use("/api/tokens", require("./routes/token.routes"));
 app.use("/api/records", require("./routes/record.routes"));
+app.use("/api/medications", require("./routes/medication.routes"));
 app.use("/api/qr", require("./routes/qr.routes"));
 app.use("/api/profile", require("./routes/profile.routes"));
 app.use("/api/schedule", require("./routes/schedule.routes"));

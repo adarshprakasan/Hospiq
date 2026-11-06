@@ -22,8 +22,7 @@ function validatedFields(data) {
     if (data[key] !== undefined) values[key] = data[key].trim();
   }
   if (data.medications !== undefined && (!Array.isArray(data.medications) || data.medications.length > 40)) throw fail(400, "Provide a medication list of up to 40 entries");
-  values.medications = data.medications || [];
-  if (!values.medications.every(m => m && typeof m.name === "string" && m.name.trim())) throw fail(400, "Every medication requires a name");
+  values.medications = (data.medications || []).map(require("../services/medication-validation").validateMedication);
   if (!["prescription", "lab-report"].includes(data.kind || "lab-report")) throw fail(400, "Invalid attachment type");
   return values;
 }
@@ -56,6 +55,13 @@ async function create(req, res) {
   if (doctor) {
     const hospital = await Hospital.findById(doctor.hospitalId);
     Object.assign(values, { doctorId: doctor._id, hospitalId: doctor.hospitalId, doctorName: doctor.name, hospitalName: hospital?.name || "", department: doctor.department });
+  }
+  for (const medication of values.medications) {
+    if (!medication.medicationId) continue; // Preserve older clients and external patient-entered prescriptions.
+    const item = doctor && await require("../models/Medication").findOne({ _id: medication.medicationId, hospitalId: doctor.hospitalId, active: true });
+    if (!item) throw fail(400, "Selected medication is no longer available at this hospital. Refresh the medication list");
+    medication.name = item.name; // Snapshot the authoritative name/strength for historical records.
+    delete medication.dose;
   }
   if (!values.doctorName || !values.hospitalName || !values.department) throw fail(400, "Doctor, hospital, and department are required");
   if (!values.diagnosis && !values.notes && !values.prescription && !values.medications.length && !req.files?.length) throw fail(400, "Add visit notes, medication, or an attachment");

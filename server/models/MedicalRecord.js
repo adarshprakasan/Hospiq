@@ -1,5 +1,11 @@
 const mongoose = require("mongoose");
 const medication = new mongoose.Schema({ name: { type: String, required: true, maxlength: 200 }, dose: { type: String, maxlength: 100 }, frequency: { type: String, maxlength: 100 }, duration: { type: String, maxlength: 100 }, instructions: { type: String, maxlength: 1000 } }, { _id: false });
+medication.add({
+  medicationId: { type: mongoose.Schema.Types.ObjectId, ref: "Medication" },
+  times: [{ type: String, enum: ["morning", "noon", "night"] }],
+  startDate: String, endDate: String,
+  foodTiming: { type: String, enum: ["", "before", "after"] },
+});
 const attachment = new mongoose.Schema({ originalName: String, mimeType: String, size: Number, kind: { type: String, enum: ["prescription", "lab-report"] }, storageKey: { type: String, required: true }, iv: { type: String, required: true }, tag: { type: String, required: true } });
 const schema = new mongoose.Schema({
   patientId: { type: mongoose.Schema.Types.ObjectId, ref: "User", required: true },

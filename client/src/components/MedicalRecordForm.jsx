@@ -1,11 +1,24 @@
 import { useEffect, useState } from "react";
-import { Alert, Box, Button, Checkbox, DialogActions, DialogContent, FormControlLabel, MenuItem, Stack, TextField, Typography } from "@mui/material";
+import { Alert, Autocomplete, Box, Button, Checkbox, DialogActions, DialogContent, FormControlLabel, FormGroup, MenuItem, Stack, TextField, Typography } from "@mui/material";
 import axios from "../api/axios";
-const blankMedication = () => ({ name: "", dose: "", frequency: "", duration: "", instructions: "" });
+const today = () => { const now = new Date(); return new Date(now.getTime() - now.getTimezoneOffset() * 60000).toISOString().slice(0, 10); };
+const blankMedication = () => ({ name: "", times: [], startDate: today(), endDate: "", foodTiming: "", instructions: "" });
 const localNow = () => { const now = new Date(); return new Date(now.getTime() - now.getTimezoneOffset() * 60000).toISOString().slice(0, 16); };
 export default function MedicalRecordForm({ patientId, visitTokenId, isDoctor, onSaved, onCancel }) {
   const [form, setForm] = useState({ visitDate: localNow(), doctorName: "", hospitalName: "", department: "", diagnosis: "", notes: "", prescription: "", kind: "lab-report" });
   const [medications, setMedications] = useState([]);
+  const [catalogue, setCatalogue] = useState([]);
+  const [catalogueLoading, setCatalogueLoading] = useState(false);
+  const [catalogueError, setCatalogueError] = useState("");
+  const [catalogueVersion, setCatalogueVersion] = useState(0);
+  useEffect(() => {
+    if (!isDoctor) return;
+    let live = true;
+    setCatalogueLoading(true); setCatalogueError("");
+    axios.get("/medications").then(({ data }) => { if (live) setCatalogue(data); }).catch(err => { if (live) setCatalogueError(err.response?.data?.message || "Could not load hospital medications"); }).finally(() => { if (live) setCatalogueLoading(false); });
+    return () => { live = false; };
+  }, [isDoctor, catalogueVersion]);
+  const updateMedication = (index, changes) => setMedications(previous => previous.map((m, i) => i === index ? { ...m, ...changes } : m));
   const [files, setFiles] = useState([]);
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
@@ -38,6 +51,7 @@ export default function MedicalRecordForm({ patientId, visitTokenId, isDoctor, o
     const visitDate = new Date(form.visitDate);
     if (!Number.isFinite(visitDate.getTime()) || visitDate > new Date()) { setError("Choose a valid visit date/time in the past or present"); return; }
     if (associate && (!doctorId || !share)) { setError("Choose a doctor and confirm access to this uploaded record"); return; }
+    if (medications.some(m => !m.name.trim() || (isDoctor && !catalogue.some(item => item._id === m.medicationId)) || !m.times.length || !m.endDate || m.endDate < m.startDate)) { setError("For each medication select a medicine, at least one time of day, and an end date on or after its start date"); return; }
     const data = { ...form, visitDate: visitDate.toISOString(), medications, ...(isDoctor ? { patientId, visitTokenId } : associate ? { doctorId, shareWithDoctor: share } : {}) };
     const body = new FormData(); body.append("data", JSON.stringify(data)); files.forEach(file => body.append("files", file));
     setBusy(true);
@@ -56,7 +70,16 @@ export default function MedicalRecordForm({ patientId, visitTokenId, isDoctor, o
       </>}
       <TextField label="Diagnosis / reason for visit" name="diagnosis" value={form.diagnosis} onChange={change} multiline minRows={2} />
       <Typography variant="h6">Prescribed medications</Typography>
-      {medications.map((medication, index) => <Box key={index} sx={{ border: "1px solid #e0e9e8", borderRadius: 2, p: 2 }}><Stack gap={1}>{[["name", "Medication name"], ["dose", "Dose"], ["frequency", "Frequency"], ["duration", "Duration"], ["instructions", "Instructions"]].map(([field, label]) => <TextField key={field} size="small" required={field === "name"} label={label} value={medication[field]} onChange={e => setMedications(previous => previous.map((m, i) => i === index ? { ...m, [field]: e.target.value } : m))} />)}<Button color="error" onClick={() => setMedications(previous => previous.filter((_, i) => i !== index))}>Remove medication</Button></Stack></Box>)}
+      {isDoctor && <Box><Typography variant="body2" color="text.secondary">Choose a medicine with its strength from your hospital's available list.</Typography>{catalogueError && <Alert severity="error">{catalogueError}</Alert>}{!catalogueLoading && !catalogueError && !catalogue.length && <Alert severity="info">No medications available. Add them in the Medications page, then refresh this list.</Alert>}<Button size="small" onClick={() => window.open("/medications", "_blank", "noopener,noreferrer")}>Manage hospital medications</Button><Button size="small" disabled={catalogueLoading} onClick={() => setCatalogueVersion(v => v + 1)}>Refresh medication list</Button></Box>}
+      {medications.map((medication, index) => <Box key={index} sx={{ border: "1px solid #e0e9e8", borderRadius: 2, p: 2 }}><Stack gap={2}>
+        <Typography fontWeight={700}>Medication {index + 1}</Typography>
+        {isDoctor ? <Autocomplete options={catalogue} loading={catalogueLoading} value={catalogue.find(item => item._id === medication.medicationId) || null} getOptionLabel={item => item.name} isOptionEqualToValue={(a, b) => a._id === b._id} onChange={(_event, item) => updateMedication(index, { medicationId: item?._id, name: item?.name || "" })} renderInput={params => <TextField {...params} required label="Search hospital medication and strength" />} /> : <TextField required label="Medication name and strength" value={medication.name} onChange={e => updateMedication(index, { name: e.target.value })} />}
+        <Box component="fieldset" sx={{ border: 0, p: 0, m: 0 }}><Typography component="legend" variant="body2">Frequency — select at least one</Typography><FormGroup row>{["morning", "noon", "night"].map(time => <FormControlLabel key={time} label={time[0].toUpperCase() + time.slice(1)} control={<Checkbox checked={medication.times.includes(time)} onChange={e => updateMedication(index, { times: e.target.checked ? [...medication.times, time] : medication.times.filter(t => t !== time) })} />} />)}</FormGroup></Box>
+        <Stack direction={{ xs: "column", sm: "row" }} gap={2}><TextField required fullWidth type="date" label="Start date" value={medication.startDate} onChange={e => updateMedication(index, { startDate: e.target.value })} slotProps={{ inputLabel: { shrink: true } }} /><TextField required fullWidth type="date" label="End date" value={medication.endDate} onChange={e => updateMedication(index, { endDate: e.target.value })} slotProps={{ inputLabel: { shrink: true }, htmlInput: { min: medication.startDate } }} /></Stack>
+        <Box component="fieldset" sx={{ border: 0, p: 0, m: 0 }}><Typography component="legend" variant="body2">Food timing (optional)</Typography><FormGroup row>{[["before", "Before food"], ["after", "After food"]].map(([value, label]) => <FormControlLabel key={value} label={label} control={<Checkbox checked={medication.foodTiming === value} onChange={e => updateMedication(index, { foodTiming: e.target.checked ? value : "" })} />} />)}</FormGroup></Box>
+        <TextField label="Instructions" value={medication.instructions} onChange={e => updateMedication(index, { instructions: e.target.value })} multiline minRows={2} />
+        <Button color="error" onClick={() => setMedications(previous => previous.filter((_, i) => i !== index))}>Remove medication</Button>
+      </Stack></Box>)}
       <Button variant="outlined" disabled={medications.length >= 40} onClick={() => setMedications(previous => [...previous, blankMedication()])}>+ Add medication</Button>
       <TextField label="Prescription text" name="prescription" value={form.prescription} onChange={change} multiline minRows={2} />
       <TextField label="Visit notes" name="notes" value={form.notes} onChange={change} multiline minRows={2} />

@@ -18,6 +18,7 @@ const ManageDoctorsPage = lazy(() => import("./pages/ManageDoctorsPage"));
 const DoctorProfilePage = lazy(() => import("./pages/DoctorProfilePage"));
 
 const MedicalRecordsPage = lazy(() => import("./pages/MedicalRecordsPage"));
+const MedicationsPage = lazy(() => import("./pages/MedicationsPage"));
 
 const PatientQrPage = lazy(() => import("./pages/PatientQrPage"));
 
@@ -126,6 +127,7 @@ function App() {
       />
       <Route path="/my-qr" element={<ProtectedRoute allowedRoles={["patient"]}><Layout><PatientQrPage /></Layout></ProtectedRoute>} />
       <Route path="/medical-records" element={<ProtectedRoute allowedRoles={["patient"]}><Layout><MedicalRecordsPage /></Layout></ProtectedRoute>} />
+      <Route path="/medications" element={<ProtectedRoute allowedRoles={["staff", "doctor"]}><Layout><MedicationsPage /></Layout></ProtectedRoute>} />
       <Route path="/patients/:patientId/records" element={<ProtectedRoute allowedRoles={["doctor"]}><Layout><MedicalRecordsPage /></Layout></ProtectedRoute>} />
       <Route path="*" element={<NotFound />} />
     </Routes>
