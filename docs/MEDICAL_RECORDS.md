@@ -40,3 +40,5 @@ Run `npm --prefix server test`, `npm --prefix client run build`, and `npm --pref
 Back up the database, private attachment volume, and encryption key with appropriate separation. Losing the key makes stored attachments unreadable. Patient-entered text remains unverified; signature validation is not full malware scanning or clinical verification. The app does not provide automatic OCR, mobile SMS, corrections/versioning, or a complete clinical audit trail.
 
 Grant state is unique per doctor/patient pair and versioned. Successful verification and patient revocation advance that version, preventing an older in-flight permission proof from restoring revoked access.
+
+Doctor entry now supports `visitTokenId`. If provided, it must be a string ObjectId identifying that doctor's called/completed appointment for this patient. The saved record includes the validated appointment link. The patient QR flow supplies this context; QR identification never grants access to other doctors' records. See [Patient QR](PATIENT_QR.md).

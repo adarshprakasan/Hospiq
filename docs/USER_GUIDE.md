@@ -46,7 +46,7 @@ Patients can cancel their own pending/called/skipped tokens. The API supports re
 
 ## QR behavior and current limits
 
-The printable token QR encodes token ID, token number, and patient name. Treat printed copies as containing patient information. There is no validated scanner/check-in workflow yet. The separate profile QR API encodes a `hospiq://` link; the web app does not register that custom scheme.
+Appointment-ticket QRs contain token details and remain separate from the permanent patient identity card. Use **My QR card** (also visible on the homepage and Profile) when meeting the doctor. Doctors select **Scan patient QR** on that appointment, scan with a camera or uploaded QR image, or paste the signed card data. The app verifies the patient matches the appointment before opening the visit record. Other doctors' records still require OTP consent. Camera use requires browser permission and HTTPS or localhost. The custom QR URI is decoded by Hospiq rather than opened as a browser link.
 
 Booking is same-day, not future-slot scheduling. Consultation hours use the single configured hospital timezone; overnight shifts are not supported. Do not rely on unimplemented wait-time estimates or appointment reminders.
 
@@ -59,3 +59,5 @@ For external visits, enter doctor/facility names. To associate an upload with an
 When another doctor requests access, the email identifies that doctor and hospital and explains the 30-minute scope. Do not share the code unless you approve. **Doctors with temporary access** shows active grants and a **Revoke access** action. Revocation blocks future reads, but cannot retract information already viewed or downloaded. SMS delivery is not implemented.
 
 See [Medical records](MEDICAL_RECORDS.md) for the exact contract, storage setup, and legacy public-link migration notes.
+
+Every registered account has a stable HQ-prefixed user ID on Profile. Patient IDs are also shown beside doctor queue entries. See [Patient QR](PATIENT_QR.md) for the full identification workflow and offline-walk-in limits.

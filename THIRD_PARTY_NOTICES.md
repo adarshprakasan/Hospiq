@@ -1,6 +1,6 @@
 # Third-party notices
 
-Hospiq source is licensed under ISC. Dependencies retain their own licenses and copyright notices. The table below records the direct installed dependencies and development tools at documentation time; it does not replace their full license texts or constitute a complete transitive distribution notice bundle.
+Hospiq source is licensed under ISC. Dependencies retain their own licenses and copyright notices. This table records direct installed dependencies and development tools at documentation time; it does not replace their full license texts or provide a complete transitive distribution notice bundle.
 
 | Package | Installed version | Package license declaration | Used by |
 |---|---|---|---|
@@ -9,6 +9,7 @@ Hospiq source is licensed under ISC. Dependencies retain their own licenses and 
 | @mui/icons-material | 7.2.0 | MIT | client |
 | @mui/material | 7.2.0 | MIT | client |
 | @vitejs/plugin-react | 4.6.0 | MIT | client |
+| @zxing/browser | 0.2.1 | MIT | client |
 | axios | 1.21.0 | MIT | client |
 | bcryptjs | 3.0.2 | BSD-3-Clause | server |
 | cloudinary | 2.11.0 | MIT | server |
@@ -28,6 +29,4 @@ Hospiq source is licensed under ISC. Dependencies retain their own licenses and 
 | react-router-dom | 7.18.5 | MIT | client |
 | vite | 7.3.7 | MIT | client |
 
-For exact resolved dependency trees, see `client/package-lock.json` and `server/package-lock.json`. Inspect each installed package’s LICENSE/COPYING/NOTICE files and include applicable notices when redistributing source or bundles. Rerun dependency review when the lockfiles change.
-
-Hospiq is not endorsed by the listed projects or providers. The demo facility and clinician names represent fictional test records. No third-party stock imagery is bundled by this documentation update. External README badge images are served by Shields.io; the application logo is the local SVG in `client/public/hospiq.svg`.
+The browser QR scanner uses ZXing browser, loaded on demand. Inspect each installed package's LICENSE/COPYING/NOTICE files and include applicable notices when redistributing source or bundles. Exact dependency trees are in the committed client and server lockfiles. Dependencies are not endorsements. Demo people and facilities are fictional. The application logo is the local SVG; external README badge images are served by Shields.io.

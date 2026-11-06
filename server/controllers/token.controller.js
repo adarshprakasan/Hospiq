@@ -28,7 +28,7 @@ async function book(req, res, offline) {
 exports.bookToken = (req, res) => book(req, res, false);
 exports.bookOfflineToken = (req, res) => book(req, res, true);
 function serialize(token) {
-  return { _id: token._id, tokenNumber: token.tokenNumber, status: token.status, patientId: token.patientId?._id, patientName: token.patientId?.name || token.patientName || "Patient", doctorId: token.doctorId?._id, doctorName: token.doctorId?.name || "Doctor unavailable", departmentName: token.departmentId, date: token.date, createdAt: token.createdAt, isOffline: token.isOffline };
+  return { _id: token._id, tokenNumber: token.tokenNumber, status: token.status, patientId: token.patientId?._id, patientPublicId: token.patientId?._id ? require("../utils/user-id").publicUserId(token.patientId._id) : null, patientName: token.patientId?.name || token.patientName || "Patient", doctorId: token.doctorId?._id, doctorName: token.doctorId?.name || "Doctor unavailable", departmentName: token.departmentId, date: token.date, createdAt: token.createdAt, isOffline: token.isOffline };
 }
 async function list(filter) {
   return (await Token.find(filter).sort({ date: -1, tokenNumber: 1 }).populate("patientId", "name").populate("doctorId", "name").lean()).map(serialize);

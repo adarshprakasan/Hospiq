@@ -3,7 +3,7 @@ import { Alert, Box, Button, Checkbox, DialogActions, DialogContent, FormControl
 import axios from "../api/axios";
 const blankMedication = () => ({ name: "", dose: "", frequency: "", duration: "", instructions: "" });
 const localNow = () => { const now = new Date(); return new Date(now.getTime() - now.getTimezoneOffset() * 60000).toISOString().slice(0, 16); };
-export default function MedicalRecordForm({ patientId, isDoctor, onSaved, onCancel }) {
+export default function MedicalRecordForm({ patientId, visitTokenId, isDoctor, onSaved, onCancel }) {
   const [form, setForm] = useState({ visitDate: localNow(), doctorName: "", hospitalName: "", department: "", diagnosis: "", notes: "", prescription: "", kind: "lab-report" });
   const [medications, setMedications] = useState([]);
   const [files, setFiles] = useState([]);
@@ -38,7 +38,7 @@ export default function MedicalRecordForm({ patientId, isDoctor, onSaved, onCanc
     const visitDate = new Date(form.visitDate);
     if (!Number.isFinite(visitDate.getTime()) || visitDate > new Date()) { setError("Choose a valid visit date/time in the past or present"); return; }
     if (associate && (!doctorId || !share)) { setError("Choose a doctor and confirm access to this uploaded record"); return; }
-    const data = { ...form, visitDate: visitDate.toISOString(), medications, ...(isDoctor ? { patientId } : associate ? { doctorId, shareWithDoctor: share } : {}) };
+    const data = { ...form, visitDate: visitDate.toISOString(), medications, ...(isDoctor ? { patientId, visitTokenId } : associate ? { doctorId, shareWithDoctor: share } : {}) };
     const body = new FormData(); body.append("data", JSON.stringify(data)); files.forEach(file => body.append("files", file));
     setBusy(true);
     try { await axios.post(isDoctor ? "/records/add" : "/records/mine", body, { headers: { "Content-Type": undefined }, timeout: 60000 }); onSaved(); }

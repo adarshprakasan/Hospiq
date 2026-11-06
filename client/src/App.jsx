@@ -19,6 +19,8 @@ const DoctorProfilePage = lazy(() => import("./pages/DoctorProfilePage"));
 
 const MedicalRecordsPage = lazy(() => import("./pages/MedicalRecordsPage"));
 
+const PatientQrPage = lazy(() => import("./pages/PatientQrPage"));
+
 function App() {
   return (
     <Suspense fallback={<Box textAlign="center" p={8}><CircularProgress aria-label="Loading page" /></Box>}>
@@ -122,6 +124,7 @@ function App() {
         path="/unauthorized"
         element={<div style={{ padding: "2rem" }}>Access Denied</div>}
       />
+      <Route path="/my-qr" element={<ProtectedRoute allowedRoles={["patient"]}><Layout><PatientQrPage /></Layout></ProtectedRoute>} />
       <Route path="/medical-records" element={<ProtectedRoute allowedRoles={["patient"]}><Layout><MedicalRecordsPage /></Layout></ProtectedRoute>} />
       <Route path="/patients/:patientId/records" element={<ProtectedRoute allowedRoles={["doctor"]}><Layout><MedicalRecordsPage /></Layout></ProtectedRoute>} />
       <Route path="*" element={<NotFound />} />

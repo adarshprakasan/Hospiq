@@ -4,6 +4,16 @@ Changes are recorded here as they land. No semantic-version release tag has been
 
 ## Unreleased
 
+### Patient identity and visit scanning — 6 November 2026
+
+- Stable HQ-prefixed IDs for all existing/new users without backfilling accounts.
+- Permanent patient QR card on the homepage, Profile and My QR card page, with download/copy actions.
+- Doctor per-appointment Scan patient QR with camera, local QR image decoding and paste fallback.
+- Signed purpose-specific QR resolution restricted to the exact patient on the logged-in doctor's appointment today; no login or OTP-consent bypass.
+- Matched visit context and record-entry handoff, validated visitTokenId storage, and clear offline/unregistered/cancelled appointment handling.
+- 23 regression tests and 81 isolated integration checks; actual QR image scanning and visit-record saving verified in the browser.
+
+
 ### Medical history and consent — 6 November 2026
 
 - Patient medical history and upload/camera intake; dated doctor visit notes, department, prescriptions, structured medications and lab files.

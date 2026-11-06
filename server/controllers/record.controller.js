@@ -1,3 +1,4 @@
+const mongoose = require("mongoose");
 const Record = require("../models/MedicalRecord");
 const Doctor = require("../models/Doctor");
 const Hospital = require("../models/Hospital");
@@ -34,15 +35,22 @@ async function create(req, res) {
   if (req.user.role === "patient") {
     patientId = req.user.id;
     if (data.doctorId) {
+      if (typeof data.doctorId !== "string" || !mongoose.isObjectIdOrHexString(data.doctorId)) throw fail(400, "Select a valid treating doctor");
       doctor = await Doctor.findById(data.doctorId);
       if (!doctor) throw fail(400, "Selected doctor was not found");
       if (data.shareWithDoctor !== true) throw fail(400, "Confirm that the selected doctor may read this uploaded visit record");
     }
   } else if (req.user.role === "doctor") {
     patientId = data.patientId;
+    if (typeof patientId !== "string" || !mongoose.isObjectIdOrHexString(patientId)) throw fail(400, "Select a valid patient");
+    if (data.visitTokenId !== undefined && (typeof data.visitTokenId !== "string" || !mongoose.isObjectIdOrHexString(data.visitTokenId))) throw fail(400, "Select a valid appointment");
     doctor = await Doctor.findOne({ userId: req.user.id });
     if (!doctor) throw fail(403, "Your doctor account is not linked");
-    if (!await Token.exists({ doctorId: doctor._id, patientId, status: { $in: ["called", "completed"] } })) throw fail(403, "Call the patient before recording the visit, or select a prior completed visit");
+    const visitFilter = { doctorId: doctor._id, patientId, status: { $in: ["called", "completed"] } };
+    if (data.visitTokenId) visitFilter._id = data.visitTokenId;
+    const visit = await Token.findOne(visitFilter).sort({ createdAt: -1 });
+    if (!visit) throw fail(403, "Call this patient before recording the matched visit, or select a prior completed visit");
+    values.visitTokenId = visit._id;
   } else throw fail(403, "Access denied");
   if (!await User.exists({ _id: patientId, role: "patient" })) throw fail(404, "Patient not found");
   if (doctor) {

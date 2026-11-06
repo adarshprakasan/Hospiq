@@ -10,7 +10,9 @@ const mongoose = require("mongoose");
 const jwt = require("jsonwebtoken");
 const bcrypt = require("bcryptjs");
 const dbName = `hospiq_record_test_${randomBytes(8).toString("hex")}`;
-let httpServer, smtpServer, storage;
+let httpServer, smtpServer, storage, stopPreview;
+const previewMode = process.argv.includes("--preview");
+const previewStopKey = randomBytes(16).toString("hex");
 const sockets = new Set();
 const messages = [];
 let mailFailure = false;
@@ -73,9 +75,13 @@ async function run() {
   const doctor = await Doctor.create({ name: "Doctor A", hospitalId: hospital._id, department: "Medicine", userId: clinician._id });
   const otherDoctor = await Doctor.create({ name: "Doctor B", hospitalId: hospital._id, department: "Medicine", userId: secondClinician._id });
   const today = require("../utils/queue").queueDate();
-  await Token.create({ doctorId: doctor._id, patientId: patient._id, departmentId: "Medicine", date: today, tokenNumber: 1, status: "called" });
-  await Token.create({ doctorId: otherDoctor._id, patientId: patient._id, departmentId: "Medicine", date: today, tokenNumber: 1, status: "pending" });
-  httpServer = app.listen(0, "127.0.0.1"); await new Promise(resolve => httpServer.once("listening", resolve));
+  const firstVisit = await Token.create({ doctorId: doctor._id, patientId: patient._id, departmentId: "Medicine", date: today, tokenNumber: 1, status: "called" });
+  const secondVisit = await Token.create({ doctorId: otherDoctor._id, patientId: patient._id, departmentId: "Medicine", date: today, tokenNumber: 1, status: "pending" });
+  httpServer = require("node:http").createServer((req, res) => {
+    if (previewMode && req.method === "POST" && req.url === "/__fixture/stop" && req.headers["x-fixture-stop"] === previewStopKey) { res.end("Stopping disposable fixture"); stopPreview?.(); return; }
+    app(req, res);
+  });
+  await listen(httpServer);
   const base = `http://127.0.0.1:${httpServer.address().port}/api`;
   async function request(actor, route, method = "GET", body) {
     const headers = actor ? { Authorization: `Bearer ${jwt.sign({ id: actor._id }, process.env.JWT_SECRET, { expiresIn: "10m" })}` } : {};
@@ -141,7 +147,48 @@ async function run() {
   response = await request(patient, "/records/mine", "POST", bad); check(response.status, 400);
   check(await Record.countDocuments({ patientId: patient._id }), 3);
   const onDisk = await fs.readFile(path.join(storage, (await Record.findById(external._id)).attachments[0].storageKey)); check(onDisk.includes(Buffer.from("Fictional lab report")), false);
+  // Permanent patient cards identify exactly the patient on the doctor's own visit.
+  response = await request(patient, "/qr/me"); check(response.status, 200); const card = await response.json();
+  check(card.publicId, "HQ-" + String(patient._id).toUpperCase());
+  response = await request(patient, "/qr/me"); check((await response.json()).qrValue, card.qrValue);
+  response = await request(clinician, "/tokens/my"); check((await response.json()).find(t => t._id === String(firstVisit._id)).patientPublicId, card.publicId);
+  for (const actor of [clinician, staff]) { response = await request(actor, "/qr/me"); check(response.status, 403); }
+  response = await request(patient, `/qr/patient/${otherPatient._id}`); check(response.status, 403);
+  response = await fetch(base + "/auth/me", { headers: { Authorization: "Bearer " + card.qrValue.split("/").at(-1) } }); check(response.status, 401);
+  for (const actor of [patient, clinician, staff, admin]) { response = await request(actor, "/auth/me"); check((await response.json()).publicId, "HQ-" + String(actor._id).toUpperCase()); }
+  response = await request(clinician, "/qr/patient/resolve", "POST", { tokenId: String(firstVisit._id), qrValue: card.qrValue }); check(response.status, 200);
+  const resolved = await response.json(); check(resolved.patient.patientId, String(patient._id)); check(resolved.doctor.doctorId, String(doctor._id)); check(resolved.appointment.tokenId, String(firstVisit._id));
+  check(JSON.stringify(resolved).includes("Fictional medication"), false);
+  response = await request(otherPatient, "/qr/me"); const otherCard = await response.json();
+  response = await request(clinician, "/qr/patient/resolve", "POST", { tokenId: String(firstVisit._id), qrValue: otherCard.qrValue }); check(response.status, 409);
+  response = await request(secondClinician, "/qr/patient/resolve", "POST", { tokenId: String(firstVisit._id), qrValue: card.qrValue }); check(response.status, 403);
+  response = await request(staff, "/qr/patient/resolve", "POST", { tokenId: String(firstVisit._id), qrValue: card.qrValue }); check(response.status, 403);
+  response = await request(clinician, "/qr/patient/resolve", "POST", { tokenId: String(firstVisit._id), qrValue: "malformed" }); check(response.status, 400);
+  const cancelledVisit = await Token.create({ doctorId: doctor._id, patientId: patient._id, departmentId: "Medicine", date: today, tokenNumber: 2, status: "cancelled" });
+  response = await request(clinician, "/qr/patient/resolve", "POST", { tokenId: String(cancelledVisit._id), qrValue: card.qrValue }); check(response.status, 403);
+  const offlineVisit = await Token.create({ doctorId: doctor._id, patientName: "Fictional walk-in", departmentId: "Medicine", date: today, tokenNumber: 3, status: "pending", isOffline: true });
+  response = await request(clinician, "/qr/patient/resolve", "POST", { tokenId: String(offlineVisit._id), qrValue: card.qrValue }); check(response.status, 403);
+  const oldVisit = await Token.create({ doctorId: doctor._id, patientId: patient._id, departmentId: "Medicine", date: "2000-01-01", tokenNumber: 1, status: "completed" });
+  response = await request(clinician, "/qr/patient/resolve", "POST", { tokenId: String(oldVisit._id), qrValue: card.qrValue }); check(response.status, 403);
+  response = await request(secondClinician, "/qr/patient/resolve", "POST", { tokenId: String(secondVisit._id), qrValue: card.qrValue }); check(response.status, 200);
+  response = await request(secondClinician, `/records/patient/${patient._id}`); check((await response.json()).length, 1);
+  check(await Grant.countDocuments({ revokedAt: null, expiresAt: { $gt: new Date() } }), 0);
+  response = await request(clinician, "/records/add", "POST", { ...visit, patientId: String(patient._id), visitTokenId: String(secondVisit._id) }); check(response.status, 403);
+  response = await request(clinician, "/qr/patient/resolve", "POST", { tokenId: { $ne: null }, qrValue: card.qrValue }); check(response.status, 400);
+  response = await request(clinician, "/records/add", "POST", { ...visit, patientId: String(patient._id), visitTokenId: { $ne: null } }); check(response.status, 400);
+  response = await request(clinician, "/records/add", "POST", { ...visit, patientId: { $ne: null }, visitTokenId: String(firstVisit._id) }); check(response.status, 400);
+  response = await request(clinician, "/records/add", "POST", { ...visit, patientId: String(patient._id), visitTokenId: String(firstVisit._id) }); check(response.status, 201);
+  check((await response.json()).record.visitTokenId, String(firstVisit._id));
   console.log(JSON.stringify({ result: "passed", checks: assertions, smtpMessagesCaptured: messages.length, database: "isolated disposable database", patientData: "fictional only" }));
+  if (previewMode) {
+    mailFailure = false;
+    const qrImagePath = path.join(storage, "patient-qr.png");
+    await require("qrcode").toFile(qrImagePath, card.qrValue, { width: 512, margin: 4 });
+    console.log(JSON.stringify({ previewApi: base, patientEmail: patient.email, doctorEmail: secondClinician.email, password: "FictionalIntegrationPassword", qrImagePath, stopUrl: base.replace(/\/api$/, "") + "/__fixture/stop", stopKey: previewStopKey, lifetime: "10 minutes, fictional disposable data only" }));
+    let timer;
+    await new Promise(resolve => { stopPreview = resolve; timer = setTimeout(resolve, 10 * 60000); });
+    clearTimeout(timer);
+  }
 
 }
 async function cleanup() {

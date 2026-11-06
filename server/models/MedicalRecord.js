@@ -5,6 +5,7 @@ const schema = new mongoose.Schema({
   patientId: { type: mongoose.Schema.Types.ObjectId, ref: "User", required: true },
   doctorId: { type: mongoose.Schema.Types.ObjectId, ref: "Doctor" },
   hospitalId: { type: mongoose.Schema.Types.ObjectId, ref: "Hospital" },
+  visitTokenId: { type: mongoose.Schema.Types.ObjectId, ref: "Token" },
   createdBy: { type: mongoose.Schema.Types.ObjectId, ref: "User" },
   source: { type: String, enum: ["doctor", "patient"], default: "doctor" },
   doctorName: { type: String, maxlength: 200 }, hospitalName: { type: String, maxlength: 200 }, department: { type: String, maxlength: 200 },

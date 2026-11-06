@@ -1,3 +1,4 @@
+import PatientIdentityCard from "../components/PatientIdentityCard";
 import React, { useEffect, useState } from "react";
 import axios from "../api/axios";
 import {
@@ -50,9 +51,11 @@ const ProfileDashboard = () => {
         <Typography variant="h5" gutterBottom>
           Welcome, {user?.name}
         </Typography>
+        <Typography sx={{ overflowWrap: "anywhere", fontFamily: "monospace", mb: 1 }}>User ID: {user?.publicId}</Typography>
         <Typography>Email: {user?.email}</Typography>
         <Typography>Role: {user?.role}</Typography>
       </Paper>
+      {user?.role === "patient" && <Box mt={3}><PatientIdentityCard /></Box>}
     </Container>
   );
 };

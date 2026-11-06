@@ -24,7 +24,7 @@ The frontend and API run as separate processes. The API does not serve `client/d
 
 | Entity | Important fields | Relationships / notes |
 |---|---|---|
-| User | name, email, password hash, role, hospitalId | Login identity; roles patient/doctor/staff/admin; public signup excludes admin |
+| User | name, email, password hash, role, hospitalId, virtual publicId | Login identity; HQ-prefixed publicId uses the full account ObjectId and needs no migration; public signup excludes admin |
 | Hospital | name, address, coordinates, type, departments | Departments are embedded strings; type Hospital or Clinic |
 | Doctor | name, hospitalId, department, userId, qualifications, availabilityStatus | Clinical profile; optional unique userId links to a doctor login |
 | DoctorSchedule | doctorId, weeklySchedule | One schedule per clinical doctor; weekday/time/availability entries |
@@ -69,3 +69,7 @@ The system currently has one timezone and one in-memory auth rate limiter per AP
 New attachments are encrypted using AES-256-GCM with random IVs and patient/storage-key authenticated associated data. Only authorized API downloads decrypt them, and authentication tags are verified before plaintext is returned. Download authorization is rechecked after disk I/O; responses use private/no-store caching policy and attachment disposition. Record list responses omit storage paths, IVs, tags, and legacy public URLs. The separate encryption key must be backed up with appropriate separation from data. Visit text remains in MongoDB; this change does not implement application-level encryption of all database fields.
 
 Consent requests require today's pending/called appointment, a registered patient email and the requesting linked doctor. The code is never returned to the doctor API; actual email delivery or an explicit local SMTP test fixture is required. Incorrect attempts are counted atomically and successful codes are consumed atomically. Revoked/expired grants are excluded on each read. A patient can stop future access but cannot erase information already read or downloaded.
+
+## Patient identification
+
+The server signs a purpose-specific identity token under a dedicated audience/issuer and emits it as the permanent patient card. Login middleware rejects purpose-specific tokens, including this card. Resolution checks the current clinical doctor and their exact registered patient appointment today. The card carries no contact or medical details. Identity resolution never creates an access grant. A selected visitTokenId on record creation is validated against the patient, doctor and called/completed state. See [Patient QR](PATIENT_QR.md).

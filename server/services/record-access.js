@@ -19,7 +19,7 @@ function canReadRecord(record, context) {
 function serializeRecord(record) {
   const r = record.toObject ? record.toObject() : record;
   return {
-    _id: r._id, patientId: r.patientId, doctorId: r.doctorId?._id || r.doctorId, hospitalId: r.hospitalId?._id || r.hospitalId,
+    _id: r._id, visitTokenId: r.visitTokenId, patientId: r.patientId, doctorId: r.doctorId?._id || r.doctorId, hospitalId: r.hospitalId?._id || r.hospitalId,
     doctorName: r.doctorName || r.doctorId?.name || "External doctor", hospitalName: r.hospitalName || r.hospitalId?.name || "External facility",
     department: r.department || r.doctorId?.department || "Not recorded", visitDate: r.visitDate, createdAt: r.createdAt,
     source: r.source || "doctor", diagnosis: r.diagnosis, notes: r.notes, prescription: r.prescription, medications: r.medications || [],

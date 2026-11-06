@@ -35,3 +35,7 @@ Track remediation in the [roadmap](docs/ROADMAP.md) and [project review](PROJECT
 ## Secret hygiene
 
 Keep `.env` files, generated passwords, JWTs, and provider credentials out of Git. If a secret is exposed, rotate it at the issuing system and review affected access; deleting it from a new commit does not invalidate it or remove history. Production configuration belongs in a secret manager. Dependency audits are time-sensitive checks, not security certification.
+
+## Patient QR identity boundary
+
+The permanent patient QR is a signed identity pointer, not a login credential, OTP, or medical-access grant. It contains no medical or contact data. Doctors must have the matching registered appointment today, and a different patient's card is rejected. A copied card is not proof of liveness; the doctor should still confirm the person and patient ID in the visit. Account deletion or signing-secret rotation can make a card unusable; the public user ID remains stable. Never treat a successful scan as approval for another doctor's clinical history.

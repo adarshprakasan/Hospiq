@@ -1,6 +1,7 @@
 import React, { useRef } from "react";
 import { QRCodeCanvas } from "qrcode.react";
-import { Button } from "@mui/material";
+import { Link } from "react-router-dom";
+import { Button, Typography } from "@mui/material";
 
 const PrintableQRCode = ({ token }) => {
   const canvasRef = useRef();
@@ -42,6 +43,7 @@ const PrintableQRCode = ({ token }) => {
 
   return (
     <>
+      <Typography variant="caption" display="block" mb={1}>Appointment ticket QR. Show your <Link to="/my-qr">patient ID card</Link> for doctor identification.</Typography>
       <div ref={canvasRef}>
         <QRCodeCanvas
           value={JSON.stringify({
@@ -58,7 +60,7 @@ const PrintableQRCode = ({ token }) => {
         sx={{ mt: 1 }}
         onClick={handlePrint}
       >
-        Print QR Code
+        Print appointment QR
       </Button>
     </>
   );

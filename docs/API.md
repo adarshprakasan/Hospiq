@@ -41,6 +41,7 @@ Login response fields:
   "token": "<jwt>",
   "user": {
     "id": "<user-id>",
+    "publicId": "HQ-<24-UPPERCASE-HEX-CHARACTERS>",
     "name": "Demo Patient",
     "email": "patient.creekside@example.invalid",
     "role": "patient",
@@ -153,12 +154,15 @@ Booking checks doctor availability and consultation hours for both online and of
 | POST | `/records/upload` | Retired, 410; use multipart record creation |
 | GET | `/profile/patient/:id` | Authenticated self only; returns `{user, records}` |
 | GET | `/profile/doctor/:id` | Public; hospital name populated |
-| GET | `/qr/:type/:id` | Public; type patient or doctor; returns `{qr, encoded}` |
+| GET | `/qr/me` | Patient self; signed identity-card data |
+| POST | `/qr/patient/resolve` | Doctor; `{tokenId, qrValue}` must match their registered patient appointment today |
+| GET | `/qr/patient/:id` | Authenticated patient self; legacy identity-card alias |
+| GET | `/qr/doctor/:id` | Public doctor profile QR; `{qr, encoded}` |
 | GET | `/health` | Public; `{ "status": "ok" }`, liveness only |
 
 Medical-record requests now require `visitDate` with timezone and support structured medications and private attachments. Doctor/facility/department identities derive from the linked profile; patient external visits use explicit text fields or an explicitly approved local doctor association. Public `testResults` URL submission is not supported. See [Medical records](MEDICAL_RECORDS.md) for all consent/access/download routes, multipart payloads, legacy-link behavior and the updated contract.
 
-The QR route encodes a profile link, does not verify that the target profile exists, and does not confer permission to read it.
+Patient QR resolution is purpose-signed and checks the linked doctor, current appointment and exact patient. It does not create clinical consent or act as a login token. Doctor profile links retain the older public format. See [Patient QR](PATIENT_QR.md) for the contract and camera/image/paste flow.
 
 ## Error handling and limits
 

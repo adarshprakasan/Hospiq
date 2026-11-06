@@ -1,23 +1,15 @@
-const express = require("express");
-const router = express.Router();
+const router = require("express").Router();
 const QRCode = require("qrcode");
-
-// Route to generate a QR code for a patient or doctor
-router.get("/:type/:id", async (req, res) => {
-  const { type, id } = req.params;
-
-  if (!["patient", "doctor"].includes(type)) {
-    return res.status(400).json({ message: "Invalid type" });
-  }
-
-  const dataToEncode = `hospiq://profile/${type}/${id}`; // or just the ID
-
-  try {
-    const qrDataURL = await QRCode.toDataURL(dataToEncode);
-    res.status(200).json({ qr: qrDataURL, encoded: dataToEncode });
-  } catch (err) {
-    res.status(500).json({ message: err.message });
-  }
+const auth = require("../middlewares/auth");
+const roles = require("../middlewares/roles");
+const rateLimit = require("../middlewares/rateLimit");
+const qr = require("../controllers/qr.controller");
+router.get("/me", auth, roles(["patient"]), qr.myCard);
+router.post("/patient/resolve", auth, roles(["doctor"]), rateLimit({ limit: 60, windowMs: 60000 }), qr.resolvePatient);
+router.get("/patient/:id", auth, roles(["patient"]), qr.myCard);
+router.get("/doctor/:id", async (req, res) => {
+  const encoded = `hospiq://profile/doctor/${req.params.id}`;
+  res.json({ qr: await QRCode.toDataURL(encoded), encoded });
 });
-
+router.get("/:type/:id", (_req, res) => res.status(400).json({ message: "Invalid QR type" }));
 module.exports = router;

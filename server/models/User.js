@@ -24,7 +24,9 @@ const userSchema = new mongoose.Schema(
     },
     qrCode: String, // Placeholder for future
   },
-  { timestamps: true }
+  { timestamps: true, toJSON: { virtuals: true } }
 );
+
+userSchema.virtual("publicId").get(function () { return require("../utils/user-id").publicUserId(this._id); });
 
 module.exports = mongoose.model("User", userSchema);

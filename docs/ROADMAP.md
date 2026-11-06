@@ -15,7 +15,7 @@ These priorities describe intended work, not committed dates or shipped function
 ## Patient and care-team experience
 
 - Real-time queue updates, reconnect handling, queue position and measured wait estimates.
-- One active consultation per doctor, capacity/no-show policies, validated QR check-in.
+- One active consultation per doctor, capacity/no-show policies, and optional stronger proof-of-presence beyond the implemented signed patient QR appointment match.
 - Future appointments, holidays and leave, timezone per facility, overnight shift rules.
 - Extend the implemented patient history and clinician visit/prescription/attachment interfaces with versioned corrections, richer encounters and optional reviewed OCR.
 - Opt-in reminders, follow-up messaging, and delivery tracking.

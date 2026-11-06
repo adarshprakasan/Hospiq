@@ -28,7 +28,8 @@ Built and maintained by [Adarsh](https://github.com/adarshprakasan).
 | Search facilities by name, address, or department | Departments, doctor profiles, and account linking | Queue scoped to the linked doctor |
 | Filter hospitals and clinics | Weekly consultation schedules | Call, skip, and complete visits |
 | Book same-day tokens during consultation hours | Walk-in bookings and hospital queue search | Manage own availability and schedule |
-| Appointment history, cancellation, printable QR | Queue counts and status filters | Dated visit records and prescriptions |
+| Appointment history, cancellation, printable tickets | Queue counts and status filters | Dated visit records and prescriptions |
+| Permanent patient QR card and stable user ID | User ID on Profile | Scan patient QR, confirm matched appointment, and start record entry |
 | Medical history, scanned documents, lab uploads, consent revocation | No access to clinical records | Own earlier visit records; other records with patient-approved email OTP |
 
 The interface includes responsive navigation, a shared teal/neutral theme, loading and empty states, guarded routes, and lazy-loaded pages. The medical-record page includes dated visits, structured medications, protected prescription/lab files, camera capture, and patient-controlled temporary doctor access. Automatic OCR, SMS OTP, future-date slots, live queue notifications, and patient queue-position estimates are not implemented.
@@ -119,6 +120,7 @@ For Creekside testing, use `patient.creekside@example.invalid`, `staff.creekside
 | [Architecture](docs/ARCHITECTURE.md) | Components, data model, and access boundaries |
 | [API reference](docs/API.md) | Routes, authorization, requests, and responses |
 | [Medical records](docs/MEDICAL_RECORDS.md) | Visit records, private attachments, and patient consent |
+| [Patient QR](docs/PATIENT_QR.md) | Permanent identity cards, doctor scanning, and matched visit records |
 | [Testing](docs/TESTING.md) | Automated checks and manual scenarios |
 | [Deployment](docs/DEPLOYMENT.md) | Build/hosting model and release requirements |
 | [Roadmap](docs/ROADMAP.md) | Prioritized gaps and feature ideas |
