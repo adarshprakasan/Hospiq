@@ -14,3 +14,6 @@ client/.env.local
 
 # Encrypted medical files must never be committed or served statically
 server/storage/
+
+# Local-only generated demo passwords and account roster
+server/.demo-large-credentials.json

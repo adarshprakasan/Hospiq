@@ -48,7 +48,7 @@ async function create(req, res) {
     if (!doctor) throw fail(403, "Your doctor account is not linked");
     const visitFilter = { doctorId: doctor._id, patientId, status: { $in: ["called", "completed"] } };
     if (data.visitTokenId) visitFilter._id = data.visitTokenId;
-    const visit = await Token.findOne(visitFilter).sort({ createdAt: -1 });
+    const visit = await Token.findOne(visitFilter).sort({ date: -1, tokenNumber: -1, createdAt: -1 });
     if (!visit) throw fail(403, "Call this patient before recording the matched visit, or select a prior completed visit");
     values.visitTokenId = visit._id;
   } else throw fail(403, "Access denied");

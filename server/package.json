@@ -9,7 +9,8 @@
     "check:upgrade": "node scripts/check-upgrade.js",
     "seed:demo": "node scripts/seed-demo.js",
     "seed:accounts": "node scripts/seed-demo-accounts.js",
-    "test:records": "node scripts/verify-medical-records.js"
+    "test:records": "node scripts/verify-medical-records.js",
+    "seed:large": "node scripts/seed-large-demo.js"
   },
   "keywords": [
     "healthcare",

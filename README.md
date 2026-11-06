@@ -29,7 +29,7 @@ Built and maintained by [Adarsh](https://github.com/adarshprakasan).
 | Filter hospitals and clinics | Weekly consultation schedules | Call, skip, and complete visits |
 | Book same-day tokens during consultation hours | Walk-in bookings and hospital queue search | Manage own availability and schedule |
 | Appointment history, cancellation, printable tickets | Queue counts and status filters | Dated visit records and prescriptions |
-| Permanent patient QR card and stable user ID | User ID on Profile | Scan patient QR, confirm matched appointment, and start record entry |
+| Visit-specific QR selector and stable user ID | User ID on Profile | Scan patient QR, confirm matched appointment, and start record entry |
 | Medical history, scanned documents, lab uploads, consent revocation | No access to clinical records | Own earlier visit records; other records with patient-approved email OTP |
 
 The interface includes responsive navigation, a shared teal/neutral theme, loading and empty states, guarded routes, and lazy-loaded pages. The medical-record page includes dated visits, structured medications, protected prescription/lab files, camera capture, and patient-controlled temporary doctor access. Automatic OCR, SMS OTP, future-date slots, live queue notifications, and patient queue-position estimates are not implemented.
@@ -104,6 +104,7 @@ For Creekside testing, use `patient.creekside@example.invalid`, `staff.creekside
 | `npm --prefix server test` | Backend regression tests |
 | `npm --prefix server run test:records` | Isolated database + local SMTP medical-record integration checks |
 | `npm --prefix server run check:upgrade` | Read-only database upgrade preflight |
+| `npm --prefix server run seed:large` | 6 facilities, 162 users, 1,680 visits, 1,440 records and 480 encrypted demo files |
 | `npm --prefix server run seed:demo` | Insert demo facilities/doctors/schedules |
 | `npm --prefix server run seed:accounts` | Insert and link demo login accounts |
 | `npm --prefix server audit` / `npm --prefix client audit` | Current dependency advisories |
@@ -120,7 +121,8 @@ For Creekside testing, use `patient.creekside@example.invalid`, `staff.creekside
 | [Architecture](docs/ARCHITECTURE.md) | Components, data model, and access boundaries |
 | [API reference](docs/API.md) | Routes, authorization, requests, and responses |
 | [Medical records](docs/MEDICAL_RECORDS.md) | Visit records, private attachments, and patient consent |
-| [Patient QR](docs/PATIENT_QR.md) | Permanent identity cards, doctor scanning, and matched visit records |
+| [Patient QR](docs/PATIENT_QR.md) | Per-appointment codes, doctor scanning, and matched visit records |
+| [Test today's features](docs/TEST_TODAYS_FEATURES.md) | Large dataset, account roles, QR, clinical records and OTP walkthrough |
 | [Testing](docs/TESTING.md) | Automated checks and manual scenarios |
 | [Deployment](docs/DEPLOYMENT.md) | Build/hosting model and release requirements |
 | [Roadmap](docs/ROADMAP.md) | Prioritized gaps and feature ideas |
@@ -134,3 +136,5 @@ Read [CONTRIBUTING.md](CONTRIBUTING.md) and the [Code of Conduct](CODE_OF_CONDUC
 ## License and copyright
 
 Copyright (c) 2026 Adarsh. Licensed under the [ISC License](LICENSE), matching the existing backend package declaration. Third-party dependencies retain their own licenses; see [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md). The license text follows the [SPDX ISC template](https://spdx.org/licenses/ISC.html).
+
+For a larger repeatable dataset, run `npm --prefix server run seed:large` and follow [Test today's features](docs/TEST_TODAYS_FEATURES.md). Generated large-demo credentials are kept in the ignored `server/.demo-large-credentials.json`, not published here. Rerun the seed on another date to create that day's appointments; existing edits/passwords are preserved.

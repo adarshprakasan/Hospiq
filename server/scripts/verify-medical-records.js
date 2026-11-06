@@ -148,9 +148,11 @@ async function run() {
   check(await Record.countDocuments({ patientId: patient._id }), 3);
   const onDisk = await fs.readFile(path.join(storage, (await Record.findById(external._id)).attachments[0].storageKey)); check(onDisk.includes(Buffer.from("Fictional lab report")), false);
   // Permanent patient cards identify exactly the patient on the doctor's own visit.
-  response = await request(patient, "/qr/me"); check(response.status, 200); const card = await response.json();
+  response = await request(patient, "/qr/me"); check(response.status, 200); const cardList = await response.json();
+  const card = cardList.visits.find(v => v.tokenId === String(firstVisit._id));
+  const secondCard = cardList.visits.find(v => v.tokenId === String(secondVisit._id));
   check(card.publicId, "HQ-" + String(patient._id).toUpperCase());
-  response = await request(patient, "/qr/me"); check((await response.json()).qrValue, card.qrValue);
+  response = await request(patient, "/qr/me"); check((await response.json()).visits.find(v => v.tokenId === String(firstVisit._id)).qrValue, card.qrValue);
   response = await request(clinician, "/tokens/my"); check((await response.json()).find(t => t._id === String(firstVisit._id)).patientPublicId, card.publicId);
   for (const actor of [clinician, staff]) { response = await request(actor, "/qr/me"); check(response.status, 403); }
   response = await request(patient, `/qr/patient/${otherPatient._id}`); check(response.status, 403);
@@ -159,7 +161,9 @@ async function run() {
   response = await request(clinician, "/qr/patient/resolve", "POST", { tokenId: String(firstVisit._id), qrValue: card.qrValue }); check(response.status, 200);
   const resolved = await response.json(); check(resolved.patient.patientId, String(patient._id)); check(resolved.doctor.doctorId, String(doctor._id)); check(resolved.appointment.tokenId, String(firstVisit._id));
   check(JSON.stringify(resolved).includes("Fictional medication"), false);
-  response = await request(otherPatient, "/qr/me"); const otherCard = await response.json();
+  response = await request(otherPatient, "/qr/me"); const emptyCards = await response.json(); check(emptyCards.visits.length, 0); check(emptyCards.qrValue, undefined);
+  const otherVisit = await Token.create({ doctorId: doctor._id, patientId: otherPatient._id, departmentId: "Medicine", date: today, tokenNumber: 4, status: "pending" });
+  response = await request(otherPatient, "/qr/me"); const otherCard = (await response.json()).visits.find(v => v.tokenId === String(otherVisit._id));
   response = await request(clinician, "/qr/patient/resolve", "POST", { tokenId: String(firstVisit._id), qrValue: otherCard.qrValue }); check(response.status, 409);
   response = await request(secondClinician, "/qr/patient/resolve", "POST", { tokenId: String(firstVisit._id), qrValue: card.qrValue }); check(response.status, 403);
   response = await request(staff, "/qr/patient/resolve", "POST", { tokenId: String(firstVisit._id), qrValue: card.qrValue }); check(response.status, 403);
@@ -170,7 +174,16 @@ async function run() {
   response = await request(clinician, "/qr/patient/resolve", "POST", { tokenId: String(offlineVisit._id), qrValue: card.qrValue }); check(response.status, 403);
   const oldVisit = await Token.create({ doctorId: doctor._id, patientId: patient._id, departmentId: "Medicine", date: "2000-01-01", tokenNumber: 1, status: "completed" });
   response = await request(clinician, "/qr/patient/resolve", "POST", { tokenId: String(oldVisit._id), qrValue: card.qrValue }); check(response.status, 403);
-  response = await request(secondClinician, "/qr/patient/resolve", "POST", { tokenId: String(secondVisit._id), qrValue: card.qrValue }); check(response.status, 200);
+  response = await request(secondClinician, "/qr/patient/resolve", "POST", { tokenId: String(secondVisit._id), qrValue: secondCard.qrValue }); check(response.status, 200);
+  check(card.qrValue === secondCard.qrValue, false);
+  response = await request(secondClinician, "/qr/patient/resolve", "POST", { tokenId: String(secondVisit._id), qrValue: card.qrValue }); check(response.status, 409);
+  check(/different visit|visit date/.test((await response.json()).message), true);
+  const completedVisit = await Token.create({ doctorId: doctor._id, patientId: patient._id, departmentId: "Medicine", date: today, tokenNumber: 5, status: "completed" });
+  const completedQr = require("../services/patient-qr").createPatientQr(patient, completedVisit);
+  response = await request(clinician, "/qr/patient/resolve", "POST", { tokenId: String(completedVisit._id), qrValue: completedQr.qrValue }); check(response.status, 403);
+  const oldQr = require("../services/patient-qr").createPatientQr(patient, oldVisit);
+  response = await request(clinician, "/qr/patient/resolve", "POST", { tokenId: String(firstVisit._id), qrValue: oldQr.qrValue }); check(response.status, 409);
+  response = await request(patient, "/qr/me"); check((await response.json()).visits.some(v => v.tokenId === String(completedVisit._id)), false);
   response = await request(secondClinician, `/records/patient/${patient._id}`); check((await response.json()).length, 1);
   check(await Grant.countDocuments({ revokedAt: null, expiresAt: { $gt: new Date() } }), 0);
   response = await request(clinician, "/records/add", "POST", { ...visit, patientId: String(patient._id), visitTokenId: String(secondVisit._id) }); check(response.status, 403);
@@ -183,8 +196,10 @@ async function run() {
   if (previewMode) {
     mailFailure = false;
     const qrImagePath = path.join(storage, "patient-qr.png");
-    await require("qrcode").toFile(qrImagePath, card.qrValue, { width: 512, margin: 4 });
-    console.log(JSON.stringify({ previewApi: base, patientEmail: patient.email, doctorEmail: secondClinician.email, password: "FictionalIntegrationPassword", qrImagePath, stopUrl: base.replace(/\/api$/, "") + "/__fixture/stop", stopKey: previewStopKey, lifetime: "10 minutes, fictional disposable data only" }));
+    await require("qrcode").toFile(qrImagePath, secondCard.qrValue, { width: 512, margin: 4 });
+    const wrongVisitQrImagePath = path.join(storage, "wrong-visit-qr.png");
+    await require("qrcode").toFile(wrongVisitQrImagePath, card.qrValue, { width: 512, margin: 4 });
+    console.log(JSON.stringify({ wrongVisitQrImagePath, previewApi: base, patientEmail: patient.email, doctorEmail: secondClinician.email, password: "FictionalIntegrationPassword", qrImagePath, stopUrl: base.replace(/\/api$/, "") + "/__fixture/stop", stopKey: previewStopKey, lifetime: "10 minutes, fictional disposable data only" }));
     let timer;
     await new Promise(resolve => { stopPreview = resolve; timer = setTimeout(resolve, 10 * 60000); });
     clearTimeout(timer);

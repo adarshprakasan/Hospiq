@@ -10,7 +10,7 @@ mongoose
   .connect(process.env.MONGO_URI)
   .then(async () => {
     await Promise.all([require("./models/Token").init(), require("./models/Doctor").init(), require("./models/QueueCounter").init(), require("./models/RecordAccessRequest").init(), require("./models/RecordAccessGrant").init(), require("./models/MedicalRecord").init()]);
-    console.log("âœ… MongoDB connected");
+    console.log("MongoDB connected");
     app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
   })
   .catch((err) => { console.error("Startup failed:", err.message); process.exitCode = 1; mongoose.disconnect(); });

@@ -62,3 +62,5 @@ node -e "console.log(require('node:crypto').randomBytes(32).toString('hex'))"
 ```
 
 Never publish the output or regenerate it when files already exist. Losing the key makes encrypted attachments unreadable. Database backups need the attachment volume and separately protected key backup. Multi-instance deployment requires a shared private persistent volume or a deliberate private object-storage implementation; local ephemeral disks are unsuitable.
+
+`LARGE_DEMO_PASSWORD` optionally sets the initial password for a new large dataset. Once `server/.demo-large-credentials.json` exists, that private manifest preserves the dataset's generated password; reruns never reset existing account passwords. This variable does not alter normal registration or OTP.

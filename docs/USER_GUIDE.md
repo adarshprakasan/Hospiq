@@ -46,7 +46,7 @@ Patients can cancel their own pending/called/skipped tokens. The API supports re
 
 ## QR behavior and current limits
 
-Appointment-ticket QRs contain token details and remain separate from the permanent patient identity card. Use **My QR card** (also visible on the homepage and Profile) when meeting the doctor. Doctors select **Scan patient QR** on that appointment, scan with a camera or uploaded QR image, or paste the signed card data. The app verifies the patient matches the appointment before opening the visit record. Other doctors' records still require OTP consent. Camera use requires browser permission and HTTPS or localhost. The custom QR URI is decoded by Hospiq rather than opened as a browser link.
+Each appointment now links to its own signed QR. Use **My visit QR** (also visible on the homepage and Profile), and select the exact doctor/date/appointment you are attending. Your HQ user ID stays the same while the QR changes for every visit. Doctors select **Scan patient QR** on that appointment, scan with a camera or uploaded QR image, or paste the signed card data. The app verifies the patient, appointment ID and visit date all match before opening the visit record. Other doctors' records still require OTP consent. Camera use requires browser permission and HTTPS or localhost. The custom QR URI is decoded by Hospiq rather than opened as a browser link.
 
 Booking is same-day, not future-slot scheduling. Consultation hours use the single configured hospital timezone; overnight shifts are not supported. Do not rely on unimplemented wait-time estimates or appointment reminders.
 

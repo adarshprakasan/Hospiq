@@ -60,3 +60,9 @@ Never publish your generated password, reuse it outside testing, or run demo see
 ## Medical-record consent testing
 
 The seeded example.invalid emails cannot receive real permission codes. Do not add a universal/demo OTP bypass. Use `npm --prefix server run test:records` for the isolated database/local SMTP consent scenarios, or use a real verified patient account for actual email delivery. Patient upload and the treating doctor's own visit records do not require the cross-doctor OTP workflow.
+
+## Large dataset
+
+Run `npm --prefix server run seed:large` for 6 additional facilities, 30 doctors, 12 staff, 120 patients, 30 schedules, 1,440 historical visits/records, 480 encrypted PDF lab attachments and 240 appointments for the seed date. This namespace is separate from the earlier smaller seed. It reserves token numbers with atomic counters, uses stable IDs and insert-only data writes, preserves passwords/edits, and stores generated credentials in the ignored `server/.demo-large-credentials.json`. A rerun on the same date creates no duplicates; a different date adds new daily visits without deleting prior history.
+
+Use [Test today's features](TEST_TODAYS_FEATURES.md) for the account patterns, concrete primary logins, visit rotation and consent tests. All email addresses are fictional `.invalid` addresses and cannot receive real OTP messages. No consent grant or universal OTP bypass is seeded. The sample report is [demo-lab-report.pdf](../server/fixtures/demo-lab-report.pdf), contains no clinical results, and is encrypted separately for each seeded attachment.

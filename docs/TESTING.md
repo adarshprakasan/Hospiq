@@ -14,7 +14,7 @@ npm --prefix client audit
 git diff --check
 ```
 
-The Node test suite currently contains 23 cases. It starts an ephemeral localhost HTTP server for unauthenticated-route checks and uses mocked database methods for ownership/workflow rules. It does not require a seeded database, email delivery, or Cloudinary uploads. Allow local loopback connections in your test environment. Never load a production `.env` in CI; these tests do not need real secrets.
+The Node test suite currently contains 24 cases. It starts an ephemeral localhost HTTP server for unauthenticated-route checks and uses mocked database methods for ownership/workflow rules. It does not require a seeded database, email delivery, or Cloudinary uploads. Allow local loopback connections in your test environment. Never load a production `.env` in CI; these tests do not need real secrets.
 
 Covered behaviors include authentication boundaries, rejection of admin signup and unsigned email proofs, hospital scope, linked-doctor ownership, midnight timezone alignment, health/404 responses, foreign-hospital token rejection, terminal state transitions, unavailable doctors, and invalid schedules.
 
@@ -62,7 +62,7 @@ The initial redesign passed the 12-case suite and Vite build. Dependency audits 
 
 ## Medical records and consent integration
 
-The initial medical-record extension added seven cases for 19 total at that point; the current suite runs 23 regression cases, including clinical ownership, safe serialization, date validation, supported signatures, encryption round trips, patient binding and tamper detection. `npm --prefix server run test:records` now exercises 81 checks through real HTTP routes against a new uniquely named disposable database on the configured MongoDB server and a local SMTP fixture. It creates only fictional data and removes its test database/storage on completion. The database user needs permission to create/drop that isolated database. It never sends real email.
+The initial medical-record extension added seven cases for 19 total at that point; the current suite runs 24 regression cases, including clinical ownership, safe serialization, date validation, supported signatures, encryption round trips, patient binding and tamper detection. `npm --prefix server run test:records` now exercises 89 checks through real HTTP routes against a new uniquely named disposable database on the configured MongoDB server and a local SMTP fixture. It creates only fictional data and removes its test database/storage on completion. The database user needs permission to create/drop that isolated database. It never sends real email.
 
 Integration checks cover doctor-created and patient-uploaded visits, local-doctor association confirmation, protected files, own-doctor visibility, denied staff/admin/other-patient access, OTP delivery capture, incorrect/wrong-doctor/expired/exhausted/reused codes, consent, revocation, grant expiry, SMTP failure without an access grant, and retired public uploads. A fixture cannot establish Gmail delivery behavior or SMS support.
 
@@ -70,6 +70,10 @@ Browser verification on 6 November 2026 used that disposable fixture: patient-cr
 
 ## Patient QR verification
 
-Four QR unit cases cover all-role ID stability, full-ID uniqueness, purpose-scoped signatures, payload privacy, tampering and invalid scan formats. The 81-case integration command includes signed-card retrieval, self-only access, QR/login separation, appointment/patient/doctor matching, wrong/cancelled/offline/old visits, preserved OTP boundaries, queue public IDs and visit-bound record creation. It rejects operator-shaped IDs in QR and matched-record requests.
+Five QR unit cases cover all-role ID stability, full-ID uniqueness, purpose-scoped signatures, payload privacy, tampering and invalid scan formats. The 89-case integration command includes signed-card retrieval, self-only access, QR/login separation, appointment/patient/doctor matching, wrong/cancelled/offline/old visits, preserved OTP boundaries, queue public IDs and visit-bound record creation. It rejects operator-shaped IDs in QR and matched-record requests.
 
 The browser test used a generated QR image: patient homepage/dedicated card, doctor queue scan action, actual image decoding, matched patient/doctor context, starting the visit, automatic record form, and saved linked notes were observed. Physical camera hardware and permission behavior were not exercised. The ZXing decoder is dynamically loaded only when camera/image scanning is used.
+
+The per-visit update additionally checks different codes for same-day appointments and changed visit dates, empty visit lists without a generic code, old permanent code rejection, completed-visit rejection, and unchanged clinical consent rules. The persistent large dataset is inserted by `seed:large`, separately from the disposable integration database. Its second run was verified to insert zero duplicates. See [the feature-testing walkthrough](TEST_TODAYS_FEATURES.md).
+
+On the actual large-demo dataset, the browser verified that Patient 001's two same-day visit QR strings differ while their HQ ID is unchanged. The Oasis doctor rejected the Harbour visit's code with an explicit wrong-visit message and accepted the correct Oasis code. This check did not change the seeded appointment statuses or medical history.

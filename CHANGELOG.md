@@ -4,6 +4,15 @@ Changes are recorded here as they land. No semantic-version release tag has been
 
 ## Unreleased
 
+### Visit QR rotation and expanded demo data — 6 November 2026
+
+- Replaced the permanent patient QR with signed visit-specific codes based on patient ID, appointment ID and visit date; stable user IDs remain unchanged.
+- Added today's visit selector, appointment-specific downloads, empty/ended visit states and rejection of codes from another visit/date or retired permanent cards.
+- Added a repeatable large seed with 6 facilities, 162 user accounts, 1,680 visits, 1,440 records and 480 encrypted sample PDF files; credentials remain local and existing data is preserved.
+- Added the complete feature-testing walkthrough and verified zero duplicate inserts on the seed's second run.
+- 24 regression tests and 89 isolated integration checks pass.
+
+
 ### Patient identity and visit scanning — 6 November 2026
 
 - Stable HQ-prefixed IDs for all existing/new users without backfilling accounts.

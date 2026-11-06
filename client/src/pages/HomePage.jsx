@@ -22,7 +22,7 @@ export default function HomePage() {
     });
     return () => { live = false; };
   }, []);
-  const active = tokens.filter(t => activeStatus(t.status));
+  const active = tokens.filter(t => activeStatus(t.status) && t.isToday !== false);
   const visible = hospitals.filter(h => (!type || h.type === type) && [h.name, h.address, ...(h.departments || [])].join(" ").toLowerCase().includes(search.toLowerCase()));
   return <Container maxWidth="lg" sx={{ mt: 3 }}>
     <Box className="page-hero"><Typography variant="overline">YOUR HEALTH, SIMPLIFIED</Typography><Typography variant="h4" sx={{ mt: 1 }}>A little less waiting.<br />A lot more care.</Typography><Typography sx={{ mt: 2 }}>Welcome{storedUser()?.name ? `, ${storedUser().name.split(" ")[0]}` : ""}. Find a hospital or clinic, choose your doctor, and keep your appointments in one place.</Typography><Button component={Link} to="/my-tokens" variant="contained" sx={{ mt: 2, bgcolor: "white", color: "primary.dark" }}>My appointments →</Button></Box>
