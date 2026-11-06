@@ -2,7 +2,7 @@
   <img src="client/public/hospiq.svg" width="76" height="76" alt="Hospiq logo" />
   <h1>Hospiq</h1>
   <p><strong>Better care. Less waiting.</strong></p>
-  <p>Hospital discovery, same-day appointment tokens, and care-team queue management.</p>
+  <p>Hospital discovery, visit-specific QR check-in, patient-owned medical records, and care-team queue management.</p>
   <p>
     <a href="LICENSE"><img src="https://img.shields.io/badge/license-ISC-087f72" alt="License: ISC" /></a>
     <a href="docs/SETUP.md"><img src="https://img.shields.io/badge/Node.js-22.12%2B-339933" alt="Node.js 22.12 or newer" /></a>
@@ -15,6 +15,8 @@
 ## Overview
 
 Hospiq gives patients and hospital teams a shared appointment workflow. Patients find a hospital or clinic, choose a department and doctor, and book a same-day queue token. Staff register walk-ins and manage the queue; doctors see visits assigned to their linked clinical profiles.
+
+Patients keep their visit history, medications, prescriptions, and lab reports in one place. A signed QR connects each appointment to the correct patient and doctor. Doctors can read their own associated records; access to another clinician's records requires the patient's approval.
 
 Built and maintained by [Adarsh](https://github.com/adarshprakasan).
 
@@ -33,6 +35,24 @@ Built and maintained by [Adarsh](https://github.com/adarshprakasan).
 | Medical history, scanned documents, lab uploads, consent revocation | No access to clinical records | Own earlier visit records; other records with patient-approved email OTP |
 
 The interface includes responsive navigation, a shared teal/neutral theme, loading and empty states, guarded routes, and lazy-loaded pages. The medical-record page includes dated visits, structured medications, protected prescription/lab files, camera capture, and patient-controlled temporary doctor access. Automatic OCR, SMS OTP, future-date slots, live queue notifications, and patient queue-position estimates are not implemented.
+
+### Visit-specific QR check-in
+
+- Every user has a stable `HQ-...` public ID. Each patient appointment has its own signed QR containing the patient identity, appointment ID, and visit date, so two visits on the same day have different codes.
+- **My visit QR**, the patient homepage, and Profile show a selector for today's active visits, with download and copy options.
+- Doctors scan by camera, upload a QR image, or paste its data from the selected patient's queue row. The server checks the patient, treating doctor, exact appointment, date, and active status before allowing visit entry.
+- Previous-day, completed, cancelled, tampered, and mismatched visit codes are rejected. Scanning a QR does not grant access to other doctors' records.
+
+### Medical history and patient permission
+
+- Records capture visit date/time, doctor, hospital, department, diagnosis/reason, notes, prescription text, and structured medication details.
+- Doctors create records for their visits. Patients can add earlier visits and upload or photograph JPEG, PNG, or PDF prescriptions and lab reports, with up to five files per record and 10 MB per file.
+- New attachments use AES-256-GCM encrypted private storage and authenticated downloads. Patients can view their own history; staff cannot read clinical records.
+- Treating doctors can view their own associated history. Patient uploads may explicitly be associated with a Hospiq doctor after confirmation.
+- For other clinicians' records, a doctor with an eligible current visit requests a six-digit email OTP. Patient approval grants 30 minutes of read-only access; the patient can revoke it sooner. Codes expire after five minutes and are single-use, with limited failed attempts.
+- Histories support search and filtering by who added the record. Patients can open Medical records directly from navigation or its URL without scanning a QR first.
+
+See [Patient QR](docs/PATIENT_QR.md), [Medical records](docs/MEDICAL_RECORDS.md), and the [complete feature-testing walkthrough](docs/TEST_TODAYS_FEATURES.md).
 
 ## Technology
 
@@ -83,6 +103,33 @@ Open [the app](http://localhost:5173) and check [API health](http://localhost:50
 
 These commands write to the MongoDB database selected by `server/.env`. Use a dedicated demo database:
 
+### Large feature-testing dataset
+
+```powershell
+npm --prefix server run seed:large
+```
+
+This adds **6 facilities, 30 doctors with linked accounts, 12 staff, 120 patients, 30 schedules, 1,440 historical visits and medical records, 480 encrypted sample lab reports, and 240 appointments for the seed date**. The five departments are General Medicine, Cardiology, Paediatrics, Dermatology, and Orthopaedics.
+
+The seed preserves existing records, passwords, and test edits. Repeating it on the same day does not duplicate data; running it on another date adds that day's appointments. All appointment date checks use `HOSPITAL_TIMEZONE` (Asia/Dubai by default).
+
+| Demo role | Email | Scenario |
+|---|---|---|
+| Patient | `patient001@demo.hospiq.invalid` | Two initial active visits and 12 historical records |
+| Harbour doctor | `doctor01@demo.hospiq.invalid` | Patient001's Harbour visit and associated history |
+| Oasis doctor | `doctor06@demo.hospiq.invalid` | Separate visit QR and cross-doctor permission checks |
+| Harbour staff | `staff01@demo.hospiq.invalid` | Hospital queue and doctor management |
+
+The seed saves its generated password and complete roster in the ignored local file `server/.demo-large-credentials.json`. Retrieve your local demo password with:
+
+```powershell
+(Get-Content server/.demo-large-credentials.json -Raw | ConvertFrom-Json).password
+```
+
+Use a normal browser window for the patient and an incognito window or another browser for the doctor; ordinary tabs share the login. Dummy `*.invalid` email addresses cannot receive OTPs. Use a real verified patient email for manual consent testing, or the isolated local SMTP integration suite below. Follow [Test today's features](docs/TEST_TODAYS_FEATURES.md) for QR matching, wrong-code rejection, record entry, uploads, downloads, consent, expiry, and revocation. A fictional upload fixture is included at [demo-lab-report.pdf](server/fixtures/demo-lab-report.pdf).
+
+### Smaller discovery dataset
+
 ```powershell
 npm --prefix server run seed:demo
 npm --prefix server run seed:accounts
@@ -129,6 +176,16 @@ For Creekside testing, use `patient.creekside@example.invalid`, `staff.creekside
 | [Project review](PROJECT_REVIEW.md) | Dated findings and verification evidence |
 | [Changelog](CHANGELOG.md) | Unreleased changes and baseline commit |
 
+## Verification
+
+```powershell
+npm --prefix server test
+npm --prefix server run test:records
+npm --prefix client run build
+```
+
+The latest feature baseline passed **24 backend regression tests, 89 isolated medical-record/QR integration checks, and the frontend production build**. The integration suite uses a disposable database and local SMTP fixture, sends no real email, and cleans up its temporary data. The direct medical-record page fix was also checked across six patient/doctor navigation cases. Hardware camera capture and real-provider email delivery still need manual verification.
+
 ## Contributing and support
 
 Read [CONTRIBUTING.md](CONTRIBUTING.md) and the [Code of Conduct](CODE_OF_CONDUCT.md). Report reproducible bugs through [GitHub Issues](https://github.com/adarshprakasan/Hospiq/issues); include sanitized details only. See [SUPPORT.md](SUPPORT.md) for help and [SECURITY.md](SECURITY.md) for vulnerability reporting.
@@ -136,5 +193,3 @@ Read [CONTRIBUTING.md](CONTRIBUTING.md) and the [Code of Conduct](CODE_OF_CONDUC
 ## License and copyright
 
 Copyright (c) 2026 Adarsh. Licensed under the [ISC License](LICENSE), matching the existing backend package declaration. Third-party dependencies retain their own licenses; see [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md). The license text follows the [SPDX ISC template](https://spdx.org/licenses/ISC.html).
-
-For a larger repeatable dataset, run `npm --prefix server run seed:large` and follow [Test today's features](docs/TEST_TODAYS_FEATURES.md). Generated large-demo credentials are kept in the ignored `server/.demo-large-credentials.json`, not published here. Rerun the seed on another date to create that day's appointments; existing edits/passwords are preserved.
