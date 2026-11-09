@@ -10,6 +10,8 @@ router.post("/send-otp", auth.sendOtp);
 router.post("/verify-otp", auth.verifyOtp);
 router.post("/register", auth.registerUser);
 router.post("/login", auth.loginUser);
+router.post('/forgot-password', rateLimit({ limit: 5 }), require('../controllers/password-reset.controller').request);
+router.post('/reset-password', rateLimit({ limit: 10 }), require('../controllers/password-reset.controller').reset);
 router.get("/me", authMiddleware, auth.getCurrentUser);
 router.post("/change-password", authMiddleware, rateLimit({ limit: 10 }), auth.changePassword);
 

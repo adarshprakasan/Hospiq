@@ -1,36 +1,128 @@
-import { useEffect, useState } from "react";
-import { Link, useParams } from "react-router-dom";
-import { Container, Typography, Box, TextField, MenuItem, Button, Alert, Paper, Stack } from "@mui/material";
-import axios from "../api/axios";
+import { t as translate, useLocale } from "../i18n";
+import { useEffect, useState } from 'react';
+import { Link, useParams, useSearchParams } from 'react-router-dom';
+import { Alert, Box, Button, Chip, Container, Paper, Skeleton, Stack, TextField, Typography } from '@mui/material';
+import axios from '../api/axios';
+import { storedUser } from '../utils';
 export default function BookingPage() {
-  const { hospitalId } = useParams();
-  const [hospital, setHospital] = useState(null);
-  const [doctors, setDoctors] = useState([]);
-  const [department, setDepartment] = useState("");
-  const [doctorId, setDoctorId] = useState("");
-  const [error, setError] = useState("");
-  const [busy, setBusy] = useState(false);
-  const [loading, setLoading] = useState(true);
-  const [token, setToken] = useState(null);
+  useLocale();
+  const {
+    hospitalId
+  } = useParams();
+  const [params] = useSearchParams();
+  const [hospital, setHospital] = useState(null),
+    [doctors, setDoctors] = useState([]);
+  const [doctorId, setDoctorId] = useState(params.get('doctor') || ''),
+    [search, setSearch] = useState('');
+  const [date, setDate] = useState(new Date().toLocaleDateString('en-CA', {
+    timeZone: 'Asia/Dubai'
+  }));
+  const [schedule, setSchedule] = useState(null),
+    [scheduleLoading, setScheduleLoading] = useState(false);
+  const [error, setError] = useState(''),
+    [busy, setBusy] = useState(false),
+    [loading, setLoading] = useState(true);
+  const [token, setToken] = useState(null),
+    [retry, setRetry] = useState(0);
   useEffect(() => {
-    let live = true;
-    axios.get(`/hospitals/${hospitalId}`).then(({ data }) => { if (live) setHospital(data); }).catch(() => { if (live) setError("Unable to load this care provider."); }).finally(() => { if (live) setLoading(false); });
-    return () => { live = false; };
-  }, [hospitalId]);
+    const controller = new AbortController();
+    setLoading(true);
+    Promise.all([axios.get(`/hospitals/${hospitalId}`, {
+      signal: controller.signal
+    }), axios.get(`/doctors/hospital/${hospitalId}`, {
+      signal: controller.signal
+    })]).then(([h, d]) => {
+      setHospital(h.data);
+      setDoctors(d.data);
+      setError('');
+    }).catch(err => {
+      if (err.code !== 'ERR_CANCELED') setError('Unable to load this provider. Please retry.');
+    }).finally(() => {
+      if (!controller.signal.aborted) setLoading(false);
+    });
+    return () => controller.abort();
+  }, [hospitalId, retry]);
   useEffect(() => {
-    let live = true;
-    setDoctors([]); setDoctorId("");
-    if (department) axios.get("/doctors", { params: { hospitalId, department } }).then(({ data }) => { if (live) setDoctors(data); }).catch(() => { if (live) setError("Unable to load doctors. Please try again."); });
-    return () => { live = false; };
-  }, [department, hospitalId]);
-  async function book(event) {
-    event.preventDefault(); setBusy(true); setError("");
-    try { const { data } = await axios.post("/tokens/book", { doctorId }); setToken(data.token); }
-    catch (err) { setError(err.response?.data?.message || "Unable to book. Please try again."); }
-    finally { setBusy(false); }
+    const controller = new AbortController();
+    setSchedule(null);
+    if (doctorId) {
+      setScheduleLoading(true);
+      axios.get(`/schedule/${doctorId}`, {
+        signal: controller.signal
+      }).then(({
+        data
+      }) => setSchedule(data)).catch(err => {
+        if (err.code !== 'ERR_CANCELED') setError('No schedule is available for this doctor. Choose another doctor or contact the facility.');
+      }).finally(() => {
+        if (!controller.signal.aborted) setScheduleLoading(false);
+      });
+    }
+    return () => controller.abort();
+  }, [doctorId, retry]);
+  const doctor = doctors.find(d => d._id === doctorId);
+  const day = date && Number.isFinite(Date.parse(date)) ? new Date(`${date}T12:00:00Z`).toLocaleDateString('en-US', {
+    weekday: 'long',
+    timeZone: 'UTC'
+  }) : '';
+  const hours = schedule?.weeklySchedule.find(d => d.day === day && d.isAvailable),
+    closed = schedule?.closedDates?.includes(date);
+  const user = storedUser();
+  async function book() {
+    setBusy(true);
+    setError('');
+    try {
+      const {
+        data
+      } = await axios.post('/tokens/book', {
+        doctorId,
+        date
+      });
+      setToken(data.token);
+    } catch (err) {
+      setError(err.response?.data?.message || 'Unable to book. Please try again.');
+    } finally {
+      setBusy(false);
+    }
   }
-  return <Container maxWidth="md" sx={{ mt: 3 }}><Button component={Link} to="/" sx={{ mb: 2 }}>← Back to care providers</Button><Box className="page-hero"><Typography variant="overline">BOOK YOUR VISIT</Typography><Typography variant="h4">{hospital?.name || "Choose your care"}</Typography><Typography sx={{ mt: 1 }}>{hospital?.address || "Select a department and doctor to join today's queue."}</Typography></Box>
-    {error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}
-    {token ? <Paper sx={{ p: 4, textAlign: "center" }}><Alert severity="success">Your appointment is confirmed.</Alert><Typography color="text.secondary" sx={{ mt: 3 }}>Your token number</Typography><Typography variant="h2" color="primary">#{token.tokenNumber}</Typography><Typography sx={{ my: 2 }}>Please arrive during your doctor's scheduled hours.</Typography><Button component={Link} to="/my-tokens" variant="contained">View my appointments</Button></Paper> : <Paper component="form" onSubmit={book} sx={{ p: { xs: 2, sm: 4 } }}><Typography variant="h6" mb={2}>Who would you like to see?</Typography><Stack gap={3}><TextField select required fullWidth label="Department" value={department} onChange={e => { setDepartment(e.target.value); setError(""); }} disabled={loading || !hospital}>{(hospital?.departments || []).map(d => <MenuItem key={d} value={d}>{d}</MenuItem>)}</TextField><TextField select required fullWidth label="Doctor" value={doctorId} onChange={e => setDoctorId(e.target.value)} disabled={!department || !doctors.length}>{doctors.map(d => <MenuItem key={d._id} value={d._id} disabled={d.availabilityStatus !== "available"}>{d.name} · {d.specialization || d.department}{d.availabilityStatus !== "available" ? " (unavailable)" : ""}</MenuItem>)}</TextField>{department && !doctors.length && <Alert severity="info">No doctors listed for this department yet.</Alert>}<Typography variant="body2" color="text.secondary">Same-day tokens are issued during scheduled consultation hours. Availability is checked when you confirm.</Typography><Button type="submit" variant="contained" disabled={busy || !doctorId}>{busy ? "Confirming…" : "Confirm appointment"}</Button></Stack></Paper>}
+  return <Container maxWidth="lg" sx={{
+    py: 3
+  }}><Button component={Link} to="/find-care">{translate("Back to care providers")}</Button><Typography variant="h4" mt={2}>{hospital?.name || 'Choose your care'}</Typography><Typography color="text.secondary" mb={3}>{hospital?.address}</Typography>
+    {error && <Alert severity="error" action={<Button onClick={() => setRetry(v => v + 1)}>{translate("Retry")}</Button>} sx={{
+      mb: 2
+    }}>{error}</Alert>}
+    {token ? <Paper sx={{
+      p: 4
+    }}><Alert severity="success">{translate("Your queue booking is confirmed.")}</Alert><Typography variant="h3" my={2}>#{token.tokenNumber}</Typography><Typography>{doctor?.name} · {token.date} · {hours?.startTime}–{hours?.endTime}</Typography><Typography my={2}>Arrive during consultation hours and check in at reception. Your queue number is not a fixed appointment time. You can cancel or reschedule before check-in.</Typography><Button component={Link} to="/my-tokens" variant="contained">{translate("View appointment and QR")}</Button></Paper> : <Stack direction={{
+      xs: 'column',
+      md: 'row'
+    }} gap={3} alignItems="flex-start"><Box sx={{
+        flex: 1,
+        width: '100%'
+      }}><TextField fullWidth label={translate("Search doctor or specialty")} value={search} onChange={e => setSearch(e.target.value)} sx={{
+          mb: 2
+        }} />{loading ? <Skeleton variant="rounded" height={200} /> : <Stack gap={2}>{doctors.filter(d => [d.name, d.specialization, d.department].join(' ').toLowerCase().includes(search.toLowerCase())).map(d => <Paper key={d._id} sx={{
+            p: 3,
+            border: '2px solid',
+            borderColor: doctorId === d._id ? 'primary.main' : 'divider'
+          }}><Typography variant="h6">{d.name}</Typography><Typography>{d.specialization || d.department}</Typography><Typography color="text.secondary">{(d.qualifications || []).join(' · ')}</Typography>{d.languages?.length > 0 && <Typography>Languages: {d.languages.join(', ')}</Typography>}<Chip size="small" label={d.availabilityStatus === 'available' ? translate("Available today") : translate("Unavailable today")} sx={{
+              my: 1
+            }} /><Button fullWidth variant={doctorId === d._id ? 'contained' : 'outlined'} onClick={() => {
+              setDoctorId(d._id);
+              setError('');
+            }}>{doctorId === d._id ? translate("Selected") : translate("Choose doctor")}</Button></Paper>)}{!doctors.length && <Alert severity="info">No doctors are listed at this facility yet.</Alert>}</Stack>}</Box><Paper sx={{
+        p: 3,
+        width: {
+          xs: '100%',
+          md: 360
+        },
+        position: {
+          md: 'sticky'
+        },
+        top: 24
+      }}><Stack gap={2}><Typography variant="h6">{translate("Review your visit")}</Typography><TextField type="date" label={translate("Visit date")} value={date} onChange={e => setDate(e.target.value)} slotProps={{
+            inputLabel: {
+              shrink: true
+            }
+          }} /><Typography>{doctor?.name || translate("Choose a doctor")}</Typography>{scheduleLoading ? <Skeleton /> : doctorId && <Alert severity={hours && !closed ? 'info' : 'warning'}>{hours && !closed ? `Consultation hours: ${hours.startTime}–${hours.endTime}. Dates use the facility scheduling timezone.` : 'No consultation hours on this date. Choose another date.'}</Alert>}<Typography variant="body2">Join the queue up to 90 days ahead. This does not reserve an exact time. Cancel or reschedule before check-in; availability is checked at confirmation.</Typography>{user?.role === 'patient' ? <Button variant="contained" disabled={busy || !doctor || !hours || closed || scheduleLoading} onClick={book}>{busy ? 'Confirming…' : translate("Confirm queue booking")}</Button> : <Button component={Link} to={`/login?returnTo=${encodeURIComponent(`/book/${hospitalId}?doctor=${doctorId}`)}`} variant="contained">{translate("Sign in to book")}</Button>}</Stack></Paper></Stack>}
   </Container>;
 }

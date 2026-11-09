@@ -17,3 +17,6 @@ server/storage/
 
 # Local-only generated demo passwords and account roster
 server/.demo-large-credentials.json
+
+client/test-results/
+client/playwright-report/

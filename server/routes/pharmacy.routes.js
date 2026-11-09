@@ -13,6 +13,8 @@ router.get("/orders/:id", role(["patient", "pharmacist"]), controller.get);
 router.patch("/orders/:id/prepare", role(["pharmacist"]), controller.prepare);
 router.post("/orders/:id/ready", role(["pharmacist"]), controller.ready);
 router.post("/orders/:id/paid", role(["pharmacist"]), controller.paid);
+router.post('/orders/:id/collect', role(['pharmacist']), controller.collect);
+router.post('/orders/:id/refund', role(['pharmacist']), require('../middlewares/rateLimit')({ limit: 10 }), require('../services/pharmacy-refunds').refund);
 router.post("/orders/:id/counter", role(["patient"]), async (req, res) => res.json(await configured(await payment.counter(await authorized(req.user, req.params.id)))));
 router.post("/orders/:id/checkout", role(["patient"]), require("../middlewares/rateLimit")({ limit: 20 }), async (req, res) => res.json(await payment.checkout(await authorized(req.user, req.params.id))));
 router.post("/orders/:id/reconcile", role(["patient"]), require("../middlewares/rateLimit")({ limit: 30 }), async (req, res) => res.json(await configured(await payment.reconcile(await authorized(req.user, req.params.id)))));

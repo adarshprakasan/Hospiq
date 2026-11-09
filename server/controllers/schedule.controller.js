@@ -2,7 +2,10 @@ const DoctorSchedule = require("../models/DoctorSchedule");
 
 exports.setSchedule = async (req, res) => {
   try {
-    const { doctorId, weeklySchedule } = req.body;
+    const { doctorId, weeklySchedule, closedDates = [] } = req.body;
+    const dailyCapacity = req.body.dailyCapacity ?? 0;
+    if (!Number.isSafeInteger(dailyCapacity) || dailyCapacity < 0 || dailyCapacity > 500) return res.status(400).json({ message: 'Daily capacity must be 0 (unlimited) to 500' });
+    if (!Array.isArray(closedDates) || closedDates.length > 366 || closedDates.some(d => typeof d !== 'string' || !/^\d{4}-\d{2}-\d{2}$/.test(d) || !Number.isFinite(Date.parse(d)) || new Date(d).toISOString().slice(0, 10) !== d)) return res.status(400).json({ message: 'Provide valid closure dates (maximum 366)' });
 
     if (!await require("../middlewares/ownership").ownsDoctor(req.user, doctorId)) return res.status(403).json({ message: "Access denied" });
     // Validate weeklySchedule is an array of objects
@@ -18,11 +21,13 @@ exports.setSchedule = async (req, res) => {
 
     if (schedule) {
       schedule.weeklySchedule = weeklySchedule;
+      schedule.closedDates = [...new Set(closedDates)];
+      schedule.dailyCapacity = dailyCapacity;
       await schedule.save();
       return res.json({ message: "Schedule updated", schedule });
     }
 
-    schedule = new DoctorSchedule({ doctorId, weeklySchedule });
+    schedule = new DoctorSchedule({ doctorId, weeklySchedule, closedDates: [...new Set(closedDates)], dailyCapacity });
     await schedule.save();
 
     res.status(201).json({ message: "Schedule created", schedule });

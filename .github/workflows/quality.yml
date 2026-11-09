@@ -1,0 +1,43 @@
+name: Quality checks
+on:
+  push:
+  pull_request:
+permissions:
+  contents: read
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    services:
+      mongo:
+        image: mongo:7
+        ports: ['27017:27017']
+    env:
+      MONGO_URI: mongodb://127.0.0.1:27017/hospiq_ci
+      JWT_SECRET: ci-only-fictional-session-key
+      HOSPITAL_TIMEZONE: Asia/Dubai
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: |
+            server/package-lock.json
+            client/package-lock.json
+      - run: npm --prefix server ci
+      - run: npm --prefix client ci
+      - run: npm --prefix server test
+      - run: npm --prefix server run test:records
+      - run: npm --prefix server run test:pharmacy
+      - run: npm --prefix server run test:management
+      - run: npm --prefix server run test:journey
+      - run: npm --prefix client run lint
+      - run: npm --prefix client run build
+      - run: npx playwright install --with-deps chromium
+        working-directory: client
+      - run: npm --prefix client run test:browser
+      - uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: browser-test-results
+          path: client/test-results

@@ -10,13 +10,14 @@ exports.send = async (req, res) => {
   const doctor = await Doctor.findOne({ userId: req.user.id });
   const record = doctor && await Record.findOne({ _id: req.params.recordId, doctorId: doctor._id, source: "doctor" });
   if (!record) throw fail(404, "Your visit record was not found");
+  if (record.status === 'draft') throw fail(409, 'Finalize the consultation before sending medications');
   if (!record.visitTokenId || !record.medications.length) throw fail(400, "This record needs an appointment and prescribed medications");
   const previous = await Order.findOne({ visitTokenId: record.visitTokenId });
   if (previous) {
     if (String(previous.recordId) !== String(record._id)) throw fail(409, `This visit already has pharmacy token P-${previous.tokenNumber}. Its prescription has already been sent; a different record cannot replace its bill`);
     return res.json(serialize(previous));
   }
-  const visit = await require("../models/Token").findOneAndUpdate({ _id: record.visitTokenId, doctorId: doctor._id, patientId: record.patientId, status: { $in: ["called", "completed"] } }, { $set: { status: "completed" } });
+  const visit = await require("../models/Token").findOneAndUpdate({ _id: record.visitTokenId, doctorId: doctor._id, patientId: record.patientId, status: { $in: ["called", "completed"] } }, { $set: { status: "completed", consultationOpen: false, completedAt: new Date() } });
   if (!visit) throw fail(409, "Complete this visit before sending its medication to pharmacy");
   const patient = await User.findById(record.patientId);
   if (!patient) throw fail(404, "Patient account no longer exists");
@@ -57,9 +58,11 @@ exports.prepare = async (req, res) => {
     const line = order.lines.id(submitted._id);
     if (!line || typeof submitted.gathered !== "boolean") throw fail(400, "Invalid preparation checklist");
     line.gathered = submitted.gathered;
+    line.unavailable = submitted.unavailable === true;
+    line.unavailableReason = typeof submitted.unavailableReason === 'string' ? submitted.unavailableReason.trim().slice(0, 500) : '';
     line.quantity = submitted.quantity;
     line.unitPriceMinor = submitted.unitPriceMinor;
-    if (!Number.isSafeInteger(submitted.quantity) || submitted.quantity < 1 || submitted.quantity > 10000 || !Number.isSafeInteger(submitted.unitPriceMinor) || submitted.unitPriceMinor < 0 || submitted.unitPriceMinor > 100000000) throw fail(400, "Enter valid quantities and prices for every medication");
+    if (!Number.isSafeInteger(submitted.quantity) || submitted.quantity < (line.unavailable ? 0 : 1) || submitted.quantity > 10000 || !Number.isSafeInteger(submitted.unitPriceMinor) || submitted.unitPriceMinor < 0 || submitted.unitPriceMinor > 100000000) throw fail(400, "Enter valid quantities and prices for every medication");
   }
   amount(order.lines, false);
   const saved = await Order.findOneAndUpdate({ _id: order._id, status: "pending", version: version(req.body) }, { $set: { lines: order.lines }, $inc: { version: 1 } }, { new: true, runValidators: true });
@@ -69,8 +72,10 @@ exports.prepare = async (req, res) => {
 exports.ready = async (req, res) => {
   const order = await authorized(req.user, req.params.id);
   const totalMinor = amount(order.lines);
-  const saved = await Order.findOneAndUpdate({ _id: order._id, status: "pending", version: version(req.body) }, { $set: { status: "ready", totalMinor, readyAt: new Date(), preparedBy: req.user.id }, $inc: { version: 1 } }, { new: true });
+  const status = order.lines.every(line => line.unavailable) ? 'unavailable' : 'ready';
+  const saved = await Order.findOneAndUpdate({ _id: order._id, status: "pending", version: version(req.body) }, { $set: { status, totalMinor, readyAt: new Date(), preparedBy: req.user.id }, $inc: { version: 1 } }, { new: true });
   if (!saved) throw fail(409, "Order changed or already ready. Refresh before continuing");
+  await require('../services/notifications').notify(order.patientId, `ready:${order._id}`, status === 'unavailable' ? 'Your pharmacy could not supply the prescribed medicines. Open your order for next steps.' : 'Your pharmacy order is ready. Review payment and collection details.', '/pharmacy');
   res.json(serialize(saved));
 };
 exports.paid = async (req, res) => {
@@ -84,6 +89,13 @@ exports.paid = async (req, res) => {
 exports.team = async (req, res) => {
   if (!req.user.hospitalId) throw fail(403, "Your staff account is not linked to a hospital");
   res.json(await User.find({ role: "pharmacist", hospitalId: req.user.hospitalId }).select("name email publicId"));
+};
+exports.collect = async (req, res) => {
+  const order = await authorized(req.user, req.params.id);
+  if (order.collectedAt) return res.json(serialize(order));
+  const saved = await Order.findOneAndUpdate({ _id: order._id, version: version(req.body), status: 'ready', paymentStatus: 'paid', collectedAt: null, refundState: { $nin: ['processing', 'refunded'] } }, { $set: { collectedAt: new Date(), collectedBy: req.user.id }, $inc: { version: 1 } }, { new: true });
+  if (!saved) throw fail(409, 'Confirm preparation and payment, then refresh before handing over medicine');
+  res.json(serialize(saved));
 };
 exports.link = async (req, res) => {
   if (!req.user.hospitalId || typeof req.body.email !== "string") throw fail(400, "A hospital and registered pharmacist email are required");

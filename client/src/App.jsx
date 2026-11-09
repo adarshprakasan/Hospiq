@@ -26,10 +26,26 @@ const PatientQrPage = lazy(() => import("./pages/PatientQrPage"));
 const AdministrationPage = lazy(() => import("./pages/AdministrationPage"));
 const ChangePasswordPage = lazy(() => import("./pages/ChangePasswordPage"));
 
+const PasswordRecoveryPage = lazy(() => import("./pages/PasswordRecoveryPage"));
+const FindCarePage = lazy(() => import("./pages/FindCarePage"));
+const HealthSummaryPage = lazy(() => import("./pages/HealthSummaryPage"));
+const NotificationsPage = lazy(() => import("./pages/NotificationsPage"));
+const FamilyPage = lazy(() => import("./pages/FamilyPage"));
+const InventoryPage = lazy(() => import("./pages/InventoryPage"));
+const LabTestsPage = lazy(() => import("./pages/LabTestsPage"));
 function App() {
   return (
     <Suspense fallback={<Box textAlign="center" p={8}><CircularProgress aria-label="Loading page" /></Box>}>
     <Routes>
+      <Route path="/inventory" element={<ProtectedRoute allowedRoles={["pharmacist"]}><Layout><InventoryPage /></Layout></ProtectedRoute>} />
+      <Route path="/lab-tests" element={<ProtectedRoute allowedRoles={["patient"]}><Layout><LabTestsPage /></Layout></ProtectedRoute>} />
+      <Route path="/patients/:patientId/labs" element={<ProtectedRoute allowedRoles={["doctor"]}><Layout><LabTestsPage /></Layout></ProtectedRoute>} />
+      <Route path="/family" element={<ProtectedRoute allowedRoles={["patient"]}><Layout><FamilyPage /></Layout></ProtectedRoute>} />
+      <Route path="/health-summary" element={<ProtectedRoute allowedRoles={["patient"]}><Layout><HealthSummaryPage /></Layout></ProtectedRoute>} />
+      <Route path="/notifications" element={<ProtectedRoute allowedRoles={["patient"]}><Layout><NotificationsPage /></Layout></ProtectedRoute>} />
+      <Route path="/find-care" element={<FindCarePage />} />
+      <Route path="/forgot-password" element={<PasswordRecoveryPage />} />
+      <Route path="/reset-password" element={<PasswordRecoveryPage />} />
       <Route path="/hospital-register" element={<HospitalRegister />} />
       <Route path="/register" element={<RegisterForm />} />
       <Route path="/login" element={<LoginPage />} />
@@ -114,7 +130,7 @@ function App() {
         }
       />
 
-      <Route path="/book/:hospitalId" element={<ProtectedRoute allowedRoles={["patient"]}><Layout><BookingPage /></Layout></ProtectedRoute>} />
+      <Route path="/book/:hospitalId" element={<BookingPage />} />
 
       {/* Need editing---------------- */}
       <Route

@@ -7,9 +7,11 @@ async function run() {
   const Doctor = require("../models/Doctor");
   const duplicateNumbers = await Token.aggregate([{ $group: { _id: { doctorId: "$doctorId", date: "$date", number: "$tokenNumber" }, count: { $sum: 1 } } }, { $match: { count: { $gt: 1 } } }, { $count: "groups" }]);
   const duplicateActive = await Token.aggregate([{ $match: { isOffline: false, status: { $in: ["pending", "called", "skipped"] } } }, { $group: { _id: { doctorId: "$doctorId", date: "$date", patientId: "$patientId" }, count: { $sum: 1 } } }, { $match: { count: { $gt: 1 } } }, { $count: "groups" }]);
+  const duplicateCapacity = await Token.aggregate([{ $match: { capacitySlot: { $type: 'number' }, status: { $in: ['pending', 'called', 'skipped', 'completed'] } } }, { $group: { _id: { doctorId: '$doctorId', date: '$date', slot: '$capacitySlot' }, count: { $sum: 1 } } }, { $match: { count: { $gt: 1 } } }, { $count: 'groups' }]);
+  const duplicateConsultations = await Token.aggregate([{ $match: { consultationOpen: true } }, { $group: { _id: '$doctorId', count: { $sum: 1 } } }, { $match: { count: { $gt: 1 } } }, { $count: 'groups' }]);
   const unlinked = await Doctor.countDocuments({ userId: null });
-  console.log(JSON.stringify({ duplicateTokenNumberGroups: duplicateNumbers[0]?.groups || 0, duplicateActiveBookingGroups: duplicateActive[0]?.groups || 0, unlinkedDoctorProfiles: unlinked }, null, 2));
-  if (duplicateNumbers.length || duplicateActive.length) process.exitCode = 1;
+  console.log(JSON.stringify({ duplicateTokenNumberGroups: duplicateNumbers[0]?.groups || 0, duplicateActiveBookingGroups: duplicateActive[0]?.groups || 0, duplicateCapacitySlotGroups: duplicateCapacity[0]?.groups || 0, duplicateOpenConsultationGroups: duplicateConsultations[0]?.groups || 0, unlinkedDoctorProfiles: unlinked }, null, 2));
+  if (duplicateNumbers.length || duplicateActive.length || duplicateCapacity.length || duplicateConsultations.length) process.exitCode = 1;
 }
 mongoose.set("autoIndex", false);
-run().catch(err => { console.error(err.message); process.exitCode = 1; }).finally(() => mongoose.disconnect());
+run().catch(err => { console.error("Upgrade preflight failed:", err.name); process.exitCode = 1; }).finally(() => mongoose.disconnect());

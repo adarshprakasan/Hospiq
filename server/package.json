@@ -17,7 +17,9 @@
     "upgrade:roles": "node scripts/upgrade-roles.js",
     "seed:admins": "node scripts/seed-admins.js",
     "test:management": "node scripts/verify-management.js",
-    "bootstrap:admin": "node scripts/bootstrap-admin.js"
+    "bootstrap:admin": "node scripts/bootstrap-admin.js",
+    "test:journey": "node scripts/verify-journey.js",
+    "reminders:run": "node scripts/send-reminders.js"
   },
   "keywords": [
     "healthcare",

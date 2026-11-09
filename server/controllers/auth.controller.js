@@ -69,6 +69,7 @@ exports.loginUser = async (req, res) => {
 
     const user = await User.findOne({ email });
     if (!user) return res.status(401).json({ message: "Invalid credentials" });
+    if (user.guardianId) return res.status(401).json({ message: 'Managed dependent profiles do not have a separate login' });
     if (user.deletedAt || user.status === "suspended") return res.status(401).json({ message: "Account is inactive" });
 
     const isMatch = await bcrypt.compare(password, user.password);

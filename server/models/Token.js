@@ -33,6 +33,15 @@ const tokenSchema = new mongoose.Schema(
       type: Date,
       default: Date.now,
     },
+    checkedInAt: Date,
+    calledAt: Date,
+    consultationStartedAt: Date,
+    completedAt: Date,
+    consultationOpen: { type: Boolean, default: false },
+    capacitySlot: Number,
+    walkInOrigin: { type: Boolean, default: false },
+    claimHash: { type: String, select: false },
+    claimExpiresAt: { type: Date, select: false },
     date: {
       type: String, // 'YYYY-MM-DD'
       required: true,
@@ -42,6 +51,8 @@ const tokenSchema = new mongoose.Schema(
 );
 
 tokenSchema.index({ doctorId: 1, date: 1, tokenNumber: 1 }, { unique: true });
+tokenSchema.index({ doctorId: 1, date: 1, capacitySlot: 1 }, { unique: true, name: 'capacity_slot', partialFilterExpression: { capacitySlot: { $type: 'number' }, status: { $in: ['pending', 'called', 'skipped', 'completed'] } } });
+tokenSchema.index({ doctorId: 1 }, { unique: true, partialFilterExpression: { consultationOpen: true }, name: 'one_open_consultation_per_doctor' });
 tokenSchema.index({ doctorId: 1, patientId: 1, date: 1 }, { unique: true, partialFilterExpression: { isOffline: false, status: { $in: ["pending", "called", "skipped"] } } });
 tokenSchema.index({ patientId: 1, date: -1 });
 tokenSchema.index({ date: 1, deletedAt: 1, status: 1 });

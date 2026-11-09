@@ -28,6 +28,10 @@ const userSchema = new mongoose.Schema(
     deletedAt: { type: Date, default: null },
     mustChangePassword: { type: Boolean, default: false },
     sessionVersion: { type: Number, default: 0 },
+    emailReminders: { type: Boolean, default: false },
+    guardianId: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
+    dateOfBirth: String,
+    guardianConsentAt: Date,
   },
   { timestamps: true, toJSON: { virtuals: true } }
 );
