@@ -36,7 +36,7 @@ jobs:
       - run: npx playwright install --with-deps chromium
         working-directory: client
       - run: npm --prefix client run test:browser
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         if: failure()
         with:
           name: browser-test-results
