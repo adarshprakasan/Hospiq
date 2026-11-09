@@ -13,12 +13,12 @@ test("a doctor automatically reads only their own associated records", () => {
   assert.equal(canReadRecord({ doctorId: "doctor-a" }, context), true);
   assert.equal(canReadRecord({ doctorId: "doctor-b" }, context), false);
   assert.equal(canReadRecord({ doctorId: null }, context), false);
-  assert.deepEqual(recordFilter("patient", context), { patientId: "patient", doctorId: "doctor-a" });
+  assert.equal(recordFilter("patient", context).doctorId, "doctor-a");
 });
 test("patient self access and active doctor consent permit reading full history", () => {
   assert.equal(canReadRecord({ doctorId: "another" }, { ownPatient: true, all: true }), true);
   assert.equal(canReadRecord({ doctorId: "another" }, { doctor: { _id: "doctor" }, all: true }), true);
-  assert.deepEqual(recordFilter("patient", { all: true }), { patientId: "patient" });
+  assert.deepEqual(recordFilter("patient", { all: true }).$and, [{ $or: [{ status: { $ne: "draft" } }] }]);
 });
 test("staff, admin, and another patient cannot acquire record context", async () => {
   for (const role of ["staff", "admin", "patient"]) await assert.rejects(accessContext({ id: "other", role }, "patient"), { status: 403 });

@@ -33,7 +33,14 @@ exports.request = async (req, res) => {
   const patientId = req.params.patientId;
   const { doctor, grant: activeGrant } = await doctorContext(req);
   const visit = await currentVisit(patientId, doctor._id);
-  const patient = await User.findOne({ _id: patientId, role: "patient" }).select("email");
+  const patient = await User.findOne({ _id: patientId, role: "patient" }).select("email guardianId dateOfBirth");
+  if (patient?.guardianId) {
+    const today = queueDate();
+    const boundary = `${Number(today.slice(0, 4)) - 18}${today.slice(4)}`;
+    if (!patient.dateOfBirth || patient.dateOfBirth <= boundary) throw fail(409, 'This patient needs an independent account before new permission codes can be issued');
+    const guardian = await User.findOne({ _id: patient.guardianId, deletedAt: null, status: { $ne: 'suspended' } }).select('email');
+    patient.email = guardian?.email || '';
+  }
   if (!patient?.email || patient.email.endsWith(".invalid")) throw fail(400, "This patient needs a real registered email address to receive permission codes");
   if (activeGrant) throw fail(409, "You already have patient-approved access");
   // A versioned per-pair state fences revocation against in-flight OTP verification.

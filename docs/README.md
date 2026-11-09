@@ -4,6 +4,8 @@
 
 | Goal | Start here |
 |---|---|
+| Use the expanded care workflow | [Care workflows](CARE_WORKFLOWS.md) |
+| Roll out the improvements | [Operations and verification evidence](OPERATIONS.md) |
 | Run the app | [Setup](SETUP.md), then [Configuration](CONFIGURATION.md) |
 | Test today's additions | [Large-data and feature walkthrough](TEST_TODAYS_FEATURES.md) |
 | Test pharmacy and payments | [Pharmacist accounts, queue, counter payments and Stripe setup](PHARMACY.md) |

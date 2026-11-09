@@ -1,4 +1,5 @@
 <div align="center">
+
   <img src="client/public/hospiq.svg" width="76" height="76" alt="Hospiq logo" />
   <h1>Hospiq</h1>
   <p><strong>Better care. Less waiting.</strong></p>
@@ -11,6 +12,9 @@
   </p>
   <p><a href="docs/SETUP.md">Get started</a> · <a href="docs/USER_GUIDE.md">User guide</a> · <a href="docs/API.md">API reference</a> · <a href="docs/ROADMAP.md">Roadmap</a></p>
 </div>
+
+See [expanded care workflows](docs/CARE_WORKFLOWS.md) for the latest patient, clinician and pharmacy features, and [rollout guidance](docs/OPERATIONS.md) for configuration and verification limits.
+
 
 ## Overview
 

@@ -12,6 +12,12 @@ const uploadLimit = rateLimit({ limit: 20 });
 router.get("/mine", role(["patient"]), records.getPatientRecords);
 router.post("/mine", role(["patient"]), uploadLimit, upload, records.addPatientRecord);
 router.post("/add", role(["doctor"]), uploadLimit, upload, records.addMedicalRecord);
+router.post('/ocr', role(['doctor', 'patient']), rateLimit({ limit: 5 }), upload, async (req, res) => {
+  if (req.files?.length !== 1) return res.status(400).json({ message: 'Select one image for text extraction' });
+  res.json({ text: await require('../services/ocr').extract(req.files[0]), requiresReview: true });
+});
+router.patch('/:recordId/draft', role(['doctor']), records.updateDraft);
+router.post('/:recordId/amendments', role(['doctor']), records.amend);
 router.post("/upload", role(["patient", "doctor"]), (_req, res) => res.status(410).json({ message: "Create a medical record with attachments; public medical file uploads have been retired" }));
 router.get("/access/grants", role(["patient"]), access.listGrants);
 router.delete("/access/grants/:grantId", role(["patient"]), access.revoke);

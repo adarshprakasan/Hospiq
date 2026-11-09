@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useCallback, useEffect, useState } from "react";
 import {
   Container,
   Typography,
@@ -62,7 +62,7 @@ export default function DoctorProfilePage() {
     severity: "success",
   });
 
-  const fetchDoctor = async () => {
+  const fetchDoctor = useCallback(async () => {
     try {
       setLoading(true);
       
@@ -88,13 +88,13 @@ export default function DoctorProfilePage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [doctorId]);
 
   useEffect(() => {
     if (doctorId) {
       fetchDoctor();
     }
-  }, [doctorId]);
+  }, [doctorId, fetchDoctor]);
 
   const handleAvailabilityToggle = async () => {
     if (!doctor) return;
@@ -113,7 +113,7 @@ export default function DoctorProfilePage() {
         message: `Doctor status updated to ${newStatus}!`,
         severity: "success",
       });
-    } catch (err) {
+    } catch {
       setSnack({
         open: true,
         message: "Failed to update doctor availability.",
@@ -148,7 +148,7 @@ export default function DoctorProfilePage() {
       const period = hour >= 12 ? "PM" : "AM";
       const formattedHour = hour % 12 || 12;
       return `${formattedHour}:${minutes} ${period}`;
-    } catch (e) {
+    } catch {
       return timeString;
     }
   };

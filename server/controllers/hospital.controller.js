@@ -45,8 +45,15 @@ exports.createHospital = async (req, res) => {
 
 exports.getAllHospitals = async (req, res) => {
   try {
-    const hospitals = await Hospital.find({ deletedAt: null, status: { $ne: "suspended" }, approvalStatus: { $ne: "pending" } });
-    res.json(hospitals);
+    const filter = { deletedAt: null, status: { $ne: 'suspended' }, approvalStatus: { $ne: 'pending' } };
+    const search = typeof req.query.q === 'string' ? req.query.q.trim().slice(0, 100) : '';
+    if (search) { const literal = search.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'); filter.$or = ['name', 'address', 'departments'].map(field => ({ [field]: new RegExp(literal, 'i') })); }
+    if (['Hospital', 'Clinic'].includes(req.query.type)) filter.type = req.query.type;
+    const page = Math.max(1, Math.min(10000, Number.parseInt(req.query.page, 10) || 1)), limit = Math.max(1, Math.min(100, Number.parseInt(req.query.limit, 10) || 12));
+    let query = Hospital.find(filter).select('name address type departments location contact email website').sort({ name: 1, _id: 1 });
+    if (req.query.page !== undefined) query = query.skip((page - 1) * limit).limit(limit);
+    const hospitals = await query;
+    res.json(req.query.page !== undefined ? { items: hospitals, total: await Hospital.countDocuments(filter), page, limit } : hospitals);
   } catch (err) {
     res.status(500).json({ message: err.message });
   }

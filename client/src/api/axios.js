@@ -18,16 +18,20 @@ axiosInstance.interceptors.request.use(
     if (token) {
       config.headers['Authorization'] = `Bearer ${token}`;
     }
+    const patientContext = sessionStorage.getItem("patientContext");
+    if (patientContext) config.headers["X-Patient-Id"] = patientContext;
     return config;
   },
   (error) => Promise.reject(error)
 );
 
 axiosInstance.interceptors.response.use(response => response, error => {
+  if (error.response?.data?.code === "PATIENT_CONTEXT_REVOKED") { sessionStorage.removeItem("patientContext"); window.location.assign("/"); }
   if (error.response?.data?.code === "PASSWORD_CHANGE_REQUIRED" && window.location.pathname !== "/change-password") window.location.assign("/change-password");
   if (error.response?.status === 401 && !error.config?.url?.startsWith("/auth/login")) {
     localStorage.removeItem("token");
     localStorage.removeItem("user");
+    sessionStorage.removeItem("patientContext");
     if (window.location.pathname !== "/login") window.location.assign("/login");
   }
   return Promise.reject(error);

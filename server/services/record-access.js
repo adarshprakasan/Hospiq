@@ -11,9 +11,12 @@ async function accessContext(user, patientId) {
   return { doctor, all: Boolean(grant), grant };
 }
 function recordFilter(patientId, context) {
-  return context.all ? { patientId } : { patientId, doctorId: context.doctor._id };
+  const filter = context.all ? { patientId } : { patientId, doctorId: context.doctor._id };
+  filter.$and = [{ $or: [{ status: { $ne: 'draft' } }, ...(context.doctor ? [{ doctorId: context.doctor._id }] : [])] }];
+  return filter;
 }
 function canReadRecord(record, context) {
+  if (record.status === 'draft') return sameId(record.doctorId?._id || record.doctorId, context.doctor?._id);
   return context.ownPatient || context.all || sameId(record.doctorId?._id || record.doctorId, context.doctor?._id);
 }
 function serializeRecord(record) {
@@ -22,9 +25,9 @@ function serializeRecord(record) {
     _id: r._id, visitTokenId: r.visitTokenId, patientId: r.patientId, doctorId: r.doctorId?._id || r.doctorId, hospitalId: r.hospitalId?._id || r.hospitalId,
     doctorName: r.doctorName || r.doctorId?.name || "External doctor", hospitalName: r.hospitalName || r.hospitalId?.name || "External facility",
     department: r.department || r.doctorId?.department || "Not recorded", visitDate: r.visitDate, createdAt: r.createdAt,
-    source: r.source || "doctor", diagnosis: r.diagnosis, notes: r.notes, prescription: r.prescription, medications: r.medications || [],
+    source: r.source || "doctor", status: r.status || 'final', version: r.version || 0, finalizedAt: r.finalizedAt, amendments: r.amendments || [], diagnosis: r.diagnosis, notes: r.notes, prescription: r.prescription, medications: r.medications || [],
     attachments: (r.attachments || []).map(a => ({ _id: a._id, originalName: a.originalName, mimeType: a.mimeType, size: a.size, kind: a.kind })),
-    legacyAttachmentCount: (r.testResults || []).length,
+    legacyAttachmentCount: (r.testResults || []).length, vitals: r.vitals || {},
   };
 }
 module.exports = { accessContext, recordFilter, canReadRecord, serializeRecord, fail };

@@ -3,6 +3,16 @@ const cors = require("cors");
 require("dotenv").config();
 
 const app = express();
+app.use((req, res, next) => {
+  const requestId = require('node:crypto').randomUUID();
+  req.requestId = requestId;
+  res.set('X-Request-Id', requestId);
+  const started = Date.now();
+  res.on('finish', () => {
+    if (process.env.LOG_REQUESTS === 'true') console.log(JSON.stringify({ requestId, method: req.method, route: req.route?.path || 'unmatched', status: res.statusCode, durationMs: Date.now() - started }));
+  });
+  next();
+});
 
 // Middleware
 app.use(
@@ -15,9 +25,23 @@ app.disable("x-powered-by");
 app.post("/api/pharmacy/stripe/webhook", express.raw({ type: "application/json", limit: "100kb" }), require("./services/pharmacy-payments").webhook);
 app.use(express.json({ limit: "100kb" }));
 app.get("/api/health", (_req, res) => res.json({ status: "ok" }));
+app.get('/api/ready', async (_req, res) => {
+  try {
+    const mongoose = require('mongoose');
+    if (mongoose.connection.readyState !== 1) throw new Error('Database unavailable');
+    await mongoose.connection.db.admin().ping();
+    res.json({ status: 'ready' });
+  } catch { res.status(503).json({ status: 'not-ready' }); }
+});
 
 // Routes
 app.use("/api/auth", require("./routes/auth.routes"));
+app.use('/api/health-profile', require('./routes/health.routes'));
+app.use('/api/notifications', require('./routes/notification.routes'));
+app.use('/api/operations', require('./routes/operations.routes'));
+app.use('/api/family', require('./routes/family.routes'));
+app.use('/api/inventory', require('./routes/inventory.routes'));
+app.use('/api/labs', require('./routes/lab.routes'));
 app.use("/api/hospitals", require("./routes/hospital.routes"));
 app.use("/api/departments", require("./routes/department.routes"));
 app.use("/api/doctors", require("./routes/doctor.routes"));

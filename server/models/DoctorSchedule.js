@@ -26,6 +26,8 @@ const doctorScheduleSchema = new mongoose.Schema(
       unique: true,
     },
     weeklySchedule: [daySchema],
+    closedDates: { type: [String], default: [] },
+    dailyCapacity: { type: Number, min: 0, max: 500, default: 0 },
   },
   { timestamps: true }
 );
