@@ -2,7 +2,7 @@
 
 Pharmacists are hospital-linked accounts. They maintain medication availability and AED prices, receive only doctor-sent prescription snapshots, prepare orders using item checkboxes and explicit dispensing quantities, and record counter payments. They cannot read general medical records or other hospitals' pharmacy queues.
 
-Saving a doctor's visit record completes the appointment. The doctor is then prompted to send its medication to pharmacy. Sending is explicit and idempotent per appointment: it generates one hospital/date pharmacy token shared by the patient and pharmacy. The pharmacy preparation status is `pending` until all items are checked and priced quantities are confirmed; **Done** freezes the bill and marks `ready`. Payment is independently `unpaid` or `paid`.
+Finalizing a doctor's visit record completes the associated appointment. The doctor is then prompted to send its medication to pharmacy. Sending is explicit and idempotent per appointment: it generates one hospital/date pharmacy token shared by the patient and pharmacy. Preparation starts as `pending`. Resolve each line by confirming its available quantity and price or marking it unavailable with a reason. **Done** freezes the total for available lines and marks the order `ready`. An entirely unavailable order is marked `unavailable` with no payment due. Payment, collection and refund state are tracked separately.
 
 ## API contract
 
@@ -14,7 +14,9 @@ All application routes require a bearer login. Roles and hospital/patient owners
 | `GET /api/pharmacy/orders` | Patient / pharmacist | Own orders / assigned hospital queue, including prior unpaid orders |
 | `GET /api/pharmacy/orders/:id` | Patient / pharmacist | Authorized order status and prescription snapshot |
 | `PATCH /api/pharmacy/orders/:id/prepare` | Pharmacist | Save checklist and quantities while pending; requires current `version` |
-| `POST /api/pharmacy/orders/:id/ready` | Pharmacist | All lines gathered, quantities/prices confirmed; freeze total and mark ready |
+| `POST /api/pharmacy/orders/:id/ready` | Pharmacist | Freeze the bill for resolved lines or mark the order entirely unavailable |
+| `POST /api/pharmacy/orders/:id/collect` | Pharmacist | Record handover of a paid order using the current `version` |
+| `POST /api/pharmacy/orders/:id/refund` | Pharmacist | Full refund before collection. Send `version`, `reason` and `confirm: true` |
 | `POST /api/pharmacy/orders/:id/counter` | Patient | Select counter payment; safely expires any open checkout before switching |
 | `POST /api/pharmacy/orders/:id/paid` | Pharmacist | Mark a ready order paid at counter, with pharmacist/time audit; never while an online checkout may charge |
 | `POST /api/pharmacy/orders/:id/checkout` | Patient | Create/reuse Stripe hosted checkout with server-calculated AED amount |
@@ -26,6 +28,12 @@ All application routes require a bearer login. Roles and hospital/patient owners
 Catalogue reads remain available to linked doctors, pharmacists and administrators; queue staff do not manage medicines. Only pharmacists can add, price, or remove medications. Prices are captured when sent; unpriced legacy entries must be priced by pharmacy before preparation completes. Removing catalogue entries preserves existing order and record snapshots.
 
 Online payments require Stripe merchant configuration. Counter payments remain usable without it. Apple Pay and Google Pay availability depends on the Stripe account, payment methods, device, browser, and deployment; card details are entered only on Stripe's hosted checkout. No fake online-paid action exists in the application.
+
+## Collection, refunds and stock
+
+Record collection after handing over a paid order. Patients can download their receipts from the pharmacy view. Full refunds are available before collection. For a counter payment, confirm that cash was returned. For online payments, a pending retry checks the same provider refund. Refresh after a failed attempt before retrying. The original paid bill is retained.
+
+Open **Stock & expiry** to add batches with an expiry date and starting quantity, then record movements with a reason. Expired batches cannot be dispensed through the ledger. Stock changes are manual. Record the movement separately from order collection and reconcile with physical inventory. See [Inventory API](API.md#clinical-drafts-lab-orders-and-inventory).
 
 ## Run and test the feature
 
@@ -69,7 +77,7 @@ Use independent browser sessions (normal versus incognito or another browser) fo
 2. **Hospital Admin:** create pharmacist accounts and temporary credentials through **Accounts & access** in the hospital console. Public signup no longer creates employees. Queue staff cannot provision users; existing unassigned pharmacist accounts can be linked by an administrator.
 3. **Doctor:** call a registered patient's visit, open their record form, choose medicines, and save. The visit changes to completed. In the popup click **Send medication to pharmacy**. Its success message shows the new pharmacy token.
 4. **Patient:** open **My pharmacy**, or follow the **Collect your medicine at pharmacy** banner on the homepage/appointments page. The pharmacy token is distinct from the appointment token and QR. Preparation starts as pending.
-5. **Pharmacist:** find the patient/token. Confirm actual quantities in selling units and unit prices. Check medications as they are gathered. Use **Save checklist** for partial work; **Done — mark ready** enables only when every item is checked and the quantities/prices are valid. The server independently enforces this.
+5. **Pharmacist:** find the patient/token. Confirm actual quantities in selling units and unit prices. Check medications as they are gathered. Use **Save checklist** for partial work; **Done — mark ready** enables when each line is gathered with valid pricing and quantity, or marked unavailable with a reason. The server independently enforces this.
 6. **Patient:** the order changes to ready and shows its frozen total. Select **Proceed to payment**, then **Pay at counter**. The dialog says **Proceed to counter** with the token and amount.
 7. **Pharmacist:** after collecting the displayed amount, click **Paid at counter**. The patient's view polls every five seconds, shows confirmed payment, and closes its payment dialog after three seconds. The receipt remains in paid history. No browser-wide forced tab closing is required.
 8. **Online checkout:** with Stripe test keys configured, choose **Pay Online**. After a successful hosted checkout, the app verifies the payment on the server, displays confirmation, and returns automatically to pharmacy. A cancelled checkout stays unpaid and can be retried or safely switched to counter payment.
@@ -98,7 +106,7 @@ Copy the listener's signing secret into `STRIPE_WEBHOOK_SECRET`. Use Stripe test
 
 Only signed provider events or server-side retrieval of the matching paid checkout can mark an online order paid. Amount, AED currency, checkout attempt, session, and order reference must match. The app never treats a success URL as proof. While a checkout creation outcome is uncertain, counter payment stays blocked; retry **Pay Online** after 30 seconds to recover the same idempotent attempt. If an old online session is active, choosing counter payment first expires it so it cannot also charge.
 
-All hospitals in this development app use the configured merchant Stripe account and AED. Separate hospital merchant accounts, split settlement, refunds, tax computation, stock counts, and collection confirmation are not implemented. Bills below AED 2.00 use counter payment. Clinical medicine names and schedules are not sent in payment-provider line items.
+All hospitals in this development app use the configured merchant Stripe account and AED. Separate hospital merchant accounts, split settlement and tax computation remain outside the current payment workflow. Bills below AED 2.00 use counter payment. Clinical medicine names and schedules are not sent in payment-provider line items.
 
 ## Verification evidence
 

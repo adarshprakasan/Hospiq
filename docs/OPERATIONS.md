@@ -36,4 +36,4 @@ Use Stripe test credentials first. Confirm the original order reference, amount 
 
 ## Current evidence
 
-Local verification on 2026-11-09 passed 36 server unit tests, 106 medical-record checks, 136 pharmacy checks, 113 management checks, 90 expanded-journey checks and five browser journeys. The mobile appointment accessibility check found no serious or critical violations in its tested state. Coverage is not an accessibility certification or a production payment/email test. CI is configured but has not been run remotely as part of this change.
+Local verification on 2026-11-09 passed 36 server unit tests, 106 medical-record checks, 136 pharmacy checks, 113 management checks, 90 expanded-journey checks and five browser journeys. The mobile appointment accessibility check found no serious or critical violations in its tested state. Coverage is not an accessibility certification or a production payment/email test. See [GitHub Actions](https://github.com/adarshprakasan/Hospiq/actions/workflows/quality.yml) for the results of individual CI runs.

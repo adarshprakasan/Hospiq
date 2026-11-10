@@ -45,6 +45,8 @@ Every demo doctor has a seven-day schedule from `00:00` to `23:59` in the config
 
 Patients and staff have a `hospitalId` reference; all nine doctor accounts also link to a clinical Doctor through `Doctor.userId`. Patient hospital references do not create staff privileges or restrict booking elsewhere. Seeds create no administrator accounts, patient visit history, medical records, or tokens.
 
+For newer scenarios including future bookings, drafts, family access, lab review and stock movements, use [Care workflows](CARE_WORKFLOWS.md) with fictional accounts. The [journey suite](TESTING.md) creates its own fixtures.
+
 ## Full-flow test
 
 1. Use the password from your own seed run to sign in as the Creekside patient.

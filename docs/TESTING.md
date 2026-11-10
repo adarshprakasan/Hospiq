@@ -11,17 +11,22 @@ npm --prefix server test
 npm --prefix server run test:records
 npm --prefix server run test:pharmacy
 npm --prefix server run test:management
+npm --prefix server run test:journey
+npm --prefix client run lint
 npm --prefix client run build
+npm --prefix client run test:browser
 npm --prefix server audit
 npm --prefix client audit
 git diff --check
 ```
 
-The Node regression suite currently contains 32 cases. It starts an ephemeral localhost HTTP server for unauthenticated-route checks and uses mocked database methods for ownership/workflow rules. The regression suite does not require a seeded database, email delivery, or Cloudinary uploads. The separate integration commands need MongoDB access and create uniquely named disposable databases: 106 record/QR checks use local SMTP, and 136 pharmacy/payment checks use the official Stripe SDK against a local HTTP provider fixture and signed local webhooks. They send no real email or charges and clean up afterward. Allow local loopback connections in your test environment. Never load production secrets in CI. See [Pharmacy verification](PHARMACY.md#verification-evidence).
+The November 9 verification ran 36 server unit tests. It starts an ephemeral localhost HTTP server for unauthenticated-route checks and uses mocked database methods for ownership/workflow rules. The regression suite does not require a seeded database, email delivery, or Cloudinary uploads. The separate integration commands need MongoDB access and create uniquely named disposable databases: 106 record/QR checks use local SMTP, and 136 pharmacy/payment checks use the official Stripe SDK against a local HTTP provider fixture and signed local webhooks. They send no real email or charges and clean up afterward. Allow local loopback connections in your test environment. Never load production secrets in CI. See [Pharmacy verification](PHARMACY.md#verification-evidence).
 
 Covered behaviors include authentication boundaries, rejection of admin signup and unsigned email proofs, hospital scope, linked-doctor ownership, midnight timezone alignment, health/404 responses, foreign-hospital token rejection, terminal state transitions, unavailable doctors, and invalid schedules.
 
-A successful frontend build proves bundling and compilation, not browser correctness. The checked-in ESLint config references dependencies absent from package.json; no working lint command or browser test suite is currently provided. There is no claimed coverage percentage.
+The journey integration suite covers appointment capacity, visit notes and delegation, stock, lab orders, refund recovery and reminder delivery. The 445 integration checks include 106 records, 136 pharmacy, 113 management and 90 journey checks.
+
+Playwright uses API fixtures for discovery through login, mobile appointment QR, saving a clinician draft, Arabic direction and the combined queue/history workspace. The mobile appointment state has an axe check. Windows uses installed Edge. On other platforms run `npx playwright install chromium` from `client` before the browser suite. [GitHub Actions](../.github/workflows/quality.yml) installs Chromium and runs the integration suites, lint, build and browser checks.
 
 ## Manual smoke test
 
@@ -45,7 +50,7 @@ Use [Demo data](DEMO_DATA.md) in a disposable database:
 
 Also check keyboard focus, form labels, small screens, readable contrast, reduced-motion behavior, and printing. Native browser registration and provider delivery require separate testing.
 
-## Database integration checks still needed
+## Additional integration coverage to evaluate
 
 Against an isolated MongoDB database with actual required indexes:
 

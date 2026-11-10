@@ -4,13 +4,13 @@
 
 ## Patients
 
-1. Open `/register`, provide a name, email and password, and enter the emailed six-digit code. Passwords require at least eight characters and may not exceed 72 UTF-8 bytes in registration validation.
-2. Sign in at `/login`. The patient homepage is `/`.
-3. Search by hospital/clinic name, address, or department. Select a facility type if useful.
-4. Choose a facility, department, and doctor. Confirm during the doctor's scheduled hours to receive today's token number.
-5. Open **My appointments** (`/my-tokens`) to filter history by date/status, print the token QR, or cancel an active token.
+1. Open **Find care** at `/find-care`. Search by facility, address or department, then pick a doctor and a visit date. Bookings are queue entries within the next 90 days. Your doctor selection carries through sign-in.
+2. Register with the emailed six-digit code or sign in. Use **Forgot password?** for an emailed reset link.
+3. Open **Appointments** to view instructions, directions and the visit QR. Reschedule before check-in or cancel before the consultation starts. A second active token for the same doctor and date is blocked.
+4. Check in at reception. While waiting, the visit may show people ahead and an estimated wait range. Bring the QR for the exact appointment you are attending.
+5. Open **More** on mobile for pharmacy, lab tests, family access, health summary and notifications. Switch to Arabic for right-to-left layout and translated common labels.
 
-A patient cannot hold a second active token for the same doctor on the same date. Cancelled and completed visits stay in history. A patient account's optional hospital reference does not restrict discovery or booking to that hospital.
+Use **Family access** to manage dependent profiles or grant an adult temporary access. Check the **Care for** selector before booking or opening records. Adult delegation expires after 30 days and can be revoked sooner. Use **Health summary** to record patient-reported information and review access history. **Notifications** shows queue calls, prescription readiness and reviewed lab results. Email reminders require both patient opt-in and a configured scheduler. See [Care workflows](CARE_WORKFLOWS.md).
 
 ## Hospital / Clinic Admin
 
@@ -18,7 +18,7 @@ Register through /hospital-register and verify your email, or use a demo facilit
 
 ## Hospital staff
 
-Use credentials issued by your hospital administrator and change the temporary password at first login. Queue staff can register walk-ins, call/skip/cancel arrivals and edit their hospital's doctor schedules. They cannot create hospitals/departments, manage employee accounts, change medicines/prices/banking, read clinical records, or complete clinical visits. The queue refreshes every ten seconds and includes a manual Refresh button.
+Use credentials issued by your hospital administrator and change the temporary password at first login. Queue staff can register walk-ins, check in arrivals, call or skip visits, and edit their hospital's doctor schedules, closure dates and capacity. Issue a short-lived link code when a walk-in wants to attach the visit to their patient account. They cannot create hospitals/departments, manage employee accounts, change medicines/prices/banking, read clinical records, or complete clinical visits. The queue refreshes every ten seconds and includes a manual Refresh button.
 
 ## Doctors
 
@@ -26,15 +26,19 @@ A login account and clinical profile are distinct records. Hospital administrato
 
 After signing in, the doctor queue includes visits for that linked profile. Doctors may change their own availability and call/skip/complete their own visits. Their weekly schedule is managed by hospital staff/admins. The backend rejects changes to other doctors even when a UI lists profiles in the same hospital.
 
-Open **Medical records / visit notes** on a registered patient's queue card. You can add dated records after calling the patient or for an earlier completed visit, including medications, notes, prescriptions, and lab files. Your own associated visit history is visible automatically. Other doctors' records remain hidden until the patient shares an emailed permission code during a pending/called appointment today. Approval lasts 30 minutes and is read-only; the patient can revoke it. Offline walk-ins without a patient account cannot use the patient-owned record workflow.
+Start the consultation after check-in and calling the patient. Open **Notes / history** on the patient's queue entry to work alongside the queue. **Save draft** keeps your notes private and the visit open. **Finalize** publishes the record and completes the associated visit. Add a correction with a reason if you need to amend a finalized record. The form supports structured vitals and optional review of image OCR text.
+
+Your own associated history is visible automatically. Other doctors' records require the patient's emailed permission code for an eligible visit. Access is read-only for 30 minutes and the patient can revoke it earlier. Use **Lab tests** to order or review tests from an eligible visit. Patients can link a finalized lab-report record already associated with the ordering doctor.
 
 ## Pharmacists and pharmacy collection
 
 Use the **Pharmacist** account created by your hospital administrator and replace its temporary password on first login; unassigned pharmacists cannot view hospital orders. Pharmacists sign in to `/pharmacy`, maintain medication availability/AED prices through **Medications**, and prepare prescriptions sent by doctors. They receive the prescription/dispensing snapshot, not the patient's full clinical history.
 
-Saving a doctor's record completes its appointment and opens **Send medication to pharmacy**. Sending creates a distinct pharmacy token shared by patient and pharmacist. The patient sees **Collect your medicine at pharmacy**, with pending/ready status, on **My pharmacy** and in homepage/appointment banners.
+Finalizing a doctor's record completes its appointment and opens **Send medication to pharmacy**. Sending creates a distinct pharmacy token shared by patient and pharmacist. The patient sees **Collect your medicine at pharmacy**, with pending/ready status, on **My pharmacy** and in homepage/appointment banners.
 
-Pharmacists confirm selling quantities/prices and check medicines as gathered. **Done — mark ready** is enabled only for a complete valid checklist. Patients then choose **Proceed to payment → Pay at counter** or configured Stripe online checkout. Counter instructions stay visible until the pharmacist confirms **Paid at counter**. The patient payment dialog confirms payment and closes automatically, retaining a receipt in paid history. See [Pharmacy walkthrough](PHARMACY.md) for dummy accounts, full tests and Stripe setup.
+Confirm gathered quantities and prices, and give a reason for each unavailable item. Once the checklist is resolved, mark the order ready. Patients pay at the counter or through configured Stripe checkout. Confirm collection separately after handing over a paid order. Paid orders have downloadable receipts. Full refunds are available before collection and preserve the original bill.
+
+Open **Stock & expiry** to manage medication batches and record stock movements. Adjust stock after dispensing and reconcile it with physical inventory. See [Pharmacy walkthrough](PHARMACY.md) for payment and refund details.
 
 ## Queue statuses
 
@@ -46,17 +50,17 @@ Pharmacists confirm selling quantities/prices and check medicines as gathered. *
 | `completed` | None |
 | `cancelled` | None |
 
-Patients can cancel their own pending/called/skipped tokens. The API supports returning skipped tokens to pending, while the queue UI primarily offers call/skip/complete actions. Multiple simultaneous called visits are not currently prevented for a doctor.
+Patients can cancel their own pending, called or skipped tokens before a consultation starts. Check-in and consultation start record timestamps alongside the queue status. Several visits can be called, with one open consultation per doctor.
 
 ## QR behavior and current limits
 
 Each appointment now links to its own signed QR. Use **My visit QR** (also visible on the homepage and Profile), and select the exact doctor/date/appointment you are attending. Your HQ user ID stays the same while the QR changes for every visit. Doctors select **Scan patient QR** on that appointment, scan with a camera or uploaded QR image, or paste the signed card data. The app verifies the patient, appointment ID and visit date all match before opening the visit record. Other doctors' records still require OTP consent. Camera use requires browser permission and HTTPS or localhost. The custom QR URI is decoded by Hospiq rather than opened as a browser link.
 
-Booking is same-day, not future-slot scheduling. Consultation hours use the single configured hospital timezone; overnight shifts are not supported. Do not rely on unimplemented wait-time estimates or appointment reminders.
+Consultation hours use the deployment timezone and daytime schedule intervals. Booking gives a queue number. A wait estimate uses recent measured consultations when enough samples exist.
 
 ## Patient medical records and permission
 
-Open **Medical records** in the patient navigation. Add the date/time of a past visit, treating doctor, facility, department, medications, prescription text, notes and lab/prescription files. Use **Scan / take photo** for supported device cameras or **Upload files** for JPEG/PNG/PDF; scanning stores the image and does not extract text automatically.
+Open **Medical records** in the patient navigation. Add the date/time of a past visit, treating doctor, facility, department, medications, prescription text, notes and lab/prescription files. Use **Scan / take photo** for supported device cameras or **Upload files** for JPEG/PNG/PDF; capturing an image adds an attachment. Where local OCR is configured, use the separate extraction action and review the text before applying it to notes.
 
 For external visits, enter doctor/facility names. To associate an upload with an existing Hospiq doctor, select that doctor and explicitly confirm they treated you and may view this record. Matching a typed name alone does not establish a trusted doctor identity. Patient-entered records are labeled.
 

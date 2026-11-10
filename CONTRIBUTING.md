@@ -21,7 +21,7 @@ npm --prefix client run build
 git diff --check
 ```
 
-Run relevant dependency audits when dependencies change. No working lint command is currently configured; do not claim lint passes. Provider delivery and real database concurrency need separate integration evidence.
+Run relevant dependency audits when dependencies change. Run `npm --prefix client run lint` for frontend changes. See [Testing](docs/TESTING.md) for the CI and browser journey commands. Provider delivery and real database concurrency need separate integration evidence.
 
 ## Code and API expectations
 

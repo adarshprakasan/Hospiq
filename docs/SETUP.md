@@ -43,6 +43,8 @@ The API defaults to port 5000 and the frontend to port 5173. Check `http://local
 
 The backend reads `.env` relative to its working directory. The npm-prefix commands run backend scripts from `server`, which is the supported launch method. The seed scripts resolve `server/.env` explicitly.
 
+Confirm database readiness at `http://localhost:5000/api/ready`. For optional local OCR and the reminder scheduler, see [Operations](OPERATIONS.md).
+
 ## Populate a fresh demo database
 
 ```powershell

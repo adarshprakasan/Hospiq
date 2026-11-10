@@ -11,7 +11,7 @@ This is a reference to implemented Express routes, not a generated OpenAPI contr
 - IDs are MongoDB document IDs unless a route says otherwise. `departmentId` on tokens is a department name string.
 - Authorization includes both the route's allowed roles and the ownership check described below.
 - Responses generally use `{ "message": "..." }` for errors; not all controllers currently normalize error codes identically.
-- Lists are currently unpaginated. Public means no JWT is required by that API route, even if the web UI requires sign-in.
+- Pagination is endpoint-specific. Public facilities and clinical history can be paginated with a `page` query parameter. Public means no JWT is required by that API route, even if the web UI requires sign-in.
 
 ## Authentication
 
@@ -110,7 +110,7 @@ Schedule request example:
 }
 ```
 
-Days use English full weekday names. At most seven unique days are accepted. Times are zero-padded `HH:mm`; available intervals must end after they start. The request replaces the weekly schedule rather than patching a single day. An absent schedule returns 404. Fetch before editing to preserve other days.
+Days use English full weekday names. At most seven unique days are accepted. Times are zero-padded `HH:mm`; available intervals must end after they start. The request replaces the weekly schedule rather than patching a single day. Include `closedDates` as date strings and `dailyCapacity` as a whole number from 0 to 500. Zero means unlimited. An absent schedule returns 404. Fetch before editing to preserve other days.
 
 ## Tokens and queues
 
@@ -122,12 +122,20 @@ Days use English full weekday names. At most seven unique days are accepted. Tim
 | GET | `/tokens/my` | staff or doctor; today's scoped queue |
 | GET | `/tokens/doctor/:doctorId` | staff or doctor; ownership check; today's queue |
 | PUT | `/tokens/:tokenId/status` | staff or doctor; doctor ownership and allowed transition |
-| PATCH | `/tokens/:id/complete` | staff or doctor; same checks, requests completed |
+| PATCH | `/tokens/:id/complete` | treating doctor or authorized administrator; same checks, requests completed |
 | DELETE | `/tokens/:tokenId` | patient; own active token becomes cancelled, not physically deleted |
 
-Online booking needs `{ "doctorId": "<clinical-doctor-id>" }`. Offline booking additionally needs `patientName`. The controller derives department and date from the doctor and configured clock; it does not trust a submitted hospital/department/date. No future date argument is supported.
+Booking takes `{ doctorId, date? }`. Walk-ins also require `patientName`. Omit `date` for today or send a `YYYY-MM-DD` value up to 90 days ahead. The server derives the department and facility, checks the schedule and closures, and enforces any configured capacity. Creation returns HTTP 201 with `{ message, token }`.
 
-Creation returns `{message, token}` with HTTP 201. Queue/history list objects include `_id`, `tokenNumber`, `status`, `patientName`, `doctorName`, `departmentName`, `date`, `createdAt`, `isOffline`, and available patient/doctor IDs. `date` is a `YYYY-MM-DD` string in the hospital timezone. There is no calculated ETA field.
+Queue/history results include visit and doctor IDs, facility details, token status, visit date and workflow timestamps. Eligible checked-in visits can include `peopleAhead` and a `waitEstimate` range based on recent consultation data.
+
+| Method and path | Use |
+|---|---|
+| `POST /tokens/:tokenId/reschedule` | Patient sends `{ date }` to move a pending or skipped visit before check-in |
+| `POST /tokens/:tokenId/actions/check-in` | Scoped staff, facility admin or doctor records arrival |
+| `POST /tokens/:tokenId/actions/start` | Treating doctor starts a called, checked-in visit |
+| `POST /tokens/:tokenId/claim-code` | Staff or facility admin issues a short-lived walk-in link code |
+| `POST /tokens/claim` | Patient submits `{ code }` to link the walk-in |
 
 Status body:
 
@@ -142,7 +150,7 @@ Status body:
 | skipped | pending, called, cancelled |
 | completed / cancelled | None |
 
-Booking checks doctor availability and consultation hours for both online and offline tokens. End time is exclusive. An existing active online token for the same patient/doctor/date returns conflict. Failed inserts can leave counter gaps.
+Same-day booking checks current availability and uses the consultation end time as an exclusive cutoff. Staff cannot complete a clinical visit. An existing active online token for the same patient/doctor/date returns conflict. Failed inserts can leave counter gaps.
 
 ## Records, profiles, QR, health
 
@@ -167,6 +175,43 @@ Patient QR resolution is purpose-signed and checks the linked doctor, exact acti
 ## Pharmacy and medication catalogue
 
 The `pharmacist` role is provisioned and assigned by Hospital/Clinic Admins; queue staff cannot assign accounts. Pharmacists maintain medication availability/prices and use hospital-scoped pharmacy orders; patients see only their own pharmacy tokens. Saving a doctor's record completes its appointment and returns `visitCompleted`; the subsequent pharmacy handoff is explicit and idempotent per appointment. See [Pharmacy API contract](PHARMACY.md#api-contract) and [Medication API](MEDICATIONS.md#api) for endpoints, order versions, integer-fils totals, counter payment, Stripe checkout, and signed webhooks. Pharmacists have no general medical-history or attachment access.
+
+## Discovery, recovery and patient context
+
+- `GET /hospitals` accepts `q`, `type`, `page` and `limit`. Requests with `page` return `{ items, total, page, limit }`. Requests without `page` retain the array response.
+- `POST /auth/forgot-password` takes `{ email }` and returns a generic response for valid addresses. `POST /auth/reset-password` takes `{ token, password }`. The link expires after 15 minutes and a successful reset revokes previous sessions.
+- A patient can send `X-Patient-Id` to select an authorized dependent or delegated profile. Authentication and family settings use the signed-in account. An expired or revoked selection returns HTTP 403 with `PATIENT_CONTEXT_REVOKED`.
+
+| Method and path | Use |
+|---|---|
+| `GET /family` | List available profiles and access granted by the signed-in patient |
+| `POST /family/dependents` | Create a dependent with `name`, `dateOfBirth` and `guardianConfirmation: true` |
+| `POST /family/delegations` | Grant 30-day access with `email` and `confirm: true` |
+| `DELETE /family/delegations/:id` | Revoke a grant made by the signed-in patient |
+| `GET /health-profile/summary/:patientId` | Read own/selected summary or read as a doctor with full history permission |
+| `PUT /health-profile/summary` | Patient saves `allergies`, `conditions`, `currentMedications`, `emergencyContact` and current `version` |
+| `GET /health-profile/access-history?page=1` | Patient reviews recorded clinical reads, 20 per page |
+| `GET /notifications`, `POST /notifications/:id/read` | List and mark patient notifications read |
+| `GET /notifications/preferences`, `PUT /notifications/preferences` | Read or update `{ emailReminders }` |
+| `GET /notifications/deliveries` | Recent reminder delivery attempts |
+
+## Clinical drafts, lab orders and inventory
+
+| Method and path | Use |
+|---|---|
+| `POST /records/add` | Doctor may send `status: "draft"` to keep the record private and the visit open |
+| `PATCH /records/:recordId/draft` | Author sends editable fields, current `version` and `status` of `draft` or `final` |
+| `POST /records/:recordId/amendments` | Author adds `{ text, reason, version }` to a finalized record |
+| `POST /records/ocr` | Patient or doctor submits one image via multipart `files` and receives `{ text, requiresReview }` where OCR is configured |
+| `GET /labs` | Patient's own or doctor's ordered tests. Doctor can filter by `patientId` |
+| `POST /labs` | Doctor sends `{ patientId, visitId, tests, instructions }` for an eligible visit |
+| `POST /labs/:id/status` | Send `{ status, version }`. Linking a result needs `resultRecordId` and patient submissions need `shareWithDoctor: true` |
+| `GET /inventory`, `POST /inventory` | Pharmacist lists scoped batches or creates one with `medicationId`, `batchNumber`, `expiresOn`, `quantity` |
+| `GET /inventory/:id/movements`, `POST /inventory/:id/movements` | Pharmacist reads the ledger or records `{ delta, reason, version, requestId }` |
+| `GET /operations/metrics` | Doctor, staff or admin reads scoped 30-day measures |
+| `GET /ready` | Public MongoDB readiness. HTTP 503 when unavailable |
+
+See [Medical records](MEDICAL_RECORDS.md), [Pharmacy](PHARMACY.md) and [Operations](OPERATIONS.md) for behavior and configuration. Every API response has an `X-Request-Id` header.
 
 ## Error handling and limits
 

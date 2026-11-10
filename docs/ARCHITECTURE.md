@@ -52,21 +52,17 @@ The Hospiq Admin and Hospital/Clinic Admin consoles enforce current database rol
 
 ## Booking and queue consistency
 
-1. Load the clinical doctor and check account scope for offline bookings.
-2. Check `availabilityStatus` and today's consultation interval in `HOSPITAL_TIMEZONE`.
-3. Reject an existing active patient booking for that doctor/date.
-4. Initialize the per-doctor/date counter from historical maximum token number if absent.
-5. Atomically increment the counter and create the token.
+The API validates the requested date, doctor scope, schedule, closures and capacity before allocating a number from the per-doctor/date counter. Unique indexes protect visit numbers, active online bookings and capacity slots. Cancelled visits free capacity. Number allocation and insertion are separate, so rejected inserts can leave gaps.
 
-A unique doctor/date/token-number index prevents duplicate token numbers. A partial unique doctor/patient/date index applies to online pending/called/skipped bookings. Number allocation and token insertion are separate operations, so failures may leave gaps; token numbers are not guaranteed contiguous.
-
-Status changes use a conditional update on the previous status to detect stale writes. Hospital/account creation and doctor/account linking span multiple documents without transactions; recovery logic and concurrency tests are still required before production.
+Check-in and consultation start add timestamps to visit documents. A partial unique index permits one open consultation per doctor. Conditional updates detect stale queue changes. Consultation durations contribute to measured wait ranges only after the minimum sample threshold is met.
 
 ## Performance and boundaries
 
-Public facility search currently filters the downloaded list in the browser. Staff queues query today's tokens for doctors in that hospital; patient history is unpaginated. Indexes support hospital/department doctor lookup, patient/date history, and doctor/day numbering. Avoid shared caches of patient data. Large datasets need API pagination, measured query plans, and server-side directory search.
+The care directory and clinical history support server-side search and pagination. The patient appointment list is still returned as an array. Queue and appointment views refresh through polling. Private polling state stays with the mounted client and supports visibility pause, reconnect and backoff.
 
-The system currently has one timezone and one in-memory auth rate limiter per API process. No WebSocket service, Redis cache, job queue, refresh-token service, or notification worker is implemented.
+Family context is selected per request and checked against current guardianship or delegation. The actual account remains available for clinical access logging and family settings. Private drafts, amendments, health summaries, lab orders, notifications, reminder deliveries and stock batches use separate scoped records or versioned updates.
+
+The API uses one configured timezone and an in-memory rate limiter per process. The next-day email worker runs through an external scheduler, with a delivery lease and retry history. See [Operations](OPERATIONS.md).
 
 ## Clinical files and consent boundary
 

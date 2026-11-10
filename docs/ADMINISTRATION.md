@@ -87,6 +87,8 @@ Provide `HOSPIQ_ADMIN_EMAIL` and `HOSPIQ_ADMIN_PASSWORD` through your local envi
 
 Use independent browser sessions for different roles. After role/password changes, sign in again; session version checks revoke old sessions. Archived doctors remain unavailable after restoration until reviewed. Self-archival/self-suspension is blocked, the last active platform administrator is protected, active appointments must be resolved before archiving a doctor, and unpaid pharmacy orders cannot be removed from their workflow.
 
+The consoles and clinical dashboard show scoped operational metrics for recent visits. See [Care workflows](CARE_WORKFLOWS.md) for measured waiting, consultation and pharmacy preparation times.
+
 ## Deliberate boundaries and next improvements
 
 Administrative control covers operational records, not unrestricted clinical-history access, deletion of audit trails, or arbitrary rewriting of paid invoices. Archive/restore preserves medical/billing references rather than cascading destructive deletes. Multi-document management writes use redacted started/completed/failed audit events and compensating suspension for failed employee/profile creation; they are not advertised as atomic transactions.

@@ -1,5 +1,7 @@
 # Project review and redesign
 
+This is a historical record of the original review. See [Care workflows](docs/CARE_WORKFLOWS.md) for delivered changes, [Roadmap](docs/ROADMAP.md) for current priorities and [Operations](docs/OPERATIONS.md) for verification evidence.
+
 Review date: 5 November 2026. Product priority: patients and hospital staff equally.
 
 ## Implemented findings
@@ -30,7 +32,7 @@ Review date: 5 November 2026. Product priority: patients and hospital staff equa
 
 A shared teal/neutral MUI theme brings consistent typography, buttons, form fields, surfaces, and responsive grids to existing screens. New patient discovery, booking confirmation, appointment history, login/registration, and staff queue screens use the same visual language. The patient homepage supports facility type and name/location/department search. The staff dashboard adds queue counts, search, status filters, walk-in registration, department creation, and direct links to doctors and schedules. The old MUI Grid props were updated for MUI 7. Loading, empty, error, and disabled states were added to the main flows; reduced motion and visible focus styles are included.
 
-## Remaining work, ordered by impact
+## Remaining work identified at the original review
 
 These are explicitly not represented as complete by this change.
 

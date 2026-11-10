@@ -4,6 +4,16 @@ Changes are recorded here as they land. No semantic-version release tag has been
 
 ## Unreleased
 
+### Patient and clinical workflows
+
+- Added public care search, visit-first mobile navigation, inline appointment QR, future queue bookings, daily capacity, closure dates, rescheduling and walk-in account linking.
+- Added arrival and consultation tracking, measured wait estimates, a combined clinician queue and notes view, private drafts, append-only corrections, structured vitals, visit summary downloads and reviewed local image OCR.
+- Added family profiles and adult delegation, health summaries and access history, password recovery, lab order and result review, in-app notifications, opt-in email reminders and partial Arabic/RTL support.
+- Added unavailable pharmacy lines, collection confirmation, downloadable receipts, full refunds before collection and a batch inventory ledger with expiry indicators.
+- Added operational metrics, database readiness, request IDs, optional timing logs, startup index checks, graceful shutdown, CI, dependency updates and browser journey checks.
+
+See [Care workflows](docs/CARE_WORKFLOWS.md) and [Operations](docs/OPERATIONS.md) for behavior, configuration and remaining rollout work.
+
 ### Scoped administration and role/database restructuring — 6 November 2026
 
 - Added Hospiq and Hospital/Clinic Admin dashboards for operational records, team provisioning with temporary credentials, department management, banking settings and redacted audits.

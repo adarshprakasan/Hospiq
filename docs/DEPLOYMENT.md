@@ -4,7 +4,7 @@
 
 ## Readiness
 
-This repository does not include a production deployment, Docker setup, infrastructure templates, or a CI workflow. The API and static frontend are separate services. Before processing real patient data, configure private persistent medical-file storage and key backups, migrate historical public links, and address session/onboarding controls, operational logging/auditing, backups, and broader database integration verification in [Security](../SECURITY.md) and the [roadmap](ROADMAP.md).
+Deploy the API and static frontend as separate services. GitHub Actions runs the repository quality checks. Before real patient data is used, follow the [rollout checklist](OPERATIONS.md) for backup restoration, storage, provider checks and database preflight. See [Security](../SECURITY.md) and the [roadmap](ROADMAP.md) for outstanding work.
 
 ## Frontend build
 
@@ -28,7 +28,7 @@ npm --prefix server start
 
 Use `PORT` supplied by the host. Set `CLIENT_URL` to the exact frontend origin and `HOSPITAL_TIMEZONE` to the intended timezone. Provide database/provider credentials and `MEDICAL_FILE_KEY` through the host's secret manager, not committed files. Mount a private persistent directory at `MEDICAL_STORAGE_DIR`; do not serve it through the frontend or web server. Back up that volume and preserve the encryption key separately. Do not deploy these files on an ephemeral function filesystem. Configure HTTPS at the hosting layer. Configure proxy trust deliberately before relying on IP-based throttling; the application does not currently set `trust proxy`.
 
-The API connects to MongoDB and waits for required Token/Doctor/QueueCounter indexes before listening. Preflight historical data before deployment. Startup failure may indicate credentials, connectivity, unsupported database capabilities, or duplicate index data.
+The API connects to MongoDB and waits for indexes for registered models before listening. Preflight historical data before deployment. Startup failure may indicate credentials, connectivity, unsupported database capabilities, or duplicate index data.
 
 ## Database migration and rollback
 
@@ -40,11 +40,11 @@ The API connects to MongoDB and waits for required Token/Doctor/QueueCounter ind
 
 The preflight is read-only; starting the API may create indexes. Demo seeds are explicit database writes and must not run automatically during production startup.
 
-## Observability and scaling gaps
+## Observability and scaling
 
-`GET /api/health` is liveness only. Add dependency-aware readiness, process supervision, structured sanitized logs, request IDs, audit events, alerting, backup/restore drills, and graceful shutdown before release. The application has no centralized session revocation or job worker.
+Use `GET /api/health` for liveness and `GET /api/ready` for MongoDB readiness. Requests carry `X-Request-Id`. Set `LOG_REQUESTS=true` for structured timing logs. The process handles graceful shutdown. Configure a scheduler for reminders and install Tesseract if local OCR is required. See [Operations](OPERATIONS.md) for setup and alerting targets.
 
-Auth throttling uses an in-memory map in each process. Multi-instance deployments require a shared limiter and coordinated configuration. Link/create operations span multiple documents without transactions; use transactional or recoverable workflows before scaling sensitive operations. Current list endpoints need pagination before large workloads.
+Rate limits are per process. Plan a shared limiter and tested proxy configuration for multiple instances. Some provisioning operations span multiple documents and need recovery plans.
 
 ## Secret rotation
 

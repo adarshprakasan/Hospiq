@@ -38,6 +38,6 @@ Each `visits` entry contains `tokenId`, `date`, `tokenNumber`, `status`, `doctor
 
 ## Verification
 
-The current suite has 24 regression cases and 89 isolated database/SMTP checks, including same-day code differentiation, missing-visit handling, retired permanent codes, previous dates and ended visits. Actual image decoding, appointment matching and visit-record saving were browser-verified; physical camera hardware remains a manual check.
+An earlier verification run included 24 regression cases and 89 isolated database/SMTP checks, including same-day code differentiation, missing-visit handling, retired permanent codes, previous dates and ended visits. Actual image decoding, appointment matching and visit-record saving were browser-verified; physical camera hardware remains a manual check.
 
 `npm --prefix server run test:records -- --preview` can expose a fictional disposable browser fixture for up to ten minutes. It prints the local API address, fictional credentials, QR image paths and a protected stop URL/key. No real email is sent; its database and files are removed on stop/timeout. Use [the main guide](TEST_TODAYS_FEATURES.md) for persistent large-demo testing.

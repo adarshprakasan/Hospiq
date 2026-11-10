@@ -7,7 +7,8 @@
 | Use the expanded care workflow | [Care workflows](CARE_WORKFLOWS.md) |
 | Roll out the improvements | [Operations and verification evidence](OPERATIONS.md) |
 | Run the app | [Setup](SETUP.md), then [Configuration](CONFIGURATION.md) |
-| Test today's additions | [Large-data and feature walkthrough](TEST_TODAYS_FEATURES.md) |
+| Find an app screen | [Role-based route map](ROUTES.md) |
+| Walk through QR and records | [Large-data and feature walkthrough](TEST_TODAYS_FEATURES.md) |
 | Test pharmacy and payments | [Pharmacist accounts, queue, counter payments and Stripe setup](PHARMACY.md) |
 | Administer roles and upgrade the database | [Administration](ADMINISTRATION.md) |
 | Try each role | [Demo data](DEMO_DATA.md), then [User guide](USER_GUIDE.md) and [Patient QR](PATIENT_QR.md) |

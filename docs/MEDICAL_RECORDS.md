@@ -29,7 +29,13 @@ The old POST /records/upload is retired (410); create a record with attachments 
 
 Fields: visitDate (ISO timestamp with timezone), doctorId (optional local doctor for a patient upload), doctorName, hospitalName, department, diagnosis, prescription, notes, medications (array of name/dose/frequency/duration/instructions), and patientId for doctor creation. Doctor-created identity fields are derived from the linked doctor rather than trusted input. For multipart, include a JSON `data` field and up to five `files`, with `kind` prescription or lab-report applying to that submission's files. Local-doctor selection by a patient explicitly associates the record with that doctor and permits that doctor to read it; external/unlinked records always need consent for another doctor.
 
-Email delivery requires real verified patient email addresses; demo example.invalid accounts cannot receive mail. Camera capture is browser/device dependent and does not provide OCR. SMS and automatic extraction are not implemented.
+Email delivery requires real verified patient email addresses; demo example.invalid accounts cannot receive mail. Camera capture depends on the browser and device. Optional local image OCR is a separate action and returns text for review.
+
+## Drafts, corrections and lab results
+
+Doctors can save private drafts with structured vitals and finalize them after review. Finalization completes the associated visit. Finalized records accept append-only corrections with a reason. Edits and corrections require the current version. Patients can download a text visit summary.
+
+Use **Lab tests** to order or review a result. A patient can link a finalized record containing a lab report when the record is associated with the ordering doctor. OCR is available for JPEG and PNG images when Tesseract is configured. Review extracted text before adding it to notes. See [Care workflows](CARE_WORKFLOWS.md) and [Operations](OPERATIONS.md#local-ocr).
 
 ## Running and testing
 
@@ -37,7 +43,7 @@ Restart the API and frontend after pulling this feature. Configure `MEDICAL_FILE
 
 Run `npm --prefix server test`, `npm --prefix client run build`, and `npm --prefix server run test:records`. The explicit integration command creates a new uniquely named disposable database on the configured MongoDB server, uses an actual local SMTP fixture, and removes its test database/files. Existing patient data is untouched and no real email is sent. This fixture is used because email is SMTP rather than an HTTP dependency; Postman HTTP simulation is not the transport used here. It does not establish Gmail or SMS delivery.
 
-Back up the database, private attachment volume, and encryption key with appropriate separation. Losing the key makes stored attachments unreadable. Patient-entered text remains unverified; signature validation is not full malware scanning or clinical verification. The app does not provide automatic OCR, mobile SMS, corrections/versioning, or a complete clinical audit trail.
+Back up the database, private attachment volume, and encryption key with appropriate separation. Losing the key makes stored attachments unreadable. Patient-entered text remains unverified; signature validation is not full malware scanning or clinical verification. Clinical access history covers recorded history, health summary and attachment reads. The deployment checklist covers the remaining audit and storage work.
 
 Grant state is unique per doctor/patient pair and versioned. Successful verification and patient revocation advance that version, preventing an older in-flight permission proof from restoring revoked access.
 

@@ -9,10 +9,10 @@
 | `MONGO_URI` | MongoDB connection and database | Required to start API or run seed/preflight scripts |
 | `JWT_SECRET` | Signs login and registration-verification tokens | Required for API startup; use a long random secret |
 | `PORT` | API listening port | `5000` |
-| `CLIENT_URL` | Single allowed browser CORS origin | `http://localhost:5173` |
+| `CLIENT_URL` | Allowed browser CORS origin and email link base URL | `http://localhost:5173` |
 | `HOSPITAL_TIMEZONE` | IANA timezone for queue dates, weekdays, and hours | `Asia/Dubai`; one timezone per deployment |
-| `EMAIL_USER` | Gmail sender/login account | Required for normal OTP registration |
-| `EMAIL_PASS` | Gmail app password | Required for normal OTP registration |
+| `EMAIL_USER` | Gmail sender/login account | For email workflows when `SMTP_URL` is absent |
+| `EMAIL_PASS` | Gmail app password | For email workflows when `SMTP_URL` is absent |
 | `MEDICAL_FILE_KEY` | 32-byte AES-256 key encoded as 64 hex characters | Required for new medical file uploads/downloads; back up securely and do not replace after storing files |
 | `MEDICAL_STORAGE_DIR` | Private persistent attachment directory | Defaults to `server/storage/medical`; never expose it through static hosting |
 | `SMTP_URL` | Optional SMTP connection URL for another provider or local test mailbox | Otherwise the Gmail transport is used; contains secrets if credentials are included |
@@ -21,6 +21,9 @@
 | `STRIPE_SECRET_KEY` | Stripe secret key for hosted pharmacy checkout | Optional; counter payments work without it; use test keys for development |
 | `STRIPE_WEBHOOK_SECRET` | Signing secret for the pharmacy checkout webhook | Required alongside Stripe secret key to enable online checkout |
 | `HOSPIQ_ADMIN_EMAIL`, `HOSPIQ_ADMIN_PASSWORD` | Optional first administrator bootstrap credentials | Used only by `bootstrap:admin`; remove after setup; existing admin creation goes through the console |
+| `LOG_REQUESTS` | Structured timing logs with request IDs | Off unless set to `true` |
+| `TESSERACT_PATH` | Path to a local Tesseract executable | Optional. Enables image OCR |
+| `OCR_LANGUAGES` | Installed Tesseract language packs to use | `eng` |
 
 Email transport is configured in `server/utils/mailer.js`. Set `SMTP_URL` to use a custom SMTP provider; arbitrary SMTP host variables are not read. New medical files use `server/services/medical-files.js`, not public Cloudinary delivery. Never include real credentials in documentation, issues, screenshots, shell history, or commits.
 

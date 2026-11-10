@@ -1,32 +1,30 @@
 # Roadmap
 
-[Documentation index](README.md) · [Detailed review](../PROJECT_REVIEW.md)
+[Documentation index](README.md) · [Historical project review](../PROJECT_REVIEW.md)
 
-These priorities describe intended work, not committed dates or shipped functionality.
+## Available now
 
-## Before real patient data
+- Public care discovery, future queue bookings, closure dates, daily capacity, rescheduling, check-in and consultation timing. One active consultation per doctor and measured wait estimates with a minimum sample size.
+- Private clinician drafts, finalized amendments, structured vitals, visit summaries, reviewed local image OCR, and lab orders with result linking and review.
+- Family profiles and adult delegation, password recovery, access history, in-app notifications, and optional next-day email reminders with delivery tracking.
+- Unavailable pharmacy lines, separate payment and collection, full refunds before collection, and a manual batch inventory ledger.
+- Search and pagination for the public directory and clinical history, partial Arabic and right-to-left support, CI, browser/accessibility checks, MongoDB readiness, request IDs and structured timing logs.
 
-- Migrate any historical public medical assets, add malware scanning and managed private object-storage support; new attachments already use encrypted local private storage and authorized downloads.
-- Disposable-database concurrency tests for booking uniqueness, counters, status changes, account linking, and upgrade migrations.
-- Transactional or recoverable multi-document hospital/doctor-account changes.
-- Stronger staff onboarding, explicit care-team consent, secure session storage/revocation, password recovery, and consistent validation/error responses.
-- Audit events, sanitized logging, monitored backups, restore tests, and dependency-aware readiness.
+See [Care workflows](CARE_WORKFLOWS.md) for current behavior and [Operations](OPERATIONS.md) for setup.
 
-## Patient and care-team experience
+## Before using real patient data
 
-- Real-time queue updates, reconnect handling, queue position and measured wait estimates.
-- One active consultation per doctor, capacity/no-show policies, and optional stronger proof-of-presence beyond the implemented signed patient QR appointment match.
-- Future appointments, holidays and leave, timezone per facility, overnight shift rules.
-- Extend the implemented patient history and clinician visit/prescription/attachment interfaces with versioned corrections, richer encounters and optional reviewed OCR.
-- Opt-in reminders, follow-up messaging, and delivery tracking.
-- Improved staff invitation/account lifecycle and a deliberate admin experience.
+- Move legacy public medical attachments to private storage, add malware scanning, and support a managed private file store.
+- Rehearse restoration of MongoDB, encrypted files and keys. Assign monitoring and alert ownership. Verify payment, email, and OCR providers in the deployment environment.
+- Strengthen privileged account onboarding and session controls. Make multi-document provisioning and clinical writes recoverable where they span separate updates.
+- Expand audit coverage and add shared rate limits and tested proxy settings for multi-instance deployments.
 
-## Scale and maintainability
+## Workflow improvements to evaluate
 
-- Paginated histories and facility lists, server-side directory search, measured query indexes.
-- Public-data caching with invalidation while excluding private patient data from shared caches.
-- Shared rate-limiting store and tested proxy configuration for multiple instances.
-- Consolidate embedded department strings versus the legacy Department model.
-- Lint/format tooling, browser and accessibility tests, CI checks, and dependency automation.
+- Exact-time appointments, facility timezones, overnight shifts and confirmed no-show policies.
+- Live queue delivery and optional SMS or push reminders.
+- Verified guardianship, transfer to an independent account at adulthood, and fuller Arabic localization.
+- Pharmacy stock reconciliation tied to collection, partial refunds, and returns after collection.
+- External lab integration and dedicated lab staff permissions.
 
-Open a focused [feature request](https://github.com/adarshprakasan/Hospiq/issues/new?template=feature_request.yml) with the user problem, intended roles, scope, and acceptance criteria before implementing major additions.
+These are priorities for evaluation. See the [feature request template](https://github.com/adarshprakasan/Hospiq/issues/new?template=feature_request.yml) for proposing scope and acceptance criteria.

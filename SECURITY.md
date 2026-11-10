@@ -2,7 +2,7 @@
 
 ## Pharmacy access and payments
 
-Pharmacists must be assigned to a hospital by its Hospital/Clinic Admin. They can manage that hospital's medication catalogue and see only explicitly sent prescription/dispensing snapshots, not general medical history or attachments. Patient pharmacy orders are scoped to the patient. Preparation and counter-payment updates enforce hospital ownership, order versions, and allowed states.
+Pharmacists must be assigned to a hospital by its Hospital/Clinic Admin. They can manage that hospital's medication catalogue and see only explicitly sent prescription/dispensing snapshots, not general medical history or attachments. Patient pharmacy orders are scoped to the patient. Preparation, counter payment, collection and refund actions enforce hospital ownership and applicable order version and state checks. Refunds require a paid, uncollected order. Online refund attempts are persisted for safe retries.
 
 Stripe checkout uses server-calculated, frozen AED totals and sends generic pharmacy order labels rather than clinical medicine names. Online paid status requires a signature-verified webhook or server-retrieved session with matching amount, currency, order, attempt and session. Counter settlement is blocked while an online session can still charge. Keep `STRIPE_SECRET_KEY` and `STRIPE_WEBHOOK_SECRET` server-only; use test-mode credentials for evaluation. See [Pharmacy setup](docs/PHARMACY.md).
 
@@ -20,7 +20,9 @@ Include the affected commit, component, sanitized reproduction, impact, and a pr
 
 - JWT signature verification with a current User lookup on protected requests.
 - Role and hospital/linked-doctor ownership checks on management and queue operations.
-- Patient self-access and authored-record restrictions.
+- Patient self-access, authored-record restrictions and consent checks. Private clinician drafts stay with the author.
+- Dependent and delegated patient context is reauthorized per request. Clinical access history records actor identity for supported reads.
+- Password recovery uses hashed, expiring tokens and revokes earlier sessions after reset.
 - Hashed passwords/OTPs, bounded OTP attempts, expiry checks, resend cooldown, and process-local auth throttling.
 - Request/file limits and unique booking indexes.
 
@@ -29,8 +31,8 @@ These controls do not establish regulatory compliance or eliminate application r
 ## Known release blockers and limits
 
 - New medical attachments use encrypted private storage and authorized downloads. Historical Cloudinary URLs may still be public outside the app: responses quarantine them, but existing provider assets must be migrated/removed separately.
-- Browser tokens are stored in localStorage, have a seven-day lifetime, and lack a dedicated revocation/refresh service.
-- Staff/doctor self-registration does not verify real-world credentials or affiliation; hospital association alone is not a complete onboarding policy.
+- Browser tokens are stored in localStorage and expire after seven days. Password changes, resets and account actions use session versions to revoke existing tokens.
+- Staff and doctors are provisioned through authorized administrators. Real-world credentials, facility affiliation and declared guardianship require verification outside the current workflow.
 - Doctor record creation now requires a called/completed token relationship. Other doctors' history needs a five-minute patient-email OTP for a revocable 30-minute read grant. Clinical credential/affiliation verification and richer consent scope still need work.
 - Full clinical access audit trails, retention policies, malware scanning, transaction/recovery behavior, and broad integration coverage remain incomplete. JPEG/PNG/PDF signature checks are not malware scanning. Attachment keys/storage backups and deployment permissions need operational management.
 - IP throttling is local to each process, and trusted-proxy behavior must be configured deliberately for hosting.

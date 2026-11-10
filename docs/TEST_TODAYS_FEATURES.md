@@ -1,6 +1,6 @@
 # Test the visit QR and medical-record features
 
-This guide covers the features added on 6 November 2026. Use fictional data only. Patient IDs are stable; QR codes now belong to individual visits and are signed over patient ID, appointment ID, and visit date. Two appointments on the same day therefore have different codes.
+This guide covers the visit QR, upload and consent scenarios from 6 November 2026. For the expanded visit, pharmacy, family and lab workflows, see [Care workflows](CARE_WORKFLOWS.md). Use fictional data only. Patient IDs are stable; QR codes now belong to individual visits and are signed over patient ID, appointment ID, and visit date. Two appointments on the same day therefore have different codes.
 
 The newer **[Pharmacy walkthrough](PHARMACY.md)** covers pharmacist accounts, medication pricing, doctor handoff, pharmacy tokens, preparation checkboxes, counter payments and Stripe setup. Saving a doctor's visit now completes the appointment; request any needed clinical-history OTP permission before saving.
 
@@ -137,7 +137,7 @@ Revocation blocks future reads but cannot retract data already viewed or downloa
 ## 9. Upload / scan documents and download lab reports
 
 - As a patient, use **Add visit / upload documents**. Enter doctor, department, facility and date/time. Choose external text fields or explicitly associate an upload with a Hospiq doctor and confirm that doctor's access.
-- Use **Upload files** for JPEG/PNG/PDF or **Scan / take photo** on supported camera devices. This stores the document image, not automatic OCR.
+- Use **Upload files** for JPEG/PNG/PDF or **Scan / take photo** on supported camera devices. This stores the document image. Optional OCR is a separate review action for images.
 - Maximum five files per record and 10 MB per file. Unsupported or mismatched file signatures should fail.
 - Download a seeded lab attachment from your own record. These 480 files are encrypted on private storage; they have no public delivery URL.
 - Without patient permission, another doctor must not download that attachment. Under an approved grant they may do so until expiry/revocation.
@@ -161,7 +161,7 @@ The sample PDF is clearly marked fictional and contains no clinical results. It 
 
 Departments are embedded in each facility: General Medicine, Cardiology, Paediatrics, Dermatology and Orthopaedics (30 facility-department entries, five distinct department names). Existing smaller demo data is preserved separately.
 
-The daily queue intentionally mixes pending, called, skipped, completed and cancelled visits. Current limits include unpaginated histories, manual queue refresh, no SMS OTP, no OCR, and no real camera hardware coverage in automated tests.
+The daily queue intentionally mixes pending, called, skipped, completed and cancelled visits. Camera hardware is a manual check. The isolated automated suites use fictional fixtures. See [Testing](TESTING.md) for current commands.
 
 ## Automated checks
 
