@@ -32,8 +32,33 @@ async function run() {
   function auth(user) { return jwt.sign({ id: user._id, sessionVersion: user.sessionVersion || 0 }, process.env.JWT_SECRET, { expiresIn: '1h' }); }
   async function request(user, route, method = 'GET', body, patientContext) {
     const response = await fetch(`${api}${route}`, { method, headers: { 'Content-Type': 'application/json', ...(patientContext ? { 'X-Patient-Id': patientContext } : {}), ...(user ? { Authorization: `Bearer ${auth(user)}` } : {}) }, ...(body ? { body: JSON.stringify(body) } : {}) });
-    return { status: response.status, body: await response.json() };
+    return { status: response.status, body: response.status === 204 ? null : await response.json() };
   }
+  // Account settings must never update a selected family profile.
+  const account = await user('patient', 'profile-owner');
+  const dependent = await user('patient', 'profile-dependent');
+  await User.updateOne({ _id: dependent.id }, { $set: { guardianId: account.id, dateOfBirth: '2020-05-10' } });
+  const profilePath = '/profile/me';
+  check((await request(null, profilePath)).status, 401);
+  check((await request(account, profilePath, 'PUT', {
+    name: 'Updated account', preferredName: 'Preferred', phone: '+1 555 0100', role: 'admin',
+  }, dependent.id)).status, 204);
+  check((await User.findById(dependent.id)).name, dependent.name);
+  check((await request(account, profilePath, 'GET', null, dependent.id)).body.role, 'patient');
+  check((await request(account, profilePath + '/measurements', 'PUT', { heightCm: 0, weightKg: 72, source: 'manual' })).status, 400);
+  check((await request(account, profilePath + '/measurements', 'PUT', { heightCm: 180, weightKg: 72, source: 'manual' })).status, 204);
+  check((await request(account, profilePath)).body.measurements.bmi, 22.2);
+  check((await request(dependent, profilePath)).body.measurements, null);
+  check((await request(account, profilePath + '/photo', 'PUT', { photo: 'data:image/svg+xml;base64,PHN2Zz4=' })).status, 400);
+  const bookmark = profilePath + '/saved/hospital/' + hospital.id;
+  check((await request(account, bookmark, 'PUT')).status, 204);
+  check((await request(account, bookmark, 'PUT')).status, 204);
+  check((await request(account, profilePath + '/saved')).body.hospitals.length, 1);
+  check((await request(dependent, profilePath + '/saved')).body.hospitals.length, 0);
+  check((await request(account, bookmark, 'DELETE')).status, 204);
+  check((await request(account, profilePath + '/saved')).body.hospitals.length, 0);
+  check((await request(account, '/auth/sign-out-all', 'POST')).status, 204);
+  check((await request(account, profilePath)).status, 401);
   const today = require('../utils/queue').queueDate();
   const tomorrow = new Date(`${today}T12:00:00Z`); tomorrow.setUTCDate(tomorrow.getUTCDate() + 1); const future = tomorrow.toISOString().slice(0, 10);
   const concurrent = await Promise.all(Array.from({ length: 5 }, () => request(patient, '/tokens/book', 'POST', { doctorId: doctor.id, date: future })));

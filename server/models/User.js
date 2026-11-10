@@ -24,6 +24,7 @@ const userSchema = new mongoose.Schema(
     },
     qrCode: String, // Placeholder for future
     phone: { type: String, maxlength: 40 },
+    preferredName: { type: String, maxlength: 100, trim: true },
     status: { type: String, enum: ["active", "suspended"], default: "active" },
     deletedAt: { type: Date, default: null },
     mustChangePassword: { type: Boolean, default: false },

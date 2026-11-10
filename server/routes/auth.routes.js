@@ -14,5 +14,9 @@ router.post('/forgot-password', rateLimit({ limit: 5 }), require('../controllers
 router.post('/reset-password', rateLimit({ limit: 10 }), require('../controllers/password-reset.controller').reset);
 router.get("/me", authMiddleware, auth.getCurrentUser);
 router.post("/change-password", authMiddleware, rateLimit({ limit: 10 }), auth.changePassword);
+router.post('/sign-out-all', authMiddleware, async (req, res) => {
+  await require('../models/User').updateOne({ _id: req.account.id }, { $inc: { sessionVersion: 1 } });
+  res.sendStatus(204);
+});
 
 module.exports = router;

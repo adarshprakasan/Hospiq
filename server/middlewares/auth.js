@@ -17,7 +17,8 @@ module.exports = async (req, res, next) => {
     req.account = user;
     req.user = user;
     const selected = req.get('X-Patient-Id');
-    if (selected && user.role === 'patient' && !req.originalUrl.startsWith('/api/auth/') && !req.originalUrl.startsWith('/api/family')) {
+    const accountProfile = /^\/api\/profile\/me(?:\/|\?|$)/.test(req.originalUrl);
+    if (selected && user.role === 'patient' && !accountProfile && !req.originalUrl.startsWith('/api/auth/') && !req.originalUrl.startsWith('/api/family')) {
       if (!require('mongoose').isObjectIdOrHexString(selected)) return res.status(400).json({ message: 'Invalid patient context' });
       const patient = await User.findOne({ _id: selected, role: 'patient', deletedAt: null, status: { $ne: 'suspended' } }).select('-password');
       const today = require('../utils/queue').queueDate();
