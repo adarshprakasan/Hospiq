@@ -60,6 +60,14 @@ test('revoked bearer tokens are denied before account lookup', async () => {
   await auth({ get: () => `Bearer ${token}` }, response, err => { throw err || new Error('Unexpected authorization'); });
   assert.equal(response.code, 401);
 });
+test('login tokens without an expiry are rejected before database access', async () => {
+  process.env.JWT_SECRET = 'test-only-profile-session-secret';
+  const token = jwt.sign({ id: 'owner' }, process.env.JWT_SECRET);
+  mock.method(Revoked, 'exists', () => { throw new Error('Must reject before database access'); });
+  const response = res();
+  await auth({ get: () => `Bearer ${token}` }, response, err => { throw err || new Error('Unexpected authorization'); });
+  assert.equal(response.code, 401);
+});
 test('account profile ignores the selected family context', async () => {
   process.env.JWT_SECRET = 'test-only-profile-session-secret';
   const token = jwt.sign({ id: 'owner' }, process.env.JWT_SECRET, { expiresIn: '1h' });
