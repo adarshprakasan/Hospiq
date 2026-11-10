@@ -4,6 +4,7 @@ import { Link, useParams, useSearchParams } from 'react-router-dom';
 import { Alert, Box, Button, Chip, Container, Paper, Skeleton, Stack, TextField, Typography } from '@mui/material';
 import axios from '../api/axios';
 import { storedUser } from '../utils';
+import { SaveCareButton, useSavedCare } from '../features/profile/SavedCare';
 export default function BookingPage() {
   useLocale();
   const {
@@ -67,6 +68,7 @@ export default function BookingPage() {
   const hours = schedule?.weeklySchedule.find(d => d.day === day && d.isAvailable),
     closed = schedule?.closedDates?.includes(date);
   const user = storedUser();
+  const savedCare = useSavedCare(user?.role === 'patient');
   async function book() {
     setBusy(true);
     setError('');
@@ -87,6 +89,8 @@ export default function BookingPage() {
   return <Container maxWidth="lg" sx={{
     py: 3
   }}><Button component={Link} to="/find-care">{translate("Back to care providers")}</Button><Typography variant="h4" mt={2}>{hospital?.name || 'Choose your care'}</Typography><Typography color="text.secondary" mb={3}>{hospital?.address}</Typography>
+    {hospital && <SaveCareButton care={savedCare} kind="hospital" id={hospital._id} name={hospital.name} />}
+    {savedCare.error && <Alert severity="warning" action={<Button onClick={savedCare.retry}>Retry</Button>}>{savedCare.error}</Alert>}
     {error && <Alert severity="error" action={<Button onClick={() => setRetry(v => v + 1)}>{translate("Retry")}</Button>} sx={{
       mb: 2
     }}>{error}</Alert>}
@@ -109,7 +113,7 @@ export default function BookingPage() {
             }} /><Button fullWidth variant={doctorId === d._id ? 'contained' : 'outlined'} onClick={() => {
               setDoctorId(d._id);
               setError('');
-            }}>{doctorId === d._id ? translate("Selected") : translate("Choose doctor")}</Button></Paper>)}{!doctors.length && <Alert severity="info">No doctors are listed at this facility yet.</Alert>}</Stack>}</Box><Paper sx={{
+            }}>{doctorId === d._id ? translate("Selected") : translate("Choose doctor")}</Button><SaveCareButton care={savedCare} kind="doctor" id={d._id} name={d.name} /></Paper>)}{!doctors.length && <Alert severity="info">No doctors are listed at this facility yet.</Alert>}</Stack>}</Box><Paper sx={{
         p: 3,
         width: {
           xs: '100%',

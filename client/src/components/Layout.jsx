@@ -2,6 +2,7 @@ import React, { useEffect, useState } from "react";
 import PatientContextSelector from "./PatientContextSelector";
 import Navbar from "./Navbar";
 import axios from "../api/axios";
+import { signOut } from "../utils/session";
 import { useNavigate } from "react-router-dom";
 
 const Layout = ({ children }) => {
@@ -21,6 +22,14 @@ const Layout = ({ children }) => {
     };
     fetch();
   }, [navigate]);
+
+  useEffect(() => {
+    const syncSignOut = event => {
+      if (event.key === "token" && !event.newValue && !localStorage.getItem("token")) signOut();
+    };
+    window.addEventListener("storage", syncSignOut);
+    return () => window.removeEventListener("storage", syncSignOut);
+  }, []);
 
   return (
     <>

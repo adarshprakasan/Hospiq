@@ -1,4 +1,5 @@
 import axios from 'axios';
+import { clearSession } from '../utils/session';
 
 const BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api'; // Update if using .env or deploying
 
@@ -29,9 +30,7 @@ axiosInstance.interceptors.response.use(response => response, error => {
   if (error.response?.data?.code === "PATIENT_CONTEXT_REVOKED") { sessionStorage.removeItem("patientContext"); window.location.assign("/"); }
   if (error.response?.data?.code === "PASSWORD_CHANGE_REQUIRED" && window.location.pathname !== "/change-password") window.location.assign("/change-password");
   if (error.response?.status === 401 && !error.config?.url?.startsWith("/auth/login")) {
-    localStorage.removeItem("token");
-    localStorage.removeItem("user");
-    sessionStorage.removeItem("patientContext");
+    clearSession();
     if (window.location.pathname !== "/login") window.location.assign("/login");
   }
   return Promise.reject(error);

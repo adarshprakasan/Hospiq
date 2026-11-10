@@ -6,25 +6,17 @@ import HomeOutlined from '@mui/icons-material/HomeOutlined';
 import CalendarMonthOutlined from '@mui/icons-material/CalendarMonthOutlined';
 import FolderOutlined from '@mui/icons-material/FolderOutlined';
 import MoreHoriz from '@mui/icons-material/MoreHoriz';
-import { NavLink, useLocation, useNavigate } from 'react-router-dom';
+import { NavLink, useLocation } from 'react-router-dom';
 import { roleHome } from '../utils';
+import { signOut } from '../utils/session';
 export default function Navbar({
   user
 }) {
   useLocale();
-  const navigate = useNavigate(),
-    location = useLocation();
+  const location = useLocation();
   const [anchor, setAnchor] = useState(null);
   const patient = user?.role === 'patient';
   const links = patient ? [['/', translate("Home")], ['/my-tokens', translate("Appointments")], ['/medical-records', translate("Records")]] : user?.role === 'pharmacist' ? [['/pharmacy', translate("Pharmacy queue")], ['/medications', translate("Medications")], ['/inventory', translate("Stock & expiry")]] : user?.role === 'admin' ? [['/admin', 'Platform console']] : user?.role === 'hospital_admin' ? [['/hospital-admin', 'Hospital console'], ['/dashboard', translate("Queue")], ['/schedule', translate("Schedules")]] : [['/dashboard', user?.role === 'doctor' ? translate("Clinical workspace") : translate("Queue overview")], ...(user?.role === 'staff' ? [['/schedule', translate("Schedules")]] : [])];
-  const signOut = () => {
-    localStorage.removeItem('token');
-    localStorage.removeItem('user');
-    sessionStorage.removeItem('patientContext');
-    navigate('/login', {
-      replace: true
-    });
-  };
   return <><AppBar position="sticky" color="inherit" elevation={0} sx={{
       borderBottom: '1px solid',
       borderColor: 'divider'

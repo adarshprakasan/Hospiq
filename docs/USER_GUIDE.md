@@ -12,6 +12,16 @@
 
 Use **Family access** to manage dependent profiles or grant an adult temporary access. Check the **Care for** selector before booking or opening records. Adult delegation expires after 30 days and can be revoked sooner. Use **Health summary** to record patient-reported information and review access history. **Notifications** shows queue calls, prescription readiness and reviewed lab results. Email reminders require both patient opt-in and a configured scheduler. See [Care workflows](CARE_WORKFLOWS.md).
 
+## My profile
+
+Open **Profile** from the account menu. Edit your name, preferred name and phone under **Account**. Add or remove a private JPEG or PNG photo. The sign-in email is shown for reference. Use the language control and notification settings to manage preferences.
+
+Patients can enter height and weight under **Health & measurements**. BMI updates when both values are present. Use **Health summary** for allergies, conditions, medications and emergency contacts. For Apple Health, unzip the data export and select its `export.xml` file under **Import from health apps**. For other sources, use the two-column CSV template. Review the values and save to keep them. This imports only height and weight. Live HealthKit and Health Connect sync requires a native client.
+
+Use **Save facility** in Find care and **Save doctor** on a booking page. **Saved care** lists those providers with links back to availability. Profile details, body measurements and bookmarks belong to the signed-in account. Clinical pages still use the selected patient context.
+
+**Privacy & security** provides password change, session revocation, links to clinical access history and sharing controls, and a download of the account profile and measurements. **Help & about** links to support and the app guide. **Sign out** clears this browser's session. **Sign out everywhere** invalidates existing sessions on all devices.
+
 ## Hospital / Clinic Admin
 
 Register through /hospital-register and verify your email, or use a demo facility administrator. An unassigned admin sets up a facility; the Hospiq Admin retains platform-wide oversight and suspension controls. The /hospital-admin console manages the facility's staff, pharmacist and doctor accounts, temporary login credentials, departments, operational data and encrypted banking settings. See [Administration](ADMINISTRATION.md) for the complete guide.

@@ -4,6 +4,12 @@ Changes are recorded here as they land. No semantic-version release tag has been
 
 ## Unreleased
 
+### Account profile workspace
+
+- Added profile editing, a private photo, language preferences, help, privacy controls, profile data download and sign-out across devices.
+- Added private height and weight, calculated BMI, and a reviewed import from Apple Health XML or a CSV template.
+- Added saved doctors and facilities with shortcuts back to booking.
+
 ### Patient and clinical workflows
 
 - Added public care search, visit-first mobile navigation, inline appointment QR, future queue bookings, daily capacity, closure dates, rescheduling and walk-in account linking.
