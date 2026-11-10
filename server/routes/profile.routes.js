@@ -14,6 +14,7 @@ router.use('/me', auth, (_req, res, next) => {
 });
 router.get('/me', profile.get);
 router.put('/me', profile.update);
+router.put('/me/personal', profile.personal);
 router.put('/me/photo', rateLimit({ limit: 15 }), profile.photo);
 router.put('/me/measurements', patient, profile.measurements);
 router.get('/me/saved', patient, profile.saved);
@@ -35,23 +36,23 @@ router.get("/patient/:id", require("../middlewares/auth"), async (req, res) => {
     res.set("Cache-Control", "no-store, private");
     res.json({ user, records: records.map(require("../services/record-access").serializeRecord) });
   } catch (err) {
-    res.status(500).json({ message: err.message });
+    res.status(500).json({ message: "Service temporarily unavailable. Please try again" });
   }
 });
 
 // Fetch doctor profile
 router.get("/doctor/:id", async (req, res) => {
   try {
-    const doctor = await Doctor.findById(req.params.id).populate(
-      "hospitalId",
-      "name"
-    );
+    if (!require('mongoose').isObjectIdOrHexString(req.params.id)) return res.status(400).json({ message: 'Invalid doctor' });
+    const doctor = await Doctor.findOne({ _id: req.params.id, deletedAt: null })
+      .select('name department specialization qualifications availabilityStatus hospitalId')
+      .populate({ path: 'hospitalId', select: 'name', match: { deletedAt: null, status: { $ne: 'suspended' }, approvalStatus: { $ne: 'pending' } } });
 
-    if (!doctor) return res.status(404).json({ message: "Doctor not found" });
+    if (!doctor?.hospitalId) return res.status(404).json({ message: "Doctor not found" });
 
     res.json(doctor);
   } catch (err) {
-    res.status(500).json({ message: err.message });
+    res.status(500).json({ message: "Service temporarily unavailable. Please try again" });
   }
 });
 

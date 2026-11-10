@@ -39,7 +39,7 @@ exports.createHospital = async (req, res) => {
       .status(201)
       .json({ message: "Hospital created", hospital: newHospital });
   } catch (err) {
-    res.status(500).json({ message: err.message });
+    res.status(500).json({ message: "Service temporarily unavailable. Please try again" });
   }
 };
 
@@ -55,7 +55,7 @@ exports.getAllHospitals = async (req, res) => {
     const hospitals = await query;
     res.json(req.query.page !== undefined ? { items: hospitals, total: await Hospital.countDocuments(filter), page, limit } : hospitals);
   } catch (err) {
-    res.status(500).json({ message: err.message });
+    res.status(500).json({ message: "Service temporarily unavailable. Please try again" });
   }
 };
 
@@ -66,6 +66,6 @@ exports.getHospitalById = async (req, res) => {
       return res.status(404).json({ message: "Hospital not found" });
     res.json(hospital);
   } catch (err) {
-    res.status(500).json({ message: err.message });
+    res.status(500).json({ message: "Service temporarily unavailable. Please try again" });
   }
 };

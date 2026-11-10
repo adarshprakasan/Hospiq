@@ -22,6 +22,11 @@ app.use(
   })
 );
 app.disable("x-powered-by");
+app.use((_req, res, next) => {
+  res.set({ 'X-Content-Type-Options': 'nosniff', 'Referrer-Policy': 'no-referrer', 'X-Frame-Options': 'DENY' });
+  if (_req.get('Authorization')) res.set('Cache-Control', 'no-store, private');
+  next();
+});
 app.post("/api/pharmacy/stripe/webhook", express.raw({ type: "application/json", limit: "100kb" }), require("./services/pharmacy-payments").webhook);
 app.use(express.json({ limit: "100kb" }));
 app.get("/api/health", (_req, res) => res.json({ status: "ok" }));

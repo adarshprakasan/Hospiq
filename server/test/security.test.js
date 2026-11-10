@@ -94,3 +94,21 @@ test("invalid schedule entries return a validation error", async () => {
     assert.equal(res.code, 400);
   } finally { stub.mock.restore(); }
 });
+
+test('logout persists revocation and replay of that token is rejected', async () => {
+  const jwt = require('jsonwebtoken');
+  const Revoked = require('../models/RevokedSession');
+  const User = require('../models/User');
+  const token = jwt.sign({ id: '507f1f77bcf86cd799439011' }, process.env.JWT_SECRET, { expiresIn: '1h', jwtid: 'logout-regression' });
+  let digest;
+  const exists = mock.method(Revoked, 'exists', async filter => filter._id === digest);
+  const write = mock.method(Revoked, 'updateOne', async (filter, update) => { digest = filter._id; assert.ok(update.$set.expiresAt > new Date()); });
+  const account = mock.method(User, 'findById', () => ({ select: async () => ({ id: '507f1f77bcf86cd799439011', role: 'patient' }) }));
+  try {
+    const headers = { Authorization: `Bearer ${token}` };
+    const response = await request('/auth/sign-out', { method: 'POST', headers });
+    assert.equal(response.status, 204);
+    assert.match(digest, /^[a-f0-9]{64}$/);
+    assert.equal((await request('/auth/me', { headers })).status, 401);
+  } finally { exists.mock.restore(); write.mock.restore(); account.mock.restore(); }
+});

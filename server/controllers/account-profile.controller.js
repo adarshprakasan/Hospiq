@@ -21,6 +21,7 @@ exports.get = async (req, res) => {
     name: account.name, email: account.email, phone: account.phone || '', role: account.role,
     publicId: account.publicId, createdAt: account.createdAt,
     preferredName: account.preferredName || '', photo: profile?.photo || null,
+    dateOfBirth: profile?.dateOfBirth || '', address: profile?.address || '',
     measurements: measurements ? { ...measurements, bmi: heightCm && weightKg ? Math.round(weightKg / (heightCm / 100) ** 2 * 10) / 10 : null } : null,
     savedDoctorIds: profile?.savedDoctors || [], savedHospitalIds: profile?.savedHospitals || [],
   });
@@ -33,6 +34,18 @@ exports.update = async (req, res) => {
       typeof phone !== 'string' || phone.length > 40) throw fail(400, 'Enter a name and valid contact details');
   // Account contact and public display name are stored together on the signed-in account.
   await User.updateOne({ _id: req.account.id }, { $set: { name: name.trim(), phone: phone.trim(), preferredName: preferredName.trim() } });
+  res.sendStatus(204);
+};
+
+exports.personal = async (req, res) => {
+  const { dateOfBirth, address } = req.body;
+  const parsed = typeof dateOfBirth === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(dateOfBirth) ? new Date(`${dateOfBirth}T00:00:00Z`) : null;
+  if (typeof address !== 'string' || address.length > 500 ||
+      (dateOfBirth !== '' && (!parsed || !Number.isFinite(parsed.getTime()) || parsed.toISOString().slice(0, 10) !== dateOfBirth || parsed > new Date() || dateOfBirth < '1900-01-01'))) {
+    throw fail(400, 'Enter a valid birth date and an address up to 500 characters');
+  }
+  // Self-reported demographics must never change the age used for guardian authorization.
+  await profileUpdate(req.account.id, { $set: { dateOfBirth, address: address.trim() } });
   res.sendStatus(204);
 };
 

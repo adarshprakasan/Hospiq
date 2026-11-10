@@ -57,7 +57,7 @@ exports.registerUser = async (req, res) => {
 
     res.status(201).json({ message: "User registered successfully" });
   } catch (err) {
-    res.status(500).json({ message: err.message });
+    res.status(500).json({ message: "Service temporarily unavailable. Please try again" });
   }
 };
 
@@ -79,7 +79,7 @@ exports.loginUser = async (req, res) => {
     const token = jwt.sign(
       { id: user._id, role: user.role, sessionVersion: user.sessionVersion || 0 },
       process.env.JWT_SECRET,
-      { expiresIn: "7d" }
+      { expiresIn: "7d", jwtid: require('node:crypto').randomUUID() }
     );
 
     res.json({
@@ -96,7 +96,7 @@ exports.loginUser = async (req, res) => {
       },
     });
   } catch (err) {
-    res.status(500).json({ message: err.message });
+    res.status(500).json({ message: "Service temporarily unavailable. Please try again" });
   }
 };
 
