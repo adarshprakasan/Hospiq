@@ -67,36 +67,52 @@ export default function AccountDetails({ profile, onChange }) {
     }
   }
 
-  return <Paper variant="outlined" sx={{ p: 3 }}>
-    <Stack gap={2}>
-      <Typography component="h2" variant="h6">Personal details</Typography>
-      {error && <Alert severity="error">{error}</Alert>}
-      {notice && <Alert severity="success">{notice}</Alert>}
-      <Stack direction="row" alignItems="center" flexWrap="wrap" gap={1}>
-        <Avatar src={photo || undefined} alt="" sx={{ width: 64, height: 64 }}>{profile.name[0]?.toUpperCase()}</Avatar>
-        <Button disabled={busy} onClick={() => fileInput.current.click()}>{photo ? 'Change photo' : 'Add photo'}</Button>
-        <input ref={fileInput} hidden type="file" accept="image/jpeg,image/png" onChange={event => {
-          const file = event.target.files[0];
-          event.target.value = '';
-          if (file) updatePhoto(file);
-        }} />
-        {photo && <Button color="error" disabled={busy} onClick={() => updatePhoto(null)}>Remove photo</Button>}
+  return (
+    <Paper variant="outlined" sx={{ p: 3 }}>
+      <Stack sx={{
+        gap: 2
+      }}>
+        <Typography component="h2" variant="h6">Personal details</Typography>
+        {error && <Alert severity="error">{error}</Alert>}
+        {notice && <Alert severity="success">{notice}</Alert>}
+        <Stack
+          direction="row"
+          sx={{
+            alignItems: "center",
+            flexWrap: "wrap",
+            gap: 1
+          }}>
+          <Avatar src={photo || undefined} alt="" sx={{ width: 64, height: 64 }}>{profile.name[0]?.toUpperCase()}</Avatar>
+          <Button disabled={busy} onClick={() => fileInput.current.click()}>{photo ? 'Change photo' : 'Add photo'}</Button>
+          <input ref={fileInput} hidden type="file" accept="image/jpeg,image/png" onChange={event => {
+            const file = event.target.files[0];
+            event.target.value = '';
+            if (file) updatePhoto(file);
+          }} />
+          {photo && <Button color="error" disabled={busy} onClick={() => updatePhoto(null)}>Remove photo</Button>}
+        </Stack>
+        <Typography sx={{
+          color: "text.secondary"
+        }}>Your photo is private to this account.</Typography>
+        <Stack component="form" onSubmit={submit} sx={{
+          gap: 2
+        }}>
+          {[['name', 'Full name', 200], ['preferredName', 'Preferred name', 100], ['phone', 'Phone number', 40]].map(([key, label, maxLength]) =>
+            <TextField key={key} label={label} required={key === 'name'} type={key === 'phone' ? 'tel' : 'text'} value={fields[key]}
+              slotProps={{ htmlInput: { maxLength, readOnly: !editing } }}
+              onChange={event => setFields({ ...fields, [key]: event.target.value })} />)}
+          <TextField label="Sign-in email" value={profile.email} slotProps={{ htmlInput: { readOnly: true } }} />
+          {editing ? <Stack direction="row" sx={{
+            gap: 1
+          }}>
+            <Button type="submit" variant="contained" disabled={busy || !fields.name.trim()}>Save profile</Button>
+            <Button disabled={busy} onClick={() => {
+              setFields({ name: profile.name, preferredName: profile.preferredName, phone: profile.phone });
+              setEditing(false);
+            }}>Cancel</Button>
+          </Stack> : <Button sx={{ alignSelf: 'flex-start' }} onClick={() => setEditing(true)}>Edit profile</Button>}
+        </Stack>
       </Stack>
-      <Typography color="text.secondary">Your photo is private to this account.</Typography>
-      <Stack component="form" gap={2} onSubmit={submit}>
-        {[['name', 'Full name', 200], ['preferredName', 'Preferred name', 100], ['phone', 'Phone number', 40]].map(([key, label, maxLength]) =>
-          <TextField key={key} label={label} required={key === 'name'} type={key === 'phone' ? 'tel' : 'text'} value={fields[key]}
-            slotProps={{ htmlInput: { maxLength, readOnly: !editing } }}
-            onChange={event => setFields({ ...fields, [key]: event.target.value })} />)}
-        <TextField label="Sign-in email" value={profile.email} slotProps={{ htmlInput: { readOnly: true } }} />
-        {editing ? <Stack direction="row" gap={1}>
-          <Button type="submit" variant="contained" disabled={busy || !fields.name.trim()}>Save profile</Button>
-          <Button disabled={busy} onClick={() => {
-            setFields({ name: profile.name, preferredName: profile.preferredName, phone: profile.phone });
-            setEditing(false);
-          }}>Cancel</Button>
-        </Stack> : <Button sx={{ alignSelf: 'flex-start' }} onClick={() => setEditing(true)}>Edit profile</Button>}
-      </Stack>
-    </Stack>
-  </Paper>;
+    </Paper>
+  );
 }

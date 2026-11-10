@@ -63,68 +63,93 @@ export default function PatientIdentityCard({
     link.click();
     link.remove();
   }
-  return <Paper sx={{
-    p: {
-      xs: 2,
-      sm: 3
-    },
-    mb: 3
-  }}>
-    <Stack direction={{
-      xs: "column",
-      sm: "row"
-    }} gap={3} alignItems={{
-      xs: "center",
-      sm: "flex-start"
+  return (
+    <Paper sx={{
+      p: {
+        xs: 2,
+        sm: 3
+      },
+      mb: 3
     }}>
-      <Box sx={{
-        bgcolor: "white",
-        p: 1,
-        borderRadius: 2,
-        flexShrink: 0
-      }}>{visit ? <QRCodeCanvas ref={canvas} value={visit.qrValue} size={compact ? 192 : 240} level="M" marginSize={4} title="QR for the selected patient visit" /> : card ? <Box sx={{
-          width: compact ? 176 : 224,
-          minHeight: 120,
-          display: "grid",
-          placeItems: "center",
-          color: "text.secondary",
-          textAlign: "center"
-        }}>No active visit selected</Box> : <Skeleton variant="rounded" width={176} height={176} />}</Box>
-      <Box sx={{
-        minWidth: 0,
-        width: "100%"
-      }}><Typography variant="overline" color="primary">PATIENT ID & VISIT QR</Typography><Typography variant="h6">{card?.name || "Your visit QR"}</Typography>
-        {card && <Typography sx={{
-          fontFamily: "monospace",
-          fontWeight: 700,
-          overflowWrap: "anywhere",
-          userSelect: "all",
-          my: 1
-        }}>{card.publicId}</Typography>}
-        <Typography color="text.secondary" sx={{
-          my: 1
-        }}>Your ID stays the same. Each appointment has a different QR based on your ID, visit date, and appointment ID—even for two visits on the same day.</Typography>
-        {card?.visits.length > 0 && <TextField select fullWidth label="Select today's visit" value={visit ? selected : ""} onChange={e => {
-          setSelected(e.target.value);
-          setNotice("");
-        }} sx={{
-          mt: 1
-        }}>{card.visits.map(v => <MenuItem key={v.tokenId} value={v.tokenId}>{v.doctorName} · {v.date} · Token #{v.tokenNumber}</MenuItem>)}</TextField>}
-        {visit && <Box mt={1}><Typography fontWeight={700}>{visit.hospitalName}</Typography><Typography variant="body2">{visit.department} · {visit.date} · {visit.status} · {card.timeZone}</Typography></Box>}
-        {card && !card.visits.length && <Alert severity="info" sx={{
-          mt: 1
-        }}>No active appointments today. Book a visit to receive its QR. Completed, cancelled and previous-day codes cannot be used.</Alert>}
-        {card?.visits.length > 0 && !visit && <Alert severity="warning" sx={{
-          mt: 1
-        }}>This visit is no longer active today. Select another appointment or book a new visit.</Alert>}
-        <Stack direction="row" flexWrap="wrap" gap={1} mt={2}><Button variant="outlined" disabled={!visit} onClick={download}>Download visit QR</Button><Button disabled={!card} onClick={() => copy(card.publicId, "Patient ID copied")}>Copy ID</Button><Button disabled={!visit} onClick={() => copy(visit.qrValue, "This visit's QR data copied")}>Copy visit QR data</Button><Button onClick={() => load()}>Refresh visits</Button>{card && !card.visits.length && <Button component={Link} to="/">{translate("Book a visit")}</Button>}</Stack>
-        <Typography variant="body2" color="text.secondary" mt={1}>Show the code for the doctor you are meeting. A visit QR never replaces OTP permission for other doctors' records.</Typography>
-        {error && <Alert severity="error" sx={{
-          mt: 2
-        }}>{error}</Alert>}{notice && <Alert severity="success" sx={{
-          mt: 2
-        }} onClose={() => setNotice("")}>{notice}</Alert>}
-      </Box>
-    </Stack>
-  </Paper>;
+      <Stack
+        direction={{
+          xs: "column",
+          sm: "row"
+        }}
+        sx={{
+          gap: 3,
+
+          alignItems: {
+            xs: "center",
+            sm: "flex-start"
+          }
+        }}>
+        <Box sx={{
+          bgcolor: "white",
+          p: 1,
+          borderRadius: 2,
+          flexShrink: 0
+        }}>{visit ? <QRCodeCanvas ref={canvas} value={visit.qrValue} size={compact ? 192 : 240} level="M" marginSize={4} title="QR for the selected patient visit" /> : card ? <Box sx={{
+            width: compact ? 176 : 224,
+            minHeight: 120,
+            display: "grid",
+            placeItems: "center",
+            color: "text.secondary",
+            textAlign: "center"
+          }}>No active visit selected</Box> : <Skeleton variant="rounded" width={176} height={176} />}</Box>
+        <Box sx={{
+          minWidth: 0,
+          width: "100%"
+        }}><Typography variant="overline" color="primary">PATIENT ID & VISIT QR</Typography><Typography variant="h6">{card?.name || "Your visit QR"}</Typography>
+          {card && <Typography sx={{
+            fontFamily: "monospace",
+            fontWeight: 700,
+            overflowWrap: "anywhere",
+            userSelect: "all",
+            my: 1
+          }}>{card.publicId}</Typography>}
+          <Typography
+            sx={{
+              color: "text.secondary",
+              my: 1
+            }}>Your ID stays the same. Each appointment has a different QR based on your ID, visit date, and appointment ID—even for two visits on the same day.</Typography>
+          {card?.visits.length > 0 && <TextField select fullWidth label="Select today's visit" value={visit ? selected : ""} onChange={e => {
+            setSelected(e.target.value);
+            setNotice("");
+          }} sx={{
+            mt: 1
+          }}>{card.visits.map(v => <MenuItem key={v.tokenId} value={v.tokenId}>{v.doctorName} · {v.date} · Token #{v.tokenNumber}</MenuItem>)}</TextField>}
+          {visit && <Box sx={{
+            mt: 1
+          }}><Typography sx={{
+            fontWeight: 700
+          }}>{visit.hospitalName}</Typography><Typography variant="body2">{visit.department} · {visit.date} · {visit.status} · {card.timeZone}</Typography></Box>}
+          {card && !card.visits.length && <Alert severity="info" sx={{
+            mt: 1
+          }}>No active appointments today. Book a visit to receive its QR. Completed, cancelled and previous-day codes cannot be used.</Alert>}
+          {card?.visits.length > 0 && !visit && <Alert severity="warning" sx={{
+            mt: 1
+          }}>This visit is no longer active today. Select another appointment or book a new visit.</Alert>}
+          <Stack
+            direction="row"
+            sx={{
+              flexWrap: "wrap",
+              gap: 1,
+              mt: 2
+            }}><Button variant="outlined" disabled={!visit} onClick={download}>Download visit QR</Button><Button disabled={!card} onClick={() => copy(card.publicId, "Patient ID copied")}>Copy ID</Button><Button disabled={!visit} onClick={() => copy(visit.qrValue, "This visit's QR data copied")}>Copy visit QR data</Button><Button onClick={() => load()}>Refresh visits</Button>{card && !card.visits.length && <Button component={Link} to="/">{translate("Book a visit")}</Button>}</Stack>
+          <Typography
+            variant="body2"
+            sx={{
+              color: "text.secondary",
+              mt: 1
+            }}>Show the code for the doctor you are meeting. A visit QR never replaces OTP permission for other doctors' records.</Typography>
+          {error && <Alert severity="error" sx={{
+            mt: 2
+          }}>{error}</Alert>}{notice && <Alert severity="success" sx={{
+            mt: 2
+          }} onClose={() => setNotice("")}>{notice}</Alert>}
+        </Box>
+      </Stack>
+    </Paper>
+  );
 }

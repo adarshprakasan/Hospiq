@@ -55,34 +55,38 @@ export default function CreateHospital() {
       alert("Failed to create hospital.");
     }
   };
-  return <Box p={3}>
-      <Dialog open={open} onClose={() => {
-      setOpen(false);
-      navigate("/hospital-admin");
-    }} fullWidth maxWidth="sm">
-        <DialogTitle>Add Hospital or Clinic</DialogTitle>
-        <DialogContent>
-          <TextField fullWidth margin="normal" label="Name" name="name" value={formData.name} onChange={handleChange} required />
-          <TextField fullWidth margin="normal" label="Address" name="address" value={formData.address} onChange={handleChange} required />
-          <TextField fullWidth margin="normal" label="Location (lat,lng)" name="location" value={formData.location} onChange={handleChange} required />
-          <TextField fullWidth margin="normal" select label="Type" name="type" value={formData.type} onChange={handleChange}>
-            <MenuItem value="Hospital">Hospital</MenuItem>
-            <MenuItem value="Clinic">Clinic</MenuItem>
-          </TextField>
-          {formData.type === "Clinic" && <TextField fullWidth margin="normal" label={translate("Department")} name="departments" value={formData.departments} onChange={handleChange} required />}
-          <TextField fullWidth margin="normal" label="Contact Number" name="contact" value={formData.contact} onChange={handleChange} />
-          <TextField fullWidth margin="normal" label={translate("Email")} name="email" type="email" value={formData.email} onChange={handleChange} />
-          <TextField fullWidth margin="normal" label="Website" name="website" value={formData.website} onChange={handleChange} />
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={() => {
-          setOpen(false);
-          navigate("/hospital-admin");
-        }}>{translate("Cancel")}</Button>
-          <Button onClick={handleSubmit} variant="contained">
-            Create
-          </Button>
-        </DialogActions>
-      </Dialog>
-    </Box>;
+  return (
+    <Box sx={{
+      p: 3
+    }}>
+        <Dialog open={open} onClose={() => {
+        setOpen(false);
+        navigate("/hospital-admin");
+      }} fullWidth maxWidth="sm">
+          <DialogTitle>Add Hospital or Clinic</DialogTitle>
+          <DialogContent>
+            <TextField fullWidth margin="normal" label="Name" name="name" value={formData.name} onChange={handleChange} required />
+            <TextField fullWidth margin="normal" label="Address" name="address" value={formData.address} onChange={handleChange} required />
+            <TextField fullWidth margin="normal" label="Location (lat,lng)" name="location" value={formData.location} onChange={handleChange} required />
+            <TextField fullWidth margin="normal" select label="Type" name="type" value={formData.type} onChange={handleChange}>
+              <MenuItem value="Hospital">Hospital</MenuItem>
+              <MenuItem value="Clinic">Clinic</MenuItem>
+            </TextField>
+            {formData.type === "Clinic" && <TextField fullWidth margin="normal" label={translate("Department")} name="departments" value={formData.departments} onChange={handleChange} required />}
+            <TextField fullWidth margin="normal" label="Contact Number" name="contact" value={formData.contact} onChange={handleChange} />
+            <TextField fullWidth margin="normal" label={translate("Email")} name="email" type="email" value={formData.email} onChange={handleChange} />
+            <TextField fullWidth margin="normal" label="Website" name="website" value={formData.website} onChange={handleChange} />
+          </DialogContent>
+          <DialogActions>
+            <Button onClick={() => {
+            setOpen(false);
+            navigate("/hospital-admin");
+          }}>{translate("Cancel")}</Button>
+            <Button onClick={handleSubmit} variant="contained">
+              Create
+            </Button>
+          </DialogActions>
+        </Dialog>
+      </Box>
+  );
 }

@@ -43,11 +43,15 @@ export default function PasswordRecoveryPage() {
       setBusy(false);
     }
   }
-  return <Container maxWidth="xs" sx={{
-    py: 6
-  }}><Stack component="form" onSubmit={submit} gap={3}><Typography variant="h4">{reset ? translate("Choose a new password") : translate("Recover your account")}</Typography>{error && <Alert severity="error">{error}</Alert>}{message && <Alert severity="success">{message}</Alert>}{!message && <>{reset ? <><TextField required type="password" label={translate("New password")} autoComplete="new-password" value={password} onChange={e => setPassword(e.target.value)} slotProps={{
-            htmlInput: {
-              minLength: 8
-            }
-          }} /><TextField required type="password" label={translate("Confirm password")} autoComplete="new-password" value={confirmation} onChange={e => setConfirmation(e.target.value)} /></> : <TextField required type="email" autoComplete="email" label={translate("Account email")} value={email} onChange={e => setEmail(e.target.value)} />}<Button type="submit" variant="contained" disabled={busy}>{busy ? translate("Please wait\u2026") : reset ? translate("Reset password") : translate("Email reset link")}</Button></>}<Button component={Link} to="/login">{translate("Back to sign in")}</Button></Stack></Container>;
+  return (
+    <Container maxWidth="xs" sx={{
+      py: 6
+    }}><Stack component="form" onSubmit={submit} sx={{
+      gap: 3
+    }}><Typography variant="h4">{reset ? translate("Choose a new password") : translate("Recover your account")}</Typography>{error && <Alert severity="error">{error}</Alert>}{message && <Alert severity="success">{message}</Alert>}{!message && <>{reset ? <><TextField required type="password" label={translate("New password")} autoComplete="new-password" value={password} onChange={e => setPassword(e.target.value)} slotProps={{
+              htmlInput: {
+                minLength: 8
+              }
+            }} /><TextField required type="password" label={translate("Confirm password")} autoComplete="new-password" value={confirmation} onChange={e => setConfirmation(e.target.value)} /></> : <TextField required type="email" autoComplete="email" label={translate("Account email")} value={email} onChange={e => setEmail(e.target.value)} />}<Button type="submit" variant="contained" disabled={busy}>{busy ? translate("Please wait\u2026") : reset ? translate("Reset password") : translate("Email reset link")}</Button></>}<Button component={Link} to="/login">{translate("Back to sign in")}</Button></Stack></Container>
+  );
 }

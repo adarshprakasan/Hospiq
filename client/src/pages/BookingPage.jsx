@@ -86,47 +86,70 @@ export default function BookingPage() {
       setBusy(false);
     }
   }
-  return <Container maxWidth="lg" sx={{
-    py: 3
-  }}><Button component={Link} to="/find-care">{translate("Back to care providers")}</Button><Typography variant="h4" mt={2}>{hospital?.name || 'Choose your care'}</Typography><Typography color="text.secondary" mb={3}>{hospital?.address}</Typography>
-    {hospital && <SaveCareButton care={savedCare} kind="hospital" id={hospital._id} name={hospital.name} />}
-    {savedCare.error && <Alert severity="warning" action={<Button onClick={savedCare.retry}>Retry</Button>}>{savedCare.error}</Alert>}
-    {error && <Alert severity="error" action={<Button onClick={() => setRetry(v => v + 1)}>{translate("Retry")}</Button>} sx={{
-      mb: 2
-    }}>{error}</Alert>}
-    {token ? <Paper sx={{
-      p: 4
-    }}><Alert severity="success">{translate("Your queue booking is confirmed.")}</Alert><Typography variant="h3" my={2}>#{token.tokenNumber}</Typography><Typography>{doctor?.name} · {token.date} · {hours?.startTime}–{hours?.endTime}</Typography><Typography my={2}>Arrive during consultation hours and check in at reception. Your queue number is not a fixed appointment time. You can cancel or reschedule before check-in.</Typography><Button component={Link} to="/my-tokens" variant="contained">{translate("View appointment and QR")}</Button></Paper> : <Stack direction={{
-      xs: 'column',
-      md: 'row'
-    }} gap={3} alignItems="flex-start"><Box sx={{
-        flex: 1,
-        width: '100%'
-      }}><TextField fullWidth label={translate("Search doctor or specialty")} value={search} onChange={e => setSearch(e.target.value)} sx={{
-          mb: 2
-        }} />{loading ? <Skeleton variant="rounded" height={200} /> : <Stack gap={2}>{doctors.filter(d => [d.name, d.specialization, d.department].join(' ').toLowerCase().includes(search.toLowerCase())).map(d => <Paper key={d._id} sx={{
-            p: 3,
-            border: '2px solid',
-            borderColor: doctorId === d._id ? 'primary.main' : 'divider'
-          }}><Typography variant="h6">{d.name}</Typography><Typography>{d.specialization || d.department}</Typography><Typography color="text.secondary">{(d.qualifications || []).join(' · ')}</Typography>{d.languages?.length > 0 && <Typography>Languages: {d.languages.join(', ')}</Typography>}<Chip size="small" label={d.availabilityStatus === 'available' ? translate("Available today") : translate("Unavailable today")} sx={{
-              my: 1
-            }} /><Button fullWidth variant={doctorId === d._id ? 'contained' : 'outlined'} onClick={() => {
-              setDoctorId(d._id);
-              setError('');
-            }}>{doctorId === d._id ? translate("Selected") : translate("Choose doctor")}</Button><SaveCareButton care={savedCare} kind="doctor" id={d._id} name={d.name} /></Paper>)}{!doctors.length && <Alert severity="info">No doctors are listed at this facility yet.</Alert>}</Stack>}</Box><Paper sx={{
-        p: 3,
-        width: {
-          xs: '100%',
-          md: 360
-        },
-        position: {
-          md: 'sticky'
-        },
-        top: 24
-      }}><Stack gap={2}><Typography variant="h6">{translate("Review your visit")}</Typography><TextField type="date" label={translate("Visit date")} value={date} onChange={e => setDate(e.target.value)} slotProps={{
-            inputLabel: {
-              shrink: true
-            }
-          }} /><Typography>{doctor?.name || translate("Choose a doctor")}</Typography>{scheduleLoading ? <Skeleton /> : doctorId && <Alert severity={hours && !closed ? 'info' : 'warning'}>{hours && !closed ? `Consultation hours: ${hours.startTime}–${hours.endTime}. Dates use the facility scheduling timezone.` : 'No consultation hours on this date. Choose another date.'}</Alert>}<Typography variant="body2">Join the queue up to 90 days ahead. This does not reserve an exact time. Cancel or reschedule before check-in; availability is checked at confirmation.</Typography>{user?.role === 'patient' ? <Button variant="contained" disabled={busy || !doctor || !hours || closed || scheduleLoading} onClick={book}>{busy ? 'Confirming…' : translate("Confirm queue booking")}</Button> : <Button component={Link} to={`/login?returnTo=${encodeURIComponent(`/book/${hospitalId}?doctor=${doctorId}`)}`} variant="contained">{translate("Sign in to book")}</Button>}</Stack></Paper></Stack>}
-  </Container>;
+  return (
+    <Container maxWidth="lg" sx={{
+      py: 3
+    }}><Button component={Link} to="/find-care">{translate("Back to care providers")}</Button><Typography variant="h4" sx={{
+      mt: 2
+    }}>{hospital?.name || 'Choose your care'}</Typography><Typography
+      sx={{
+        color: "text.secondary",
+        mb: 3
+      }}>{hospital?.address}</Typography>
+      {hospital && <SaveCareButton care={savedCare} kind="hospital" id={hospital._id} name={hospital.name} />}
+      {savedCare.error && <Alert severity="warning" action={<Button onClick={savedCare.retry}>Retry</Button>}>{savedCare.error}</Alert>}
+      {error && <Alert severity="error" action={<Button onClick={() => setRetry(v => v + 1)}>{translate("Retry")}</Button>} sx={{
+        mb: 2
+      }}>{error}</Alert>}
+      {token ? <Paper sx={{
+        p: 4
+      }}><Alert severity="success">{translate("Your queue booking is confirmed.")}</Alert><Typography variant="h3" sx={{
+        my: 2
+      }}>#{token.tokenNumber}</Typography><Typography>{doctor?.name} · {token.date} · {hours?.startTime}–{hours?.endTime}</Typography><Typography sx={{
+        my: 2
+      }}>Arrive during consultation hours and check in at reception. Your queue number is not a fixed appointment time. You can cancel or reschedule before check-in.</Typography><Button component={Link} to="/my-tokens" variant="contained">{translate("View appointment and QR")}</Button></Paper> : <Stack
+        direction={{
+          xs: 'column',
+          md: 'row'
+        }}
+        sx={{
+          gap: 3,
+          alignItems: "flex-start"
+        }}><Box sx={{
+          flex: 1,
+          width: '100%'
+        }}><TextField fullWidth label={translate("Search doctor or specialty")} value={search} onChange={e => setSearch(e.target.value)} sx={{
+            mb: 2
+          }} />{loading ? <Skeleton variant="rounded" height={200} /> : <Stack sx={{
+        gap: 2
+      }}>{doctors.filter(d => [d.name, d.specialization, d.department].join(' ').toLowerCase().includes(search.toLowerCase())).map(d => <Paper key={d._id} sx={{
+              p: 3,
+              border: '2px solid',
+              borderColor: doctorId === d._id ? 'primary.main' : 'divider'
+            }}><Typography variant="h6">{d.name}</Typography><Typography>{d.specialization || d.department}</Typography><Typography sx={{
+        color: "text.secondary"
+      }}>{(d.qualifications || []).join(' · ')}</Typography>{d.languages?.length > 0 && <Typography>Languages: {d.languages.join(', ')}</Typography>}<Chip size="small" label={d.availabilityStatus === 'available' ? translate("Available today") : translate("Unavailable today")} sx={{
+                my: 1
+              }} /><Button fullWidth variant={doctorId === d._id ? 'contained' : 'outlined'} onClick={() => {
+                setDoctorId(d._id);
+                setError('');
+              }}>{doctorId === d._id ? translate("Selected") : translate("Choose doctor")}</Button><SaveCareButton care={savedCare} kind="doctor" id={d._id} name={d.name} /></Paper>)}{!doctors.length && <Alert severity="info">No doctors are listed at this facility yet.</Alert>}</Stack>}</Box><Paper sx={{
+          p: 3,
+          width: {
+            xs: '100%',
+            md: 360
+          },
+          position: {
+            md: 'sticky'
+          },
+          top: 24
+        }}><Stack sx={{
+        gap: 2
+      }}><Typography variant="h6">{translate("Review your visit")}</Typography><TextField type="date" label={translate("Visit date")} value={date} onChange={e => setDate(e.target.value)} slotProps={{
+              inputLabel: {
+                shrink: true
+              }
+            }} /><Typography>{doctor?.name || translate("Choose a doctor")}</Typography>{scheduleLoading ? <Skeleton /> : doctorId && <Alert severity={hours && !closed ? 'info' : 'warning'}>{hours && !closed ? `Consultation hours: ${hours.startTime}–${hours.endTime}. Dates use the facility scheduling timezone.` : 'No consultation hours on this date. Choose another date.'}</Alert>}<Typography variant="body2">Join the queue up to 90 days ahead. This does not reserve an exact time. Cancel or reschedule before check-in; availability is checked at confirmation.</Typography>{user?.role === 'patient' ? <Button variant="contained" disabled={busy || !doctor || !hours || closed || scheduleLoading} onClick={book}>{busy ? 'Confirming…' : translate("Confirm queue booking")}</Button> : <Button component={Link} to={`/login?returnTo=${encodeURIComponent(`/book/${hospitalId}?doctor=${doctorId}`)}`} variant="contained">{translate("Sign in to book")}</Button>}</Stack></Paper></Stack>}
+    </Container>
+  );
 }

@@ -11,5 +11,13 @@ export default function PharmacyTeamPage() {
     catch (err) { setError(err.response?.data?.message || "Unable to link pharmacist"); }
     finally { setBusy(false); }
   }
-  return <Container maxWidth="md" sx={{ mt: 3 }}><Stack gap={3}><Typography variant="h4">Pharmacy team</Typography><Typography>Link a registered pharmacist to your hospital. Accounts already assigned elsewhere cannot be moved here.</Typography>{error && <Alert severity="error">{error}</Alert>}{notice && <Alert severity="success">{notice}</Alert>}<Paper component="form" onSubmit={link} sx={{ p: 3 }}><Stack gap={2}><TextField required type="email" label="Registered pharmacist email" value={email} onChange={e => setEmail(e.target.value)} /><Button type="submit" disabled={busy} variant="contained">Assign to this hospital</Button></Stack></Paper>{team.map(user => <Paper key={user._id} sx={{ p: 2 }}><Typography>{user.name}</Typography><Typography color="text.secondary">{user.email}</Typography></Paper>)}</Stack></Container>;
+  return (
+    <Container maxWidth="md" sx={{ mt: 3 }}><Stack sx={{
+      gap: 3
+    }}><Typography variant="h4">Pharmacy team</Typography><Typography>Link a registered pharmacist to your hospital. Accounts already assigned elsewhere cannot be moved here.</Typography>{error && <Alert severity="error">{error}</Alert>}{notice && <Alert severity="success">{notice}</Alert>}<Paper component="form" onSubmit={link} sx={{ p: 3 }}><Stack sx={{
+      gap: 2
+    }}><TextField required type="email" label="Registered pharmacist email" value={email} onChange={e => setEmail(e.target.value)} /><Button type="submit" disabled={busy} variant="contained">Assign to this hospital</Button></Stack></Paper>{team.map(user => <Paper key={user._id} sx={{ p: 2 }}><Typography>{user.name}</Typography><Typography sx={{
+      color: "text.secondary"
+    }}>{user.email}</Typography></Paper>)}</Stack></Container>
+  );
 }

@@ -155,7 +155,11 @@ export default function DoctorProfilePage() {
 
   if (loading) {
     return (
-      <Box textAlign="center" mt={10}>
+      <Box
+        sx={{
+          textAlign: "center",
+          mt: 10
+        }}>
         <CircularProgress />
       </Box>
     );
@@ -163,7 +167,11 @@ export default function DoctorProfilePage() {
 
   if (error) {
     return (
-      <Box textAlign="center" mt={10}>
+      <Box
+        sx={{
+          textAlign: "center",
+          mt: 10
+        }}>
         <Alert severity="error">{error}</Alert>
         <Button 
           variant="contained" 
@@ -178,7 +186,11 @@ export default function DoctorProfilePage() {
 
   if (!doctor) {
     return (
-      <Box textAlign="center" mt={10}>
+      <Box
+        sx={{
+          textAlign: "center",
+          mt: 10
+        }}>
         <Alert severity="warning">Doctor not found</Alert>
         <Button 
           variant="contained" 
@@ -195,7 +207,12 @@ export default function DoctorProfilePage() {
 
   return (
     <Container maxWidth="lg" sx={{ mt: 6, mb: 4 }}>
-      <Box display="flex" alignItems="center" mb={4}>
+      <Box
+        sx={{
+          display: "flex",
+          alignItems: "center",
+          mb: 4
+        }}>
         <Button
           startIcon={<ArrowBackIcon />}
           onClick={() => navigate(-1)}
@@ -215,7 +232,12 @@ export default function DoctorProfilePage() {
                 {doctor.name}
               </Typography>
               
-              <Box display="flex" alignItems="center" mb={2}>
+              <Box
+                sx={{
+                  display: "flex",
+                  alignItems: "center",
+                  mb: 2
+                }}>
                 <LocalHospitalIcon color="primary" sx={{ mr: 1 }} />
                 <Typography variant="body1">
                   Department: {doctor.department}
@@ -223,7 +245,12 @@ export default function DoctorProfilePage() {
               </Box>
               
               {doctor.specialization && (
-                <Box display="flex" alignItems="center" mb={2}>
+                <Box
+                  sx={{
+                    display: "flex",
+                    alignItems: "center",
+                    mb: 2
+                  }}>
                   <MedicalInformationIcon color="primary" sx={{ mr: 1 }} />
                   <Typography variant="body1">
                     Specialization: {doctor.specialization}
@@ -233,7 +260,12 @@ export default function DoctorProfilePage() {
               
               <Divider sx={{ my: 2 }} />
               
-              <Box display="flex" justifyContent="space-between" alignItems="center">
+              <Box
+                sx={{
+                  display: "flex",
+                  justifyContent: "space-between",
+                  alignItems: "center"
+                }}>
                 <Typography variant="body1">
                   Status: 
                   <Chip 
@@ -326,7 +358,11 @@ export default function DoctorProfilePage() {
               )}
               
               {user && ["staff", "hospital_admin", "admin"].includes(user.role) && (
-                <Box textAlign="center" mt={2}>
+                <Box
+                  sx={{
+                    textAlign: "center",
+                    mt: 2
+                  }}>
                   <Button 
                     variant="contained" 
                     color="primary"

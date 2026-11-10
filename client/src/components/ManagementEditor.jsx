@@ -148,68 +148,74 @@ export default function ManagementEditor({
     }
   }
   const showHospital = platform && entity !== "hospitals" && !editing && !(accounts && ["patient", "admin"].includes(form.role));
-  return <Dialog open onClose={busy ? undefined : onClose} fullWidth maxWidth="sm"><Stack component="form" onSubmit={save}><DialogTitle>{editing ? "Edit" : "Add"} {entity === "users" ? "account" : entity === "appointments" ? "queue visit" : entity.replace(/s$/, "")}</DialogTitle><DialogContent><Stack gap={2} pt={1}>
-    {error && <Alert severity="error">{error}</Alert>}
-    {entity === "users" && select("role", "Role", (platform ? ["patient", "hospital_admin", "staff", "doctor", "pharmacist", "admin"] : ["staff", "doctor", "pharmacist"]).map(role => [role, roleLabel(role)]), editing)}
-    {showHospital && select("hospitalId", translate("Hospital / clinic"), hospitals.map(h => [h._id, h.name]))}
-    {entity !== "appointments" && input("name", "Name", {
-            required: true
-          })}
-    {accounts && entity !== "doctors" && input("email", "Login email", {
-            required: true,
-            type: "email"
-          })}
-    {accounts && entity === "doctors" && !editing && input("email", "Doctor login email", {
-            required: true,
-            type: "email"
-          })}
-    {accounts && !editing && input("password", "Temporary password (optional)", {
-            type: "password",
-            autoComplete: "new-password",
-            helperText: "Leave blank to generate credentials. The user must change them on first login."
-          })}
-    {accounts && entity !== "doctors" && input("phone", "Contact phone")}
-    {accounts && editing && entity !== "doctors" && select("status", "Account status", [["active", "Active"], ["suspended", "Suspended"]])}
-    {doctor && <>{select("departmentId", translate("Department"), departments.map(d => [d._id, d.name]))}{input("specialization", "Specialization")}{input("qualifications", "Qualifications (comma separated)")}{editing && entity === "doctors" && select("availabilityStatus", "Availability", [["available", "Available"], ["unavailable", "Unavailable"]])}</>}
-    {entity === "hospitals" && <>{select("type", translate("Facility type"), [["Hospital", "Hospital"], ["Clinic", "Clinic"]])}{input("address", "Address", {
+  return (
+    <Dialog open onClose={busy ? undefined : onClose} fullWidth maxWidth="sm"><Stack component="form" onSubmit={save}><DialogTitle>{editing ? "Edit" : "Add"} {entity === "users" ? "account" : entity === "appointments" ? "queue visit" : entity.replace(/s$/, "")}</DialogTitle><DialogContent><Stack
+      sx={{
+        gap: 2,
+        pt: 1
+      }}>
+      {error && <Alert severity="error">{error}</Alert>}
+      {entity === "users" && select("role", "Role", (platform ? ["patient", "hospital_admin", "staff", "doctor", "pharmacist", "admin"] : ["staff", "doctor", "pharmacist"]).map(role => [role, roleLabel(role)]), editing)}
+      {showHospital && select("hospitalId", translate("Hospital / clinic"), hospitals.map(h => [h._id, h.name]))}
+      {entity !== "appointments" && input("name", "Name", {
               required: true
-            })}{input("lat", "Latitude", {
+            })}
+      {accounts && entity !== "doctors" && input("email", "Login email", {
               required: true,
-              type: "number",
-              slotProps: {
-                htmlInput: {
-                  min: -90,
-                  max: 90,
-                  step: "any"
-                }
-              }
-            })}{input("lng", "Longitude", {
-              required: true,
-              type: "number",
-              slotProps: {
-                htmlInput: {
-                  min: -180,
-                  max: 180,
-                  step: "any"
-                }
-              }
-            })}{input("contact", "Contact phone")}{input("email", "Contact email", {
               type: "email"
-            })}{input("website", "Website")}{editing && <>{select("status", translate("Status"), [["active", "Active"], ["suspended", "Suspended"]])}{platform && select("approvalStatus", "Registration approval", [["pending", "Pending"], ["approved", "Approved"]])}</>}</>}
-    {entity === "departments" && input("description", "Description", {
-            multiline: true,
-            minRows: 2
-          })}
-    {entity === "medications" && <>{input("price", "AED per selling unit", {
-              required: true
-            })}{input("sellingUnit", "Selling unit", {
-              required: true
-            })}{editing && <FormControlLabel label="Available" control={<Checkbox checked={form.active !== false} onChange={e => setForm(previous => ({
-              ...previous,
-              active: e.target.checked
-            }))} />} />}</>}
-    {entity === "appointments" && (editing ? <><Typography>Only valid queue status transitions are accepted. Completed/cancelled visits stay terminal.</Typography>{select("status", translate("Status"), ["pending", "called", "skipped", "completed", "cancelled"].map(value => [value, value]))}</> : <>{select("doctorId", translate("Doctor"), doctors.map(d => [d._id, `${d.name} · ${d.department}`]))}{input("patientName", "Walk-in patient name", {
-              required: true
-            })}</>)}
-  </Stack></DialogContent><DialogActions><Button onClick={onClose} disabled={busy}>{translate("Cancel")}</Button><Button type="submit" variant="contained" disabled={busy}>Save</Button></DialogActions></Stack></Dialog>;
+            })}
+      {accounts && entity === "doctors" && !editing && input("email", "Doctor login email", {
+              required: true,
+              type: "email"
+            })}
+      {accounts && !editing && input("password", "Temporary password (optional)", {
+              type: "password",
+              autoComplete: "new-password",
+              helperText: "Leave blank to generate credentials. The user must change them on first login."
+            })}
+      {accounts && entity !== "doctors" && input("phone", "Contact phone")}
+      {accounts && editing && entity !== "doctors" && select("status", "Account status", [["active", "Active"], ["suspended", "Suspended"]])}
+      {doctor && <>{select("departmentId", translate("Department"), departments.map(d => [d._id, d.name]))}{input("specialization", "Specialization")}{input("qualifications", "Qualifications (comma separated)")}{editing && entity === "doctors" && select("availabilityStatus", "Availability", [["available", "Available"], ["unavailable", "Unavailable"]])}</>}
+      {entity === "hospitals" && <>{select("type", translate("Facility type"), [["Hospital", "Hospital"], ["Clinic", "Clinic"]])}{input("address", "Address", {
+                required: true
+              })}{input("lat", "Latitude", {
+                required: true,
+                type: "number",
+                slotProps: {
+                  htmlInput: {
+                    min: -90,
+                    max: 90,
+                    step: "any"
+                  }
+                }
+              })}{input("lng", "Longitude", {
+                required: true,
+                type: "number",
+                slotProps: {
+                  htmlInput: {
+                    min: -180,
+                    max: 180,
+                    step: "any"
+                  }
+                }
+              })}{input("contact", "Contact phone")}{input("email", "Contact email", {
+                type: "email"
+              })}{input("website", "Website")}{editing && <>{select("status", translate("Status"), [["active", "Active"], ["suspended", "Suspended"]])}{platform && select("approvalStatus", "Registration approval", [["pending", "Pending"], ["approved", "Approved"]])}</>}</>}
+      {entity === "departments" && input("description", "Description", {
+              multiline: true,
+              minRows: 2
+            })}
+      {entity === "medications" && <>{input("price", "AED per selling unit", {
+                required: true
+              })}{input("sellingUnit", "Selling unit", {
+                required: true
+              })}{editing && <FormControlLabel label="Available" control={<Checkbox checked={form.active !== false} onChange={e => setForm(previous => ({
+                ...previous,
+                active: e.target.checked
+              }))} />} />}</>}
+      {entity === "appointments" && (editing ? <><Typography>Only valid queue status transitions are accepted. Completed/cancelled visits stay terminal.</Typography>{select("status", translate("Status"), ["pending", "called", "skipped", "completed", "cancelled"].map(value => [value, value]))}</> : <>{select("doctorId", translate("Doctor"), doctors.map(d => [d._id, `${d.name} · ${d.department}`]))}{input("patientName", "Walk-in patient name", {
+                required: true
+              })}</>)}
+    </Stack></DialogContent><DialogActions><Button onClick={onClose} disabled={busy}>{translate("Cancel")}</Button><Button type="submit" variant="contained" disabled={busy}>Save</Button></DialogActions></Stack></Dialog>
+  );
 }

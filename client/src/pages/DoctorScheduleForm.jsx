@@ -128,71 +128,83 @@ export default function DoctorScheduleForm() {
       });
     }
   };
-  return <Container sx={{
-    mt: 4
-  }}>
-      <Typography variant="h5" gutterBottom>
-        Set Doctor Weekly Schedule
-      </Typography>
-
-      <FormControl fullWidth sx={{
-      mb: 2
+  return (
+    <Container sx={{
+      mt: 4
     }}>
-        <InputLabel>{translate("Doctor")}</InputLabel>
-        <Select value={selectedDoctor} onChange={e => setSelectedDoctor(e.target.value)} label={translate("Doctor")}>
-          {doctors.map(doc => <MenuItem key={doc._id} value={doc._id}>
-              {`${doc.name} - ${doc.department || "No Dept"}`}
-            </MenuItem>)}
-        </Select>
-      </FormControl>
+        <Typography variant="h5" gutterBottom>
+          Set Doctor Weekly Schedule
+        </Typography>
 
-      <Grid container spacing={2} sx={{
-      mb: 3
-    }}>
-        {schedule.map((entry, index) => <Grid key={entry.day} size={{
-        xs: 12,
-        md: 6
+        <FormControl fullWidth sx={{
+        mb: 2
       }}>
-            <Box border={1} borderRadius={2} p={2}>
-              <Typography variant="subtitle1" gutterBottom>
-                {entry.day}
-              </Typography>
+          <InputLabel>{translate("Doctor")}</InputLabel>
+          <Select value={selectedDoctor} onChange={e => setSelectedDoctor(e.target.value)} label={translate("Doctor")}>
+            {doctors.map(doc => <MenuItem key={doc._id} value={doc._id}>
+                {`${doc.name} - ${doc.department || "No Dept"}`}
+              </MenuItem>)}
+          </Select>
+        </FormControl>
 
-              <FormControlLabel control={<Checkbox checked={entry.isAvailable} onChange={e => handleScheduleChange(index, "isAvailable", e.target.checked)} />} label="Available" />
+        <Grid container spacing={2} sx={{
+        mb: 3
+      }}>
+          {schedule.map((entry, index) => <Grid key={entry.day} size={{
+          xs: 12,
+          md: 6
+        }}>
+              <Box
+                sx={{
+                  border: 1,
+                  borderRadius: 2,
+                  p: 2
+                }}>
+                <Typography variant="subtitle1" gutterBottom>
+                  {entry.day}
+                </Typography>
 
-              {entry.isAvailable && <Box display="flex" gap={2} mt={1}>
-                  <TextField label="Start Time" type="time" fullWidth InputLabelProps={{
-              shrink: true
-            }} value={entry.startTime} onChange={e => handleScheduleChange(index, "startTime", e.target.value)} />
-                  <TextField label="End Time" type="time" fullWidth InputLabelProps={{
-              shrink: true
-            }} value={entry.endTime} onChange={e => handleScheduleChange(index, "endTime", e.target.value)} />
-                </Box>}
-            </Box>
-          </Grid>)}
-      </Grid>
+                <FormControlLabel control={<Checkbox checked={entry.isAvailable} onChange={e => handleScheduleChange(index, "isAvailable", e.target.checked)} />} label="Available" />
 
-      <Button variant="contained" onClick={handleSubmit}>
-        Save Schedule
-      </Button>
+                {entry.isAvailable && <Box
+                  sx={{
+                    display: "flex",
+                    gap: 2,
+                    mt: 1
+                  }}>
+                    <TextField label="Start Time" type="time" fullWidth slotProps={{ inputLabel: {
+                shrink: true
+              } }} value={entry.startTime} onChange={e => handleScheduleChange(index, "startTime", e.target.value)} />
+                    <TextField label="End Time" type="time" fullWidth slotProps={{ inputLabel: {
+                shrink: true
+              } }} value={entry.endTime} onChange={e => handleScheduleChange(index, "endTime", e.target.value)} />
+                  </Box>}
+              </Box>
+            </Grid>)}
+        </Grid>
 
-      <TextField fullWidth type="number" label="Daily booking capacity" helperText="0 means unlimited. Cancelled visits release capacity; completed visits still count for that day." value={dailyCapacity} onChange={e => setDailyCapacity(e.target.value)} sx={{
-      my: 2
-    }} slotProps={{
-      htmlInput: {
-        min: 0,
-        max: 500,
-        step: 1
-      }
-    }} />
-      <TextField fullWidth label="Leave / holiday dates" helperText="Comma-separated dates, for example 2026-12-02, 2026-12-03. Existing appointments are not automatically cancelled." value={closedDates} onChange={e => setClosedDates(e.target.value)} sx={{
-      my: 2
-    }} />
-      <Snackbar open={snack.open} autoHideDuration={4000} onClose={() => setSnack({
-      ...snack,
-      open: false
-    })}>
-        <Alert severity={snack.severity}>{snack.message}</Alert>
-      </Snackbar>
-    </Container>;
+        <Button variant="contained" onClick={handleSubmit}>
+          Save Schedule
+        </Button>
+
+        <TextField fullWidth type="number" label="Daily booking capacity" helperText="0 means unlimited. Cancelled visits release capacity; completed visits still count for that day." value={dailyCapacity} onChange={e => setDailyCapacity(e.target.value)} sx={{
+        my: 2
+      }} slotProps={{
+        htmlInput: {
+          min: 0,
+          max: 500,
+          step: 1
+        }
+      }} />
+        <TextField fullWidth label="Leave / holiday dates" helperText="Comma-separated dates, for example 2026-12-02, 2026-12-03. Existing appointments are not automatically cancelled." value={closedDates} onChange={e => setClosedDates(e.target.value)} sx={{
+        my: 2
+      }} />
+        <Snackbar open={snack.open} autoHideDuration={4000} onClose={() => setSnack({
+        ...snack,
+        open: false
+      })}>
+          <Alert severity={snack.severity}>{snack.message}</Alert>
+        </Snackbar>
+      </Container>
+  );
 }

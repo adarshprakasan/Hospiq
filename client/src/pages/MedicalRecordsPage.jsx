@@ -220,138 +220,194 @@ export default function MedicalRecordsPage({ patientIdOverride, visitTokenOverri
     }
   }
   const visible = records.filter(r => (!source || r.source === source) && [r.doctorName, r.hospitalName, r.department, r.diagnosis, r.notes, r.prescription, ...(r.medications || []).map(m => m.name)].join(" ").toLowerCase().includes(search.toLowerCase()));
-  return <Container maxWidth="lg" sx={{
-    mt: 3
-  }}>
+  return (
+    <Container maxWidth="lg" sx={{
+      mt: 3
+    }}>
 
-    <Box className="page-hero"><Typography variant="overline">PATIENT-OWNED MEDICAL HISTORY</Typography><Typography variant="h4">{isDoctor ? `${access?.patient?.name || "Patient"} — medical records` : translate("My medical records")}</Typography><Typography sx={{
-        mt: 1
-      }}>Visits, prescriptions, medications, and lab reports in one place.</Typography></Box>
+      <Box className="page-hero"><Typography variant="overline">PATIENT-OWNED MEDICAL HISTORY</Typography><Typography variant="h4">{isDoctor ? `${access?.patient?.name || "Patient"} — medical records` : translate("My medical records")}</Typography><Typography sx={{
+          mt: 1
+        }}>Visits, prescriptions, medications, and lab reports in one place.</Typography></Box>
 
-    {healthSummary && <Paper sx={{
-      p: 3,
-      mb: 2
-    }}><Typography variant="h6">Patient-reported health summary</Typography>{[['allergies', 'Allergies'], ['conditions', 'Conditions'], ['currentMedications', 'Current medications']].map(([key, label]) => <Typography key={key}><strong>{translate(label)}:</strong> {healthSummary[key] || 'Not recorded'}</Typography>)}</Paper>}
-    {scannedVisit && <Alert severity="success" sx={{
-      mb: 2
-    }}>QR identified: {scannedVisit.patient.name} ({scannedVisit.patient.publicId}) · {scannedVisit.doctor.name}, {scannedVisit.doctor.department} · Token #{scannedVisit.appointment.tokenNumber}</Alert>}
+      {healthSummary && <Paper sx={{
+        p: 3,
+        mb: 2
+      }}><Typography variant="h6">Patient-reported health summary</Typography>{[['allergies', 'Allergies'], ['conditions', 'Conditions'], ['currentMedications', 'Current medications']].map(([key, label]) => <Typography key={key}><strong>{translate(label)}:</strong> {healthSummary[key] || 'Not recorded'}</Typography>)}</Paper>}
+      {scannedVisit && <Alert severity="success" sx={{
+        mb: 2
+      }}>QR identified: {scannedVisit.patient.name} ({scannedVisit.patient.publicId}) · {scannedVisit.doctor.name}, {scannedVisit.doctor.department} · Token #{scannedVisit.appointment.tokenNumber}</Alert>}
 
-    {error && <Alert severity="error" sx={{
-      mb: 2
-    }}>{error}</Alert>}{notice && <Alert severity="success" sx={{
-      mb: 2
-    }} onClose={() => setNotice("")}>{notice}</Alert>}
+      {error && <Alert severity="error" sx={{
+        mb: 2
+      }}>{error}</Alert>}{notice && <Alert severity="success" sx={{
+        mb: 2
+      }} onClose={() => setNotice("")}>{notice}</Alert>}
 
-    <Stack direction="row" gap={1} mb={3} flexWrap="wrap"><Button variant="contained" onClick={() => {
-        setEditing(null);
-        setOpen(true);
-      }}>+ {isDoctor ? "Record this visit" : "Add visit / upload documents"}</Button><Button variant="outlined" onClick={refresh}>{translate("Refresh records")}</Button></Stack>
+      <Stack
+        direction="row"
+        sx={{
+          gap: 1,
+          mb: 3,
+          flexWrap: "wrap"
+        }}><Button variant="contained" onClick={() => {
+          setEditing(null);
+          setOpen(true);
+        }}>+ {isDoctor ? "Record this visit" : "Add visit / upload documents"}</Button><Button variant="outlined" onClick={refresh}>{translate("Refresh records")}</Button></Stack>
 
-    {isDoctor ? <Paper sx={{
-      p: 3,
-      mb: 3
-    }}><Typography variant="h6">{translate("Patient permission")}</Typography>{access?.fullAccess ? <Alert severity="success" sx={{
-        mt: 1
-      }}>Read-only access to other doctors' records until {new Date(access.expiresAt).toLocaleTimeString()}. The patient can revoke it sooner.</Alert> : <><Typography color="text.secondary" sx={{
+      {isDoctor ? <Paper sx={{
+        p: 3,
+        mb: 3
+      }}><Typography variant="h6">{translate("Patient permission")}</Typography>{access?.fullAccess ? <Alert severity="success" sx={{
+          mt: 1
+        }}>Read-only access to other doctors' records until {new Date(access.expiresAt).toLocaleTimeString()}. The patient can revoke it sooner.</Alert> : <><Typography
+        sx={{
+          color: "text.secondary",
           my: 1
         }}>You can view your own previous visit records. To see records from other doctors or hospitals, request a code sent to the patient's registered email and enter it only if the patient agrees to share it.</Typography><Button variant="outlined" disabled={Boolean(busy) || !access?.canRequest} onClick={requestAccess}>{busy === "request" ? "Sending…" : request ? "Send a new permission code" : "Request patient permission"}</Button>{!access?.canRequest && <Typography variant="body2" sx={{
+            mt: 1
+          }}>A pending or called appointment today is required to request permission.</Typography>}{request && <Box component="form" onSubmit={verify} sx={{
+            mt: 2
+          }}><Stack direction={{
+              xs: "column",
+              sm: "row"
+            }} sx={{
+        gap: 2
+      }}><TextField required label="Code shared by patient" value={otp} onChange={e => setOtp(e.target.value)} autoComplete="off" slotProps={{
+                htmlInput: {
+                  inputMode: "numeric",
+                  pattern: "[0-9]{6}",
+                  maxLength: 6
+                }
+              }} /><Button type="submit" variant="contained" disabled={Boolean(busy)}>{busy === "verify" ? "Verifying…" : "Verify permission"}</Button></Stack><Typography
+        variant="body2"
+        sx={{
+          color: "text.secondary",
           mt: 1
-        }}>A pending or called appointment today is required to request permission.</Typography>}{request && <Box component="form" onSubmit={verify} sx={{
+        }}>Code expires at {new Date(request.expiresAt).toLocaleTimeString()} and can be used once.</Typography></Box>}</>}</Paper> : <Paper sx={{
+        p: 3,
+        mb: 3
+      }}><Typography variant="h6">{translate("Doctors with temporary access")}</Typography><Typography
+        variant="body2"
+        sx={{
+          color: "text.secondary",
+          my: 1
+        }}>A permission code approves 30 minutes of read-only access to your other records. Share it only if you agree. Revoking access prevents new reads; it cannot retract information already viewed or downloaded.</Typography>{grants.length ? grants.map(g => <Stack
+        key={g._id}
+        direction="row"
+        sx={{
+          gap: 2,
+          alignItems: "center",
           mt: 2
-        }}><Stack direction={{
-            xs: "column",
-            sm: "row"
-          }} gap={2}><TextField required label="Code shared by patient" value={otp} onChange={e => setOtp(e.target.value)} autoComplete="off" slotProps={{
-              htmlInput: {
-                inputMode: "numeric",
-                pattern: "[0-9]{6}",
-                maxLength: 6
-              }
-            }} /><Button type="submit" variant="contained" disabled={Boolean(busy)}>{busy === "verify" ? "Verifying…" : "Verify permission"}</Button></Stack><Typography variant="body2" color="text.secondary" mt={1}>Code expires at {new Date(request.expiresAt).toLocaleTimeString()} and can be used once.</Typography></Box>}</>}</Paper> : <Paper sx={{
-      p: 3,
-      mb: 3
-    }}><Typography variant="h6">{translate("Doctors with temporary access")}</Typography><Typography variant="body2" color="text.secondary" sx={{
-        my: 1
-      }}>A permission code approves 30 minutes of read-only access to your other records. Share it only if you agree. Revoking access prevents new reads; it cannot retract information already viewed or downloaded.</Typography>{grants.length ? grants.map(g => <Stack key={g._id} direction="row" gap={2} alignItems="center" sx={{
+        }}><Box sx={{
+            flex: 1
+          }}><Typography>{g.doctorName}</Typography><Typography variant="body2" sx={{
+        color: "text.secondary"
+      }}>Expires {new Date(g.expiresAt).toLocaleString()}</Typography></Box><Button color="error" disabled={busy === g._id} onClick={() => revoke(g._id)}>{translate("Revoke access")}</Button></Stack>) : <Typography variant="body2">{translate("No active temporary permissions.")}</Typography>}</Paper>}
+
+      <Stack
+        direction={{
+          xs: "column",
+          sm: "row"
+        }}
+        sx={{
+          gap: 2,
+          mb: 3
+        }}><TextField fullWidth label="Search doctor, hospital, medication, or diagnosis" value={search} onChange={e => setSearch(e.target.value)} /><TextField select label={translate("Added by")} value={source} onChange={e => setSource(e.target.value)} sx={{
+          minWidth: 180
+        }}><MenuItem value="">{translate("Everyone")}</MenuItem><MenuItem value="doctor">{translate("Doctor")}</MenuItem><MenuItem value="patient">{translate("Patient upload")}</MenuItem></TextField></Stack>
+
+      {loading ? <CircularProgress aria-label="Loading medical history" /> : <Stack sx={{
+        gap: 3
+      }}>{visible.map(record => <Paper key={record._id} sx={{
+          p: 3
+        }}><Stack
+        direction="row"
+        sx={{
+          gap: 1,
+          justifyContent: "space-between",
+          flexWrap: "wrap"
+        }}><Typography variant="h6">{new Date(record.visitDate).toLocaleString()}</Typography><Chip size="small" label={record.source === "patient" ? "Patient-entered" : "Doctor-entered"} color={record.source === "patient" ? "default" : "primary"} variant="outlined" /></Stack>{record.status === 'draft' && <Alert severity="info" sx={{
+            mt: 2
+          }}>Draft — visible only to the authoring doctor. This visit is not finalized.</Alert>}
+
+        <Button onClick={() => downloadText(`hospiq-visit-${record._id}.txt`, ['Hospiq visit summary', `Date: ${new Date(record.visitDate).toLocaleString()}`, `Doctor: ${record.doctorName}`, `Facility: ${record.hospitalName}`, `Status: ${record.status}`, `Diagnosis: ${record.diagnosis || ''}`, `Notes: ${record.notes || ''}`, `Prescription: ${record.prescription || ''}`, ...record.medications.map(m => [m.name, m.dose, m.times?.join('/'), m.startDate, m.endDate, m.instructions].filter(Boolean).join(' · ')), ...(record.amendments || []).map(a => `Correction (${a.createdAt}): ${a.text}. Reason: ${a.reason}`)].join('\n'))}>{translate("Download visit summary")}</Button>
+        {record.canEdit && <Button onClick={() => {
+            if (record.status === 'draft') {
+              setEditing(record);
+              setOpen(true);
+            } else {
+              setAmending(record);
+              setCorrection('');
+              setReason('');
+            }
+          }}>{record.status === 'draft' ? translate("Resume draft") : translate("Add correction")}</Button>}
+
+        {(record.amendments || []).map((a, i) => <Alert key={i} severity="info" sx={{
+            mt: 1
+          }}>{translate("Correction")}{new Date(a.createdAt).toLocaleString()}: {a.text} — Reason: {a.reason}</Alert>)}
+
+        <Typography sx={{
+            mt: 1
+          }}>{record.doctorName} · {record.department}</Typography><Typography gutterBottom sx={{
+        color: "text.secondary"
+      }}>{record.hospitalName}</Typography>{record.diagnosis && <Typography sx={{
+            mt: 2,
+            whiteSpace: "pre-wrap"
+          }}><strong>Diagnosis / reason:</strong> {record.diagnosis}</Typography>}{record.medications.length > 0 && <Box sx={{
         mt: 2
-      }}><Box sx={{
-          flex: 1
-        }}><Typography>{g.doctorName}</Typography><Typography variant="body2" color="text.secondary">Expires {new Date(g.expiresAt).toLocaleString()}</Typography></Box><Button color="error" disabled={busy === g._id} onClick={() => revoke(g._id)}>{translate("Revoke access")}</Button></Stack>) : <Typography variant="body2">{translate("No active temporary permissions.")}</Typography>}</Paper>}
-
-    <Stack direction={{
-      xs: "column",
-      sm: "row"
-    }} gap={2} mb={3}><TextField fullWidth label="Search doctor, hospital, medication, or diagnosis" value={search} onChange={e => setSearch(e.target.value)} /><TextField select label={translate("Added by")} value={source} onChange={e => setSource(e.target.value)} sx={{
-        minWidth: 180
-      }}><MenuItem value="">{translate("Everyone")}</MenuItem><MenuItem value="doctor">{translate("Doctor")}</MenuItem><MenuItem value="patient">{translate("Patient upload")}</MenuItem></TextField></Stack>
-
-    {loading ? <CircularProgress aria-label="Loading medical history" /> : <Stack gap={3}>{visible.map(record => <Paper key={record._id} sx={{
-        p: 3
-      }}><Stack direction="row" gap={1} justifyContent="space-between" flexWrap="wrap"><Typography variant="h6">{new Date(record.visitDate).toLocaleString()}</Typography><Chip size="small" label={record.source === "patient" ? "Patient-entered" : "Doctor-entered"} color={record.source === "patient" ? "default" : "primary"} variant="outlined" /></Stack>{record.status === 'draft' && <Alert severity="info" sx={{
+      }}><Typography sx={{
+        fontWeight: 700
+      }}>{translate("Medications")}</Typography>{record.medications.map((m, i) => <Typography key={i} sx={{
+              mt: .5
+            }}>{[m.name, m.dose, m.times?.length ? m.times.map(t => t[0].toUpperCase() + t.slice(1)).join(" / ") : m.frequency, m.startDate && m.endDate ? `${m.startDate} to ${m.endDate}` : m.duration, m.foodTiming === "before" ? translate("Before food") : m.foodTiming === "after" ? translate("After food") : "", m.instructions].filter(Boolean).join(" · ")}</Typography>)}</Box>}{record.canSendToPharmacy && <Button variant="outlined" sx={{
+            mt: 2
+          }} onClick={() => {
+            setPharmacyError("");
+            setPharmacyRecord(record);
+          }}>Send medication to pharmacy</Button>}{record.prescription && <Typography sx={{
+            mt: 2,
+            whiteSpace: "pre-wrap"
+          }}><strong>Prescription:</strong> {record.prescription}</Typography>}{Object.keys(record.vitals || {}).length > 0 && <Typography sx={{
+            mt: 2
+          }}>Vitals: {Object.entries(record.vitals).map(([key, value]) => `${key}: ${value}`).join(' · ')}</Typography>}{record.notes && <Typography sx={{
+            mt: 2,
+            whiteSpace: "pre-wrap"
+          }}><strong>Visit notes:</strong> {record.notes}</Typography>}<Stack
+        direction="row"
+        sx={{
+          gap: 1,
+          flexWrap: "wrap",
           mt: 2
-        }}>Draft — visible only to the authoring doctor. This visit is not finalized.</Alert>}
+        }}>{record.attachments.map(file => <Button key={file._id} variant="outlined" disabled={busy === file._id} onClick={() => download(record, file)} sx={{
+              overflowWrap: "anywhere"
+            }}>{file.kind === "prescription" ? translate("Prescription") : translate("Lab report")}: {file.originalName}</Button>)}</Stack>{record.legacyAttachmentCount > 0 && <Alert severity="warning" sx={{
+            mt: 2
+          }}>This record has older public-link attachments. Re-upload them using protected storage; old URLs are hidden here.</Alert>}</Paper>)}</Stack>}
 
-      <Button onClick={() => downloadText(`hospiq-visit-${record._id}.txt`, ['Hospiq visit summary', `Date: ${new Date(record.visitDate).toLocaleString()}`, `Doctor: ${record.doctorName}`, `Facility: ${record.hospitalName}`, `Status: ${record.status}`, `Diagnosis: ${record.diagnosis || ''}`, `Notes: ${record.notes || ''}`, `Prescription: ${record.prescription || ''}`, ...record.medications.map(m => [m.name, m.dose, m.times?.join('/'), m.startDate, m.endDate, m.instructions].filter(Boolean).join(' · ')), ...(record.amendments || []).map(a => `Correction (${a.createdAt}): ${a.text}. Reason: ${a.reason}`)].join('\n'))}>{translate("Download visit summary")}</Button>
-      {record.canEdit && <Button onClick={() => {
-          if (record.status === 'draft') {
-            setEditing(record);
-            setOpen(true);
-          } else {
-            setAmending(record);
-            setCorrection('');
-            setReason('');
+      {!loading && !visible.length && <Alert severity="info">{isDoctor && !access?.fullAccess ? "No matching records from your own visits. Other records remain private until the patient approves." : "No medical records match this view. Add a visit or upload a prescription/lab report to get started."}</Alert>}
+
+      {!loading && <TablePagination component="div" count={total} page={page} rowsPerPage={20} rowsPerPageOptions={[20]} onPageChange={(_event, value) => setPage(value)} />}
+
+      <Dialog open={open} onClose={() => setOpen(false)} fullWidth maxWidth="md"><DialogTitle>{isDoctor ? translate("Record patient visit") : translate("Add visit or scanned document")}</DialogTitle>{open && <MedicalRecordForm initialRecord={editing} visitTokenId={visitTokenOverride || scannedVisit?.appointment.tokenId} patientId={patientId} isDoctor={isDoctor} onCancel={() => setOpen(false)} onSaved={data => {
+          setOpen(false);
+          setNotice(data.record.status === "draft" ? "Draft saved. Resume it from the record below." : isDoctor ? data.visitCompleted ? "Medical record saved. Visit completed." : "Medical record saved. Visit completion needs retry; sending to pharmacy will retry it." : "Medical record saved");
+          if (isDoctor && data.record.status !== "draft" && data.record.medications.length) {
+            setPharmacyError("");
+            setPharmacyRecord(data.record);
           }
-        }}>{record.status === 'draft' ? translate("Resume draft") : translate("Add correction")}</Button>}
+          refresh();
+        }} />}</Dialog>
 
-      {(record.amendments || []).map((a, i) => <Alert key={i} severity="info" sx={{
-          mt: 1
-        }}>{translate("Correction")}{new Date(a.createdAt).toLocaleString()}: {a.text} — Reason: {a.reason}</Alert>)}
-
-      <Typography sx={{
-          mt: 1
-        }}>{record.doctorName} · {record.department}</Typography><Typography color="text.secondary" gutterBottom>{record.hospitalName}</Typography>{record.diagnosis && <Typography sx={{
-          mt: 2,
-          whiteSpace: "pre-wrap"
-        }}><strong>Diagnosis / reason:</strong> {record.diagnosis}</Typography>}{record.medications.length > 0 && <Box mt={2}><Typography fontWeight={700}>{translate("Medications")}</Typography>{record.medications.map((m, i) => <Typography key={i} sx={{
-            mt: .5
-          }}>{[m.name, m.dose, m.times?.length ? m.times.map(t => t[0].toUpperCase() + t.slice(1)).join(" / ") : m.frequency, m.startDate && m.endDate ? `${m.startDate} to ${m.endDate}` : m.duration, m.foodTiming === "before" ? translate("Before food") : m.foodTiming === "after" ? translate("After food") : "", m.instructions].filter(Boolean).join(" · ")}</Typography>)}</Box>}{record.canSendToPharmacy && <Button variant="outlined" sx={{
+      <Dialog open={Boolean(amending)} onClose={() => setAmending(null)} fullWidth><DialogTitle>Add a correction</DialogTitle><DialogContent><Typography>The original record remains unchanged. This dated correction is appended to its history.</Typography><Stack
+        sx={{
+          gap: 2,
           mt: 2
-        }} onClick={() => {
-          setPharmacyError("");
-          setPharmacyRecord(record);
-        }}>Send medication to pharmacy</Button>}{record.prescription && <Typography sx={{
-          mt: 2,
-          whiteSpace: "pre-wrap"
-        }}><strong>Prescription:</strong> {record.prescription}</Typography>}{Object.keys(record.vitals || {}).length > 0 && <Typography sx={{
-          mt: 2
-        }}>Vitals: {Object.entries(record.vitals).map(([key, value]) => `${key}: ${value}`).join(' · ')}</Typography>}{record.notes && <Typography sx={{
-          mt: 2,
-          whiteSpace: "pre-wrap"
-        }}><strong>Visit notes:</strong> {record.notes}</Typography>}<Stack direction="row" gap={1} flexWrap="wrap" mt={2}>{record.attachments.map(file => <Button key={file._id} variant="outlined" disabled={busy === file._id} onClick={() => download(record, file)} sx={{
-            overflowWrap: "anywhere"
-          }}>{file.kind === "prescription" ? translate("Prescription") : translate("Lab report")}: {file.originalName}</Button>)}</Stack>{record.legacyAttachmentCount > 0 && <Alert severity="warning" sx={{
-          mt: 2
-        }}>This record has older public-link attachments. Re-upload them using protected storage; old URLs are hidden here.</Alert>}</Paper>)}</Stack>}
+        }}><TextField label={translate("Correction")} multiline minRows={3} value={correction} onChange={e => setCorrection(e.target.value)} /><TextField label={translate("Reason for correction")} value={reason} onChange={e => setReason(e.target.value)} /></Stack></DialogContent><DialogActions><Button onClick={() => setAmending(null)}>{translate("Cancel")}</Button><Button disabled={Boolean(busy) || !correction.trim() || !reason.trim()} onClick={amend}>{translate("Save correction")}</Button></DialogActions></Dialog>
 
-    {!loading && !visible.length && <Alert severity="info">{isDoctor && !access?.fullAccess ? "No matching records from your own visits. Other records remain private until the patient approves." : "No medical records match this view. Add a visit or upload a prescription/lab report to get started."}</Alert>}
+      <Dialog open={Boolean(pharmacyRecord)} onClose={busy === "pharmacy" ? undefined : () => setPharmacyRecord(null)} fullWidth maxWidth="sm"><DialogTitle>Send medication to pharmacy?</DialogTitle><DialogContent><Typography>The medical record is saved. Send the prescribed medications to your hospital pharmacy and generate the patient's pharmacy token.</Typography>{pharmacyError && <Alert severity="error" sx={{
+            mt: 2
+          }}>{pharmacyError}</Alert>}</DialogContent><DialogActions><Button disabled={busy === "pharmacy"} onClick={() => setPharmacyRecord(null)}>Later</Button><Button variant="contained" disabled={busy === "pharmacy"} onClick={sendPharmacy}>{busy === "pharmacy" ? "Sending…" : "Send medication to pharmacy"}</Button></DialogActions></Dialog>
 
-    {!loading && <TablePagination component="div" count={total} page={page} rowsPerPage={20} rowsPerPageOptions={[20]} onPageChange={(_event, value) => setPage(value)} />}
-
-    <Dialog open={open} onClose={() => setOpen(false)} fullWidth maxWidth="md"><DialogTitle>{isDoctor ? translate("Record patient visit") : translate("Add visit or scanned document")}</DialogTitle>{open && <MedicalRecordForm initialRecord={editing} visitTokenId={visitTokenOverride || scannedVisit?.appointment.tokenId} patientId={patientId} isDoctor={isDoctor} onCancel={() => setOpen(false)} onSaved={data => {
-        setOpen(false);
-        setNotice(data.record.status === "draft" ? "Draft saved. Resume it from the record below." : isDoctor ? data.visitCompleted ? "Medical record saved. Visit completed." : "Medical record saved. Visit completion needs retry; sending to pharmacy will retry it." : "Medical record saved");
-        if (isDoctor && data.record.status !== "draft" && data.record.medications.length) {
-          setPharmacyError("");
-          setPharmacyRecord(data.record);
-        }
-        refresh();
-      }} />}</Dialog>
-
-    <Dialog open={Boolean(amending)} onClose={() => setAmending(null)} fullWidth><DialogTitle>Add a correction</DialogTitle><DialogContent><Typography>The original record remains unchanged. This dated correction is appended to its history.</Typography><Stack gap={2} mt={2}><TextField label={translate("Correction")} multiline minRows={3} value={correction} onChange={e => setCorrection(e.target.value)} /><TextField label={translate("Reason for correction")} value={reason} onChange={e => setReason(e.target.value)} /></Stack></DialogContent><DialogActions><Button onClick={() => setAmending(null)}>{translate("Cancel")}</Button><Button disabled={Boolean(busy) || !correction.trim() || !reason.trim()} onClick={amend}>{translate("Save correction")}</Button></DialogActions></Dialog>
-
-    <Dialog open={Boolean(pharmacyRecord)} onClose={busy === "pharmacy" ? undefined : () => setPharmacyRecord(null)} fullWidth maxWidth="sm"><DialogTitle>Send medication to pharmacy?</DialogTitle><DialogContent><Typography>The medical record is saved. Send the prescribed medications to your hospital pharmacy and generate the patient's pharmacy token.</Typography>{pharmacyError && <Alert severity="error" sx={{
-          mt: 2
-        }}>{pharmacyError}</Alert>}</DialogContent><DialogActions><Button disabled={busy === "pharmacy"} onClick={() => setPharmacyRecord(null)}>Later</Button><Button variant="contained" disabled={busy === "pharmacy"} onClick={sendPharmacy}>{busy === "pharmacy" ? "Sending…" : "Send medication to pharmacy"}</Button></DialogActions></Dialog>
-
-  </Container>;
+    </Container>
+  );
 }

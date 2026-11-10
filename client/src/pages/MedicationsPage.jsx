@@ -29,18 +29,25 @@ function PriceEditor({
       setBusy(false);
     }
   }
-  return <Stack direction={{
-    xs: "column",
-    sm: "row"
-  }} gap={1} mt={2}><TextField label="AED per selling unit" size="small" value={price} onChange={e => setPrice(e.target.value)} slotProps={{
-      htmlInput: {
-        inputMode: "decimal"
-      }
-    }} /><TextField label="Selling unit (pack, tablet…)" size="small" value={unit} onChange={e => setUnit(e.target.value)} slotProps={{
-      htmlInput: {
-        maxLength: 60
-      }
-    }} /><Button disabled={busy} onClick={save}>Save price</Button></Stack>;
+  return (
+    <Stack
+      direction={{
+        xs: "column",
+        sm: "row"
+      }}
+      sx={{
+        gap: 1,
+        mt: 2
+      }}><TextField label="AED per selling unit" size="small" value={price} onChange={e => setPrice(e.target.value)} slotProps={{
+        htmlInput: {
+          inputMode: "decimal"
+        }
+      }} /><TextField label="Selling unit (pack, tablet…)" size="small" value={unit} onChange={e => setUnit(e.target.value)} slotProps={{
+        htmlInput: {
+          maxLength: 60
+        }
+      }} /><Button disabled={busy} onClick={save}>Save price</Button></Stack>
+  );
 }
 export default function MedicationsPage() {
   useLocale();
@@ -104,38 +111,55 @@ export default function MedicationsPage() {
       setBusy(false);
     }
   }
-  return <Container maxWidth="md" sx={{
-    mt: 3
-  }}><Stack gap={3}>
-    <div><Typography variant="h4">Hospital medications</Typography><Typography color="text.secondary" mt={1}>Manage the medicines available at your hospital. Include strength and form in each entry; different strengths are separate choices.</Typography></div>
-    {error && <Alert severity="error">{error}</Alert>}{notice && <Alert severity="success">{notice}</Alert>}
-    <Paper component="form" onSubmit={add} sx={{
-        p: 3
-      }}><Stack gap={2}><TextField required fullWidth label="Medication name, strength and form" helperText="For example: medicine name 500 mg tablet" value={name} onChange={e => setName(e.target.value)} slotProps={{
-            htmlInput: {
-              maxLength: 200
-            }
-          }} /><Stack direction={{
-            xs: "column",
-            sm: "row"
-          }} gap={2}><TextField required label="AED per selling unit" value={price} onChange={e => setPrice(e.target.value)} slotProps={{
+  return (
+    <Container maxWidth="md" sx={{
+      mt: 3
+    }}><Stack sx={{
+      gap: 3
+    }}>
+      <div><Typography variant="h4">Hospital medications</Typography><Typography
+        sx={{
+          color: "text.secondary",
+          mt: 1
+        }}>Manage the medicines available at your hospital. Include strength and form in each entry; different strengths are separate choices.</Typography></div>
+      {error && <Alert severity="error">{error}</Alert>}{notice && <Alert severity="success">{notice}</Alert>}
+      <Paper component="form" onSubmit={add} sx={{
+          p: 3
+        }}><Stack sx={{
+        gap: 2
+      }}><TextField required fullWidth label="Medication name, strength and form" helperText="For example: medicine name 500 mg tablet" value={name} onChange={e => setName(e.target.value)} slotProps={{
               htmlInput: {
-                inputMode: "decimal"
+                maxLength: 200
               }
-            }} /><TextField required label="Selling unit" value={unit} onChange={e => setUnit(e.target.value)} slotProps={{
-              htmlInput: {
-                maxLength: 60
-              }
-            }} /><Button type="submit" variant="contained" disabled={busy || !name.trim()}>Add medication</Button></Stack></Stack></Paper>
-    <TextField label="Search available medications" value={search} onChange={e => setSearch(e.target.value)} />
-    {items.filter(item => item.name.toLowerCase().includes(search.toLowerCase())).map(item => <Paper key={item._id} sx={{
-        p: 2
-      }}><Stack direction="row" alignItems="center" gap={2}><Typography sx={{
-            flex: 1
-          }}>{item.name}</Typography><Button color="error" disabled={busy} onClick={() => remove(item._id)}>{translate("Remove")}</Button></Stack><PriceEditor item={item} onSaved={() => {
-          setNotice("Price updated. Existing pharmacy bills are preserved.");
-          refresh();
-        }} onError={setError} /></Paper>)}
-    {!items.length && !error && <Alert severity="info">Your hospital's list is empty. Add medications above to make them available in the doctor's prescription dropdown.</Alert>}
-  </Stack></Container>;
+            }} /><Stack direction={{
+              xs: "column",
+              sm: "row"
+            }} sx={{
+        gap: 2
+      }}><TextField required label="AED per selling unit" value={price} onChange={e => setPrice(e.target.value)} slotProps={{
+                htmlInput: {
+                  inputMode: "decimal"
+                }
+              }} /><TextField required label="Selling unit" value={unit} onChange={e => setUnit(e.target.value)} slotProps={{
+                htmlInput: {
+                  maxLength: 60
+                }
+              }} /><Button type="submit" variant="contained" disabled={busy || !name.trim()}>Add medication</Button></Stack></Stack></Paper>
+      <TextField label="Search available medications" value={search} onChange={e => setSearch(e.target.value)} />
+      {items.filter(item => item.name.toLowerCase().includes(search.toLowerCase())).map(item => <Paper key={item._id} sx={{
+          p: 2
+        }}><Stack
+        direction="row"
+        sx={{
+          alignItems: "center",
+          gap: 2
+        }}><Typography sx={{
+              flex: 1
+            }}>{item.name}</Typography><Button color="error" disabled={busy} onClick={() => remove(item._id)}>{translate("Remove")}</Button></Stack><PriceEditor item={item} onSaved={() => {
+            setNotice("Price updated. Existing pharmacy bills are preserved.");
+            refresh();
+          }} onError={setError} /></Paper>)}
+      {!items.length && !error && <Alert severity="info">Your hospital's list is empty. Add medications above to make them available in the doctor's prescription dropdown.</Alert>}
+    </Stack></Container>
+  );
 }

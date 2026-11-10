@@ -160,48 +160,68 @@ export default function PatientQrScanner({
       }
     }
   }
-  return <Dialog open onClose={() => {
-    stop();
-    onClose();
-  }} fullWidth maxWidth="sm"><DialogTitle>Scan patient QR</DialogTitle><DialogContent>
-    <Typography fontWeight={700}>{appointment.patientName} · Token #{appointment.tokenNumber}</Typography><Typography variant="body2" color="text.secondary" mb={2}>{appointment.patientPublicId || "Registered patient"}</Typography>
-    {error && <Alert severity="error" sx={{
+  return (
+    <Dialog open onClose={() => {
+      stop();
+      onClose();
+    }} fullWidth maxWidth="sm"><DialogTitle>Scan patient QR</DialogTitle><DialogContent>
+      <Typography sx={{
+        fontWeight: 700
+      }}>{appointment.patientName} · Token #{appointment.tokenNumber}</Typography><Typography
+      variant="body2"
+      sx={{
+        color: "text.secondary",
         mb: 2
-      }}>{error}</Alert>}
-    {matched ? <Stack gap={2}><Alert severity="success">Patient matched to this appointment</Alert><Box><Typography variant="h6">{matched.patient.name}</Typography><Typography sx={{
+      }}>{appointment.patientPublicId || "Registered patient"}</Typography>
+      {error && <Alert severity="error" sx={{
+          mb: 2
+        }}>{error}</Alert>}
+      {matched ? <Stack sx={{
+        gap: 2
+      }}><Alert severity="success">Patient matched to this appointment</Alert><Box><Typography variant="h6">{matched.patient.name}</Typography><Typography sx={{
+              fontFamily: "monospace",
+              overflowWrap: "anywhere"
+            }}>{matched.patient.publicId}</Typography></Box><Typography><strong>Doctor:</strong> {matched.doctor.name}</Typography><Typography variant="body2" sx={{
             fontFamily: "monospace",
             overflowWrap: "anywhere"
-          }}>{matched.patient.publicId}</Typography></Box><Typography><strong>Doctor:</strong> {matched.doctor.name}</Typography><Typography variant="body2" sx={{
-          fontFamily: "monospace",
-          overflowWrap: "anywhere"
-        }}>Doctor ID: {matched.doctor.publicId}</Typography><Typography>{matched.doctor.hospitalName} · {matched.doctor.department}</Typography><Typography>Visit date: {matched.appointment.date} · Token #{matched.appointment.tokenNumber}</Typography><Alert severity="info">Only this doctor's associated records are automatically visible. Other medical history still needs the patient's OTP permission.</Alert></Stack> : <Stack gap={2}>
-      <Typography>Ask this patient to show their QR for this visit. The code must match this exact appointment and visit date.</Typography>
-      <Stack direction="row" gap={1} flexWrap="wrap"><Button variant="contained" disabled={busy || camera} onClick={startCamera}>{camera ? "Camera running" : busy ? "Reading…" : "Start camera"}</Button>{camera && <Button onClick={() => {
-            stop();
-            setCamera(false);
-            setBusy(false);
-          }}>Stop camera</Button>}<Button component="label" variant="outlined" disabled={busy}>Upload QR image<input type="file" hidden accept="image/png,image/jpeg" aria-label="Upload patient QR image" onChange={readImage} /></Button></Stack>
-      <Box sx={{
-          display: camera ? "block" : "none"
-        }}><video ref={video} muted playsInline style={{
-            width: "100%",
-            maxHeight: 280,
-            borderRadius: 12
-          }} aria-label="Patient QR camera preview" /></Box>
-      <Box component="form" onSubmit={e => {
-          e.preventDefault();
-          resolve(value);
-        }}><TextField label="Paste visit QR data (camera fallback)" fullWidth multiline minRows={2} value={value} onChange={e => setValue(e.target.value)} required slotProps={{
-            htmlInput: {
-              maxLength: 2048
-            }
-          }} /><Button type="submit" sx={{
-            mt: 1
-          }} disabled={busy || !value.trim()}>Verify pasted QR</Button></Box>
-      <Typography variant="body2" color="text.secondary">QR images are decoded on this device; only the signed card value is sent to Hospiq. Camera permission is requested only when you start it.</Typography>
-    </Stack>}
-  </DialogContent><DialogActions><Button onClick={() => {
-        stop();
-        onClose();
-      }}>{translate("Close")}</Button>{matched && <Button variant="contained" disabled={busy} onClick={startVisit}>{busy ? "Opening visit…" : ["pending", "skipped"].includes(matched.appointment.status) ? "Start visit & add medical record" : "Add medical record"}</Button>}</DialogActions></Dialog>;
+          }}>Doctor ID: {matched.doctor.publicId}</Typography><Typography>{matched.doctor.hospitalName} · {matched.doctor.department}</Typography><Typography>Visit date: {matched.appointment.date} · Token #{matched.appointment.tokenNumber}</Typography><Alert severity="info">Only this doctor's associated records are automatically visible. Other medical history still needs the patient's OTP permission.</Alert></Stack> : <Stack sx={{
+        gap: 2
+      }}>
+        <Typography>Ask this patient to show their QR for this visit. The code must match this exact appointment and visit date.</Typography>
+        <Stack
+          direction="row"
+          sx={{
+            gap: 1,
+            flexWrap: "wrap"
+          }}><Button variant="contained" disabled={busy || camera} onClick={startCamera}>{camera ? "Camera running" : busy ? "Reading…" : "Start camera"}</Button>{camera && <Button onClick={() => {
+              stop();
+              setCamera(false);
+              setBusy(false);
+            }}>Stop camera</Button>}<Button component="label" variant="outlined" disabled={busy}>Upload QR image<input type="file" hidden accept="image/png,image/jpeg" aria-label="Upload patient QR image" onChange={readImage} /></Button></Stack>
+        <Box sx={{
+            display: camera ? "block" : "none"
+          }}><video ref={video} muted playsInline style={{
+              width: "100%",
+              maxHeight: 280,
+              borderRadius: 12
+            }} aria-label="Patient QR camera preview" /></Box>
+        <Box component="form" onSubmit={e => {
+            e.preventDefault();
+            resolve(value);
+          }}><TextField label="Paste visit QR data (camera fallback)" fullWidth multiline minRows={2} value={value} onChange={e => setValue(e.target.value)} required slotProps={{
+              htmlInput: {
+                maxLength: 2048
+              }
+            }} /><Button type="submit" sx={{
+              mt: 1
+            }} disabled={busy || !value.trim()}>Verify pasted QR</Button></Box>
+        <Typography variant="body2" sx={{
+          color: "text.secondary"
+        }}>QR images are decoded on this device; only the signed card value is sent to Hospiq. Camera permission is requested only when you start it.</Typography>
+      </Stack>}
+    </DialogContent><DialogActions><Button onClick={() => {
+          stop();
+          onClose();
+        }}>{translate("Close")}</Button>{matched && <Button variant="contained" disabled={busy} onClick={startVisit}>{busy ? "Opening visit…" : ["pending", "skipped"].includes(matched.appointment.status) ? "Start visit & add medical record" : "Add medical record"}</Button>}</DialogActions></Dialog>
+  );
 }

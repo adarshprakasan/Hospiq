@@ -199,7 +199,7 @@ For Creekside testing, use `patient.creekside@example.invalid`, `staff.creekside
 
 | Command from repository root | Purpose |
 |---|---|
-| `npm --prefix server run dev` | API with nodemon |
+| `npm --prefix server run dev` | API with Node's built-in watch mode |
 | `npm --prefix server start` | API without auto-reload |
 | `npm --prefix client run dev` | Vite development server |
 | `npm --prefix client run build` | Build frontend into `client/dist` |

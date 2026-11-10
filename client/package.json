@@ -62,5 +62,8 @@
     "react",
     "express",
     "mongodb"
-  ]
+  ],
+  "overrides": {
+    "minimatch": "11.0.1"
+  }
 }

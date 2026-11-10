@@ -75,10 +75,16 @@ export default function BillingSettings({
     }
   }
   if (!hospitalId) return <Alert severity="info">Select a hospital to manage its banking and payment settings.</Alert>;
-  return <Paper component="form" onSubmit={save} sx={{
-    p: 3
-  }}><Stack gap={3}><Typography variant="h5">Banking & payment settings</Typography><Typography color="text.secondary">AED billing for this facility. Only hospital and Hospiq administrators can view or edit these settings.</Typography>{error && <Alert severity="error">{error}</Alert>}{notice && <Alert severity="success">{notice}</Alert>}{[["billingEmail", "Billing contact email"], ["taxReference", "Tax / business reference"], ["bankName", "Bank name"], ["accountHolder", "Account holder"]].map(([name, label]) => <TextField key={name} name={name} label={translate(label)} value={form[name] || ""} onChange={change} />)}<TextField name="iban" label={form.bankLast4 ? `IBAN (saved account ends ${form.bankLast4})` : "IBAN"} value={form.iban || ""} onChange={change} helperText="Leave blank to preserve the saved IBAN. Bank identifiers are encrypted." />{form.bankLast4 && <Button onClick={reveal}>Reveal saved IBAN (audited)</Button>}<TextField name="paymentInstructions" label="Payment instructions" multiline minRows={2} value={form.paymentInstructions || ""} onChange={change} /><FormControlLabel control={<Checkbox checked={Boolean(form.onlineEnabled)} onChange={e => setForm(previous => ({
-        ...previous,
-        onlineEnabled: e.target.checked
-      }))} />} label="Allow online checkout when platform Stripe is configured" /><Alert severity="info">Bank details saved here are administrative records. They do not change Stripe payouts. Online payments currently use the configured platform merchant; separate hospital settlement requires Stripe Connect onboarding.</Alert><Button type="submit" variant="contained" disabled={busy}>Save billing settings</Button></Stack></Paper>;
+  return (
+    <Paper component="form" onSubmit={save} sx={{
+      p: 3
+    }}><Stack sx={{
+      gap: 3
+    }}><Typography variant="h5">Banking & payment settings</Typography><Typography sx={{
+      color: "text.secondary"
+    }}>AED billing for this facility. Only hospital and Hospiq administrators can view or edit these settings.</Typography>{error && <Alert severity="error">{error}</Alert>}{notice && <Alert severity="success">{notice}</Alert>}{[["billingEmail", "Billing contact email"], ["taxReference", "Tax / business reference"], ["bankName", "Bank name"], ["accountHolder", "Account holder"]].map(([name, label]) => <TextField key={name} name={name} label={translate(label)} value={form[name] || ""} onChange={change} />)}<TextField name="iban" label={form.bankLast4 ? `IBAN (saved account ends ${form.bankLast4})` : "IBAN"} value={form.iban || ""} onChange={change} helperText="Leave blank to preserve the saved IBAN. Bank identifiers are encrypted." />{form.bankLast4 && <Button onClick={reveal}>Reveal saved IBAN (audited)</Button>}<TextField name="paymentInstructions" label="Payment instructions" multiline minRows={2} value={form.paymentInstructions || ""} onChange={change} /><FormControlLabel control={<Checkbox checked={Boolean(form.onlineEnabled)} onChange={e => setForm(previous => ({
+          ...previous,
+          onlineEnabled: e.target.checked
+        }))} />} label="Allow online checkout when platform Stripe is configured" /><Alert severity="info">Bank details saved here are administrative records. They do not change Stripe payouts. Online payments currently use the configured platform merchant; separate hospital settlement requires Stripe Connect onboarding.</Alert><Button type="submit" variant="contained" disabled={busy}>Save billing settings</Button></Stack></Paper>
+  );
 }

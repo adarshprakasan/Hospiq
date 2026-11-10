@@ -4,7 +4,7 @@
   "main": "server.js",
   "scripts": {
     "start": "node server.js",
-    "dev": "nodemon server.js",
+    "dev": "node --watch server.js",
     "test": "node --test",
     "check:upgrade": "node scripts/check-upgrade.js",
     "seed:demo": "node scripts/seed-demo.js",
@@ -50,9 +50,6 @@
     "nodemailer": "^10.3.1",
     "qrcode": "^1.5.4",
     "stripe": "^23.1.0"
-  },
-  "devDependencies": {
-    "nodemon": "^3.1.14"
   },
   "engines": {
     "node": ">=22"

@@ -53,29 +53,51 @@ export function SaveCareButton({ care, kind, id, name }) {
 
 export default function SavedCare() {
   const care = useSavedCare(true);
-  return <Stack gap={2}>
-    {care.error && <Alert severity="error" action={<Button onClick={care.retry}>Retry</Button>}>{care.error}</Alert>}
-    {!care.saved && !care.error && <CircularProgress aria-label="Loading saved care" />}
-    {care.saved && ['doctors', 'hospitals'].map(key => <Paper variant="outlined" sx={{ p: 3 }} key={key}>
-      <Stack gap={2}>
-        <Typography component="h2" variant="h6">{key === 'doctors' ? 'Saved doctors' : 'Saved hospitals and clinics'}</Typography>
-        {!care.saved[key].length && <Typography color="text.secondary">Your saved providers will appear here.</Typography>}
-        {care.saved[key].map(item => {
-          const doctor = key === 'doctors';
-          const path = doctor ? `/book/${item.hospitalId._id}?doctor=${item._id}` : `/book/${item._id}`;
-          return <Stack key={item._id} direction={{ xs: 'column', sm: 'row' }} gap={1} justifyContent="space-between">
-            <div>
-              <Typography fontWeight={700}>{item.name}</Typography>
-              <Typography color="text.secondary">{doctor ? [item.department, item.hospitalId.name].filter(Boolean).join(' · ') : item.address}</Typography>
-            </div>
-            <Stack direction="row" gap={1}>
-              <Button component={Link} to={path}>View availability</Button>
-              <Button disabled={care.busy} aria-label={`Remove ${item.name}`} onClick={() => care.toggle(doctor ? 'doctor' : 'hospital', item._id)}>Remove</Button>
-            </Stack>
-          </Stack>;
-        })}
-      </Stack>
-    </Paper>)}
-    <Button component={Link} to="/find-care" variant="outlined" sx={{ alignSelf: 'flex-start' }}>Browse care providers</Button>
-  </Stack>;
+  return (
+    <Stack sx={{
+      gap: 2
+    }}>
+      {care.error && <Alert severity="error" action={<Button onClick={care.retry}>Retry</Button>}>{care.error}</Alert>}
+      {!care.saved && !care.error && <CircularProgress aria-label="Loading saved care" />}
+      {care.saved && ['doctors', 'hospitals'].map(key => <Paper variant="outlined" sx={{ p: 3 }} key={key}>
+        <Stack sx={{
+          gap: 2
+        }}>
+          <Typography component="h2" variant="h6">{key === 'doctors' ? 'Saved doctors' : 'Saved hospitals and clinics'}</Typography>
+          {!care.saved[key].length && <Typography sx={{
+            color: "text.secondary"
+          }}>Your saved providers will appear here.</Typography>}
+          {care.saved[key].map(item => {
+            const doctor = key === 'doctors';
+            const path = doctor ? `/book/${item.hospitalId._id}?doctor=${item._id}` : `/book/${item._id}`;
+            return (
+              <Stack
+                key={item._id}
+                direction={{ xs: 'column', sm: 'row' }}
+                sx={{
+                  gap: 1,
+                  justifyContent: "space-between"
+                }}>
+                <div>
+                  <Typography sx={{
+                    fontWeight: 700
+                  }}>{item.name}</Typography>
+                  <Typography sx={{
+                    color: "text.secondary"
+                  }}>{doctor ? [item.department, item.hospitalId.name].filter(Boolean).join(' · ') : item.address}</Typography>
+                </div>
+                <Stack direction="row" sx={{
+                  gap: 1
+                }}>
+                  <Button component={Link} to={path}>View availability</Button>
+                  <Button disabled={care.busy} aria-label={`Remove ${item.name}`} onClick={() => care.toggle(doctor ? 'doctor' : 'hospital', item._id)}>Remove</Button>
+                </Stack>
+              </Stack>
+            );
+          })}
+        </Stack>
+      </Paper>)}
+      <Button component={Link} to="/find-care" variant="outlined" sx={{ alignSelf: 'flex-start' }}>Browse care providers</Button>
+    </Stack>
+  );
 }

@@ -20,3 +20,10 @@ test("bank identifiers are encrypted, hospital-bound and checksum validated", ()
     assert.throws(() => bank.iban("GB00WEST12345698765432"), { status: 400 });
   } finally { if (old === undefined) delete process.env.MEDICAL_FILE_KEY; else process.env.MEDICAL_FILE_KEY = old; }
 });
+
+test('department validation normalizes its unique key with promise-based middleware', async () => {
+  const Department = require('../models/Department');
+  const department = new Department({ name: '  Heart Care  ', hospitalId: '507f1f77bcf86cd799439011' });
+  await department.validate();
+  assert.equal(department.key, 'heart care');
+});

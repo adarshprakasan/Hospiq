@@ -5,6 +5,13 @@ updates:
     schedule:
       interval: weekly
     open-pull-requests-limit: 5
+    groups:
+      material-ui:
+        patterns: ['@mui/*']
+      vite:
+        patterns: ['vite', '@vitejs/*']
+      eslint:
+        patterns: ['eslint', '@eslint/*', 'eslint-plugin-*']
   - package-ecosystem: npm
     directory: /server
     schedule:

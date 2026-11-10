@@ -42,20 +42,32 @@ export default function NotificationsPage() {
     error,
     refresh
   } = usePolling('/notifications');
-  return <Container maxWidth="md" sx={{
-    py: 3
-  }}><Stack gap={2}><Typography variant="h4">{translate("Notifications")}</Typography><Typography color="text.secondary">Updates about your visits and pharmacy orders.</Typography>{preferenceError && <Alert severity="error">{preferenceError}</Alert>}{preferences && <Paper sx={{
-        p: 2
-      }}><FormControlLabel label={translate("Email me a reminder the day before a visit")} control={<Checkbox checked={preferences.emailReminders} onChange={e => preference(e.target.checked)} />} /><Typography variant="body2">{translate("Optional. You can turn reminders off at any time.")}</Typography>{deliveries.map(d => <Typography key={d._id} variant="caption" display="block">Reminder {new Date(d.createdAt).toLocaleDateString()}: {d.state} {d.sentAt ? `at ${new Date(d.sentAt).toLocaleTimeString()}` : ''}</Typography>)}</Paper>}{error && <Alert severity="warning" action={<Button onClick={refresh}>{translate("Retry")}</Button>}>{error}</Alert>}{loading ? <Skeleton height={160} /> : (data || []).map(n => <Paper key={n._id} sx={{
-        p: 3,
-        borderLeft: n.readAt ? undefined : '4px solid',
-        borderColor: 'primary.main'
-      }}><Typography fontWeight={n.readAt ? 400 : 700}>{n.title}</Typography><Typography variant="caption" display="block">{new Date(n.createdAt).toLocaleString()}</Typography><Button component={Link} to={n.path}>{translate("View details")}</Button>{!n.readAt && <Button onClick={async () => {
-          try {
-            await axios.post(`/notifications/${n._id}/read`);
-            refresh();
-          } catch {
-            refresh();
-          }
-        }}>{translate("Mark read")}</Button>}</Paper>)}{!loading && !data?.length && <Alert severity="info">{translate("No notifications yet.")}</Alert>}</Stack></Container>;
+  return (
+    <Container maxWidth="md" sx={{
+      py: 3
+    }}><Stack sx={{
+      gap: 2
+    }}><Typography variant="h4">{translate("Notifications")}</Typography><Typography sx={{
+      color: "text.secondary"
+    }}>Updates about your visits and pharmacy orders.</Typography>{preferenceError && <Alert severity="error">{preferenceError}</Alert>}{preferences && <Paper sx={{
+          p: 2
+        }}><FormControlLabel label={translate("Email me a reminder the day before a visit")} control={<Checkbox checked={preferences.emailReminders} onChange={e => preference(e.target.checked)} />} /><Typography variant="body2">{translate("Optional. You can turn reminders off at any time.")}</Typography>{deliveries.map(d => <Typography key={d._id} variant="caption" sx={{
+      display: "block"
+    }}>Reminder {new Date(d.createdAt).toLocaleDateString()}: {d.state} {d.sentAt ? `at ${new Date(d.sentAt).toLocaleTimeString()}` : ''}</Typography>)}</Paper>}{error && <Alert severity="warning" action={<Button onClick={refresh}>{translate("Retry")}</Button>}>{error}</Alert>}{loading ? <Skeleton height={160} /> : (data || []).map(n => <Paper key={n._id} sx={{
+          p: 3,
+          borderLeft: n.readAt ? undefined : '4px solid',
+          borderColor: 'primary.main'
+        }}><Typography sx={{
+      fontWeight: n.readAt ? 400 : 700
+    }}>{n.title}</Typography><Typography variant="caption" sx={{
+      display: "block"
+    }}>{new Date(n.createdAt).toLocaleString()}</Typography><Button component={Link} to={n.path}>{translate("View details")}</Button>{!n.readAt && <Button onClick={async () => {
+            try {
+              await axios.post(`/notifications/${n._id}/read`);
+              refresh();
+            } catch {
+              refresh();
+            }
+          }}>{translate("Mark read")}</Button>}</Paper>)}{!loading && !data?.length && <Alert severity="info">{translate("No notifications yet.")}</Alert>}</Stack></Container>
+  );
 }

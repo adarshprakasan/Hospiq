@@ -23,5 +23,9 @@ export default function PharmacySummary() {
       clearInterval(timer);
     };
   }, []);
-  return orders.length > 0 && <Stack gap={1} mb={3}>{orders.map(order => <Alert key={order._id} severity={order.status === "ready" ? "success" : "info"} action={<Button component={Link} to="/pharmacy">{order.status === "ready" && order.paymentStatus !== "paid" ? translate("Proceed to payment") : "View order"}</Button>}>Pharmacy order · {order.tokenLabel} · {order.hospitalName} · {order.status}</Alert>)}</Stack>;
+  return orders.length > 0 && <Stack
+    sx={{
+      gap: 1,
+      mb: 3
+    }}>{orders.map(order => <Alert key={order._id} severity={order.status === "ready" ? "success" : "info"} action={<Button component={Link} to="/pharmacy">{order.status === "ready" && order.paymentStatus !== "paid" ? translate("Proceed to payment") : "View order"}</Button>}>Pharmacy order · {order.tokenLabel} · {order.hospitalName} · {order.status}</Alert>)}</Stack>;
 }

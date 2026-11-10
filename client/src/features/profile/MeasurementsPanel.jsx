@@ -64,50 +64,76 @@ export default function MeasurementsPanel({ measurements, onChange }) {
     }
   }
 
-  return <Stack gap={2}>
-    <Paper variant="outlined" sx={{ p: 3 }}>
-      <Stack component="form" gap={2} onSubmit={event => { event.preventDefault(); save(); }}>
-        <Typography component="h2" variant="h6">Body measurements</Typography>
-        <Typography color="text.secondary">These measurements are private to your account. BMI is calculated from height and weight and is not a diagnosis.</Typography>
-        {error && <Alert severity="error">{error}</Alert>}
-        {notice && <Alert severity="info">{notice}</Alert>}
-        <Stack direction={{ xs: 'column', sm: 'row' }} gap={2}>
-          <TextField fullWidth label="Height (cm)" type="number" value={height} error={!validHeight} helperText={!validHeight ? 'Enter 20–300 cm' : undefined}
-            slotProps={{ htmlInput: { min: 20, max: 300, step: 'any' } }}
-            onChange={event => { setHeight(event.target.value); setSource('manual'); }} />
-          <TextField fullWidth label="Weight (kg)" type="number" value={weight} error={!validWeight} helperText={!validWeight ? 'Enter 0.1–700 kg' : undefined}
-            slotProps={{ htmlInput: { min: 0.1, max: 700, step: 'any' } }}
-            onChange={event => { setWeight(event.target.value); setSource('manual'); }} />
+  return (
+    <Stack sx={{
+      gap: 2
+    }}>
+      <Paper variant="outlined" sx={{ p: 3 }}>
+        <Stack component="form" onSubmit={event => { event.preventDefault(); save(); }} sx={{
+          gap: 2
+        }}>
+          <Typography component="h2" variant="h6">Body measurements</Typography>
+          <Typography sx={{
+            color: "text.secondary"
+          }}>These measurements are private to your account. BMI is calculated from height and weight and is not a diagnosis.</Typography>
+          {error && <Alert severity="error">{error}</Alert>}
+          {notice && <Alert severity="info">{notice}</Alert>}
+          <Stack direction={{ xs: 'column', sm: 'row' }} sx={{
+            gap: 2
+          }}>
+            <TextField fullWidth label="Height (cm)" type="number" value={height} error={!validHeight} helperText={!validHeight ? 'Enter 20–300 cm' : undefined}
+              slotProps={{ htmlInput: { min: 20, max: 300, step: 'any' } }}
+              onChange={event => { setHeight(event.target.value); setSource('manual'); }} />
+            <TextField fullWidth label="Weight (kg)" type="number" value={weight} error={!validWeight} helperText={!validWeight ? 'Enter 0.1–700 kg' : undefined}
+              slotProps={{ htmlInput: { min: 0.1, max: 700, step: 'any' } }}
+              onChange={event => { setWeight(event.target.value); setSource('manual'); }} />
+          </Stack>
+          <Typography aria-live="polite">{bmi ? `BMI: ${bmi} kg/m²` : 'Enter both measurements to calculate BMI.'}</Typography>
+          {measurements?.updatedAt && <Typography variant="body2" sx={{
+            color: "text.secondary"
+          }}>
+            Last saved {new Date(measurements.updatedAt).toLocaleDateString()} · {sourceLabels[measurements.source]}
+          </Typography>}
+          <Stack
+            direction="row"
+            sx={{
+              flexWrap: "wrap",
+              gap: 1
+            }}>
+            <Button type="submit" variant="contained" disabled={busy || !validHeight || !validWeight || (height === '' && weight === '')}>Save measurements</Button>
+            {measurements && <Button color="error" disabled={busy} onClick={() => save(true)}>Remove measurements</Button>}
+          </Stack>
         </Stack>
-        <Typography aria-live="polite">{bmi ? `BMI: ${bmi} kg/m²` : 'Enter both measurements to calculate BMI.'}</Typography>
-        {measurements?.updatedAt && <Typography variant="body2" color="text.secondary">
-          Last saved {new Date(measurements.updatedAt).toLocaleDateString()} · {sourceLabels[measurements.source]}
-        </Typography>}
-        <Stack direction="row" flexWrap="wrap" gap={1}>
-          <Button type="submit" variant="contained" disabled={busy || !validHeight || !validWeight || (height === '' && weight === '')}>Save measurements</Button>
-          {measurements && <Button color="error" disabled={busy} onClick={() => save(true)}>Remove measurements</Button>}
+      </Paper>
+      <Paper variant="outlined" sx={{ p: 3 }}>
+        <Stack sx={{
+          gap: 2
+        }}>
+          <Typography component="h2" variant="h6">Import from health apps</Typography>
+          <Alert severity="info">No health providers are connected. Apple Health and Android Health Connect live sync are not available in this web app. Importing a file does not grant ongoing access.</Alert>
+          <Typography>For Apple Health, export your health data, unzip the download and choose <strong>export.xml</strong>. For other providers, copy height and weight into the CSV template. This is a one-time import. The original file stays on your device.</Typography>
+          <Stack
+            direction="row"
+            sx={{
+              flexWrap: "wrap",
+              gap: 1
+            }}>
+            <Button variant="outlined" disabled={busy} onClick={() => fileInput.current.click()}>Choose Apple Health XML or CSV</Button>
+            <input ref={fileInput} hidden type="file" accept=".xml,.csv" onChange={readFile} />
+            <Button onClick={() => downloadText('hospiq-measurements.csv', 'height_cm,weight_kg\n,\n')}>Download CSV template</Button>
+          </Stack>
         </Stack>
-      </Stack>
-    </Paper>
-    <Paper variant="outlined" sx={{ p: 3 }}>
-      <Stack gap={2}>
-        <Typography component="h2" variant="h6">Import from health apps</Typography>
-        <Alert severity="info">No health providers are connected. Apple Health and Android Health Connect live sync are not available in this web app. Importing a file does not grant ongoing access.</Alert>
-        <Typography>For Apple Health, export your health data, unzip the download and choose <strong>export.xml</strong>. For other providers, copy height and weight into the CSV template. This is a one-time import. The original file stays on your device.</Typography>
-        <Stack direction="row" flexWrap="wrap" gap={1}>
-          <Button variant="outlined" disabled={busy} onClick={() => fileInput.current.click()}>Choose Apple Health XML or CSV</Button>
-          <input ref={fileInput} hidden type="file" accept=".xml,.csv" onChange={readFile} />
-          <Button onClick={() => downloadText('hospiq-measurements.csv', 'height_cm,weight_kg\n,\n')}>Download CSV template</Button>
-        </Stack>
-      </Stack>
-    </Paper>
-    <Paper variant="outlined" sx={{ p: 3 }}>
-      <Typography component="h2" variant="h6">Health information</Typography>
-      <Typography color="text.secondary">Keep allergies, conditions, medications and emergency contact details in your health summary.</Typography>
-      <Button component={Link} to="/health-summary">Open health summary</Button>
-      <Button component={Link} to="/medical-records">Medical records</Button>
-      <Button component={Link} to="/lab-tests">Lab tests</Button>
-      <Button component={Link} to="/pharmacy">Prescriptions and receipts</Button>
-    </Paper>
-  </Stack>;
+      </Paper>
+      <Paper variant="outlined" sx={{ p: 3 }}>
+        <Typography component="h2" variant="h6">Health information</Typography>
+        <Typography sx={{
+          color: "text.secondary"
+        }}>Keep allergies, conditions, medications and emergency contact details in your health summary.</Typography>
+        <Button component={Link} to="/health-summary">Open health summary</Button>
+        <Button component={Link} to="/medical-records">Medical records</Button>
+        <Button component={Link} to="/lab-tests">Lab tests</Button>
+        <Button component={Link} to="/pharmacy">Prescriptions and receipts</Button>
+      </Paper>
+    </Stack>
+  );
 }
