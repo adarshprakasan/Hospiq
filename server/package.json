@@ -39,7 +39,7 @@
   "license": "ISC",
   "description": "Hospital discovery, same-day appointment tokens, and care-team queue management.",
   "dependencies": {
-    "bcryptjs": "^3.0.2",
+    "bcryptjs": "^3.0.3",
     "cloudinary": "^2.11.0",
     "cors": "^2.8.5",
     "dotenv": "^18.0.9",
