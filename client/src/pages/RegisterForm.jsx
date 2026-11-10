@@ -74,10 +74,10 @@ export default function RegisterForm({
         gap: 2
       }}>{step === 1 ? <><TextField label="Full name" name="name" required autoComplete="name" value={form.name} onChange={change} /><TextField label={translate("Email")} name="email" type="email" autoComplete="email" required value={form.email} onChange={change} /><TextField label={translate("Password")} name="password" type="password" autoComplete="new-password" required slotProps={{
             htmlInput: {
-              minLength: 8,
+              minLength: 15,
               maxLength: 128
             }
-          }} helperText="Use at least 8 characters." value={form.password} onChange={change} />{professional && <TextField label="Role" select name="role" value={form.role} onChange={change}><MenuItem value="hospital_admin">Hospital / Clinic Admin</MenuItem></TextField>}</> : <><TextField label="Verification code" required value={otp} autoComplete="one-time-code" onChange={e => setOtp(e.target.value)} slotProps={{
+          }} helperText="Use at least 15 characters." value={form.password} onChange={change} />{professional && <TextField label="Role" select name="role" value={form.role} onChange={change}><MenuItem value="hospital_admin">Hospital / Clinic Admin</MenuItem></TextField>}</> : <><TextField label="Verification code" required value={otp} autoComplete="one-time-code" onChange={e => setOtp(e.target.value)} slotProps={{
             htmlInput: {
               inputMode: "numeric",
               pattern: "[0-9]{6}",

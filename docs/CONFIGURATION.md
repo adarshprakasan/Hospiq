@@ -41,7 +41,7 @@ Keep `localhost` and `127.0.0.1` usage consistent: they are different browser or
 
 | Setting | Current behavior |
 |---|---|
-| Login JWT lifetime | 7 days |
+| Login JWT lifetime | 1 hour |
 | OTP | Six digits, expires after 5 minutes, bcrypt stored, at most 5 verification attempts |
 | Registration proof | JWT valid for 10 minutes, also requires the source OTP row to exist when consumed |
 | Auth rate limit | 20 requests per IP per 15 minutes across login/send-OTP/verify/register; one process only |
@@ -70,3 +70,10 @@ node -e "console.log(require('node:crypto').randomBytes(32).toString('hex'))"
 Never publish the output or regenerate it when files already exist. Losing the key makes encrypted attachments unreadable. Database backups need the attachment volume and separately protected key backup. Multi-instance deployment requires a shared private persistent volume or a deliberate private object-storage implementation; local ephemeral disks are unsuitable.
 
 `LARGE_DEMO_PASSWORD` optionally sets the initial password for a new large dataset. Once `server/.demo-large-credentials.json` exists, that private manifest preserves the dataset's generated password; reruns never reset existing account passwords. This variable does not alter normal registration or OTP.
+
+## Production security settings
+
+- Set `REDIS_URL` on every API replica. Use a private, authenticated Redis service and `rediss://` where TLS is required. Replicas share `JWT_SECRET` so the same IP or account maps to the same bucket. Redis outages return 503 for protected rate-limited routes. Keep Redis capacity and eviction policy suitable for expiring counters.
+- Set `TRUSTED_PROXY_CIDRS` to the actual addresses or CIDRs of the proxies allowed to supply forwarding headers. Leave it unset when directly serving clients. Configure ingress to replace untrusted forwarding headers and prevent direct access around the trusted ingress.
+- Production password creation and changes use Have I Been Pwned's padded hash-range lookup. The plaintext password and complete hash stay in the API. If the service is unavailable, password writes return 503. Set `CHECK_BREACHED_PASSWORDS=true` to enable it during development.
+- Set `VITE_API_URL` at build time. The production HTML includes a CSP restricting scripts to the frontend origin and API connections to the configured origin. Set a CSP header with the same directives and `frame-ancestors 'none'` at the frontend host, since frame restrictions require an HTTP header.

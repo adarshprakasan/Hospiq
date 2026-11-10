@@ -3,6 +3,8 @@ const cors = require("cors");
 require("dotenv").config();
 
 const app = express();
+const trustedProxies = process.env.TRUSTED_PROXY_CIDRS?.split(",").map(value => value.trim()).filter(Boolean);
+if (trustedProxies?.length) app.set("trust proxy", trustedProxies);
 app.use((req, res, next) => {
   const requestId = require('node:crypto').randomUUID();
   req.requestId = requestId;
@@ -18,7 +20,6 @@ app.use((req, res, next) => {
 app.use(
   cors({
     origin: process.env.CLIENT_URL || "http://localhost:5173", // your frontend URL
-    credentials: true, // allow sending cookies/headers
   })
 );
 app.disable("x-powered-by");

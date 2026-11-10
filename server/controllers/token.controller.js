@@ -1,11 +1,13 @@
 const Doctor = require("../models/Doctor");
 const Token = require("../models/Token");
 const DoctorSchedule = require("../models/DoctorSchedule");
-const QueueCounter = require("../models/QueueCounter");
+const { writeNumbered, retainNumber } = require("../services/booking-capacity");
 const { ownsDoctor, sameId } = require("../middlewares/ownership");
 const { queueDate, queueClock } = require("../utils/queue");
 async function book(req, res, offline) {
-  const { doctorId, patientName } = req.body;
+  const { doctorId: rawDoctorId, patientName } = req.body;
+  if (!require("mongoose").isObjectIdOrHexString(rawDoctorId)) return res.status(400).json({ message: "Invalid doctor ID" });
+  const doctorId = rawDoctorId.toLowerCase();
   const doctor = await Doctor.findById(doctorId);
   if (!doctor || doctor.deletedAt) return res.status(404).json({ message: "Doctor not found" });
   if (offline && !await ownsDoctor(req.user, doctorId)) return res.status(403).json({ message: "Access denied" });
@@ -19,12 +21,13 @@ async function book(req, res, offline) {
   const day = schedule?.weeklySchedule.find(d => d.day === weekday);
   if (!day?.isAvailable || !day.startTime || !day.endTime || (schedule.closedDates || []).includes(date) || (date === queueDate() && clock.time >= day.endTime)) return res.status(400).json({ message: "The doctor has no remaining consultation hours on this date" });
   if (!offline && await Token.exists({ doctorId, patientId: req.user.id, date, status: { $in: ["pending", "called", "skipped"] } })) return res.status(409).json({ message: "You already have an active token for this doctor today" });
-  const key = `${doctorId}:${date}`;
-  // Initialize from existing data when upgrading an existing installation.
-  const last = await Token.findOne({ doctorId, date }).sort({ tokenNumber: -1 }).select("tokenNumber").lean();
-  try { await QueueCounter.updateOne({ _id: key }, { $setOnInsert: { sequence: last?.tokenNumber || 0 } }, { upsert: true }); } catch (err) { if (err.code !== 11000) throw err; }
-  const counter = await QueueCounter.findByIdAndUpdate(key, { $inc: { sequence: 1 } }, { new: true });
-  const token = await require('../services/booking-capacity').writeWithCapacity(doctorId, date, schedule.dailyCapacity, capacitySlot => Token.create({ capacitySlot, doctorId, patientId: offline ? null : req.user.id, patientName: offline ? patientName.trim() : req.user.name, departmentId: doctor.department, departmentRef: doctor.departmentId, isOffline: offline, tokenNumber: counter.sequence, date, checkedInAt: offline && date === queueDate() ? new Date() : undefined }));
+  const token = await writeNumbered(doctorId, date, schedule.dailyCapacity, ({ tokenNumber, capacitySlot }) => Token.create({
+    capacitySlot, doctorId, patientId: offline ? null : req.user.id,
+    patientName: offline ? patientName.trim() : req.user.name,
+    departmentId: doctor.department, departmentRef: doctor.departmentId,
+    isOffline: offline, tokenNumber, date,
+    checkedInAt: offline && date === queueDate() ? new Date() : undefined,
+  }));
   res.status(201).json({ message: "Token booked successfully", token });
 }
 exports.bookToken = (req, res) => book(req, res, false);
@@ -90,11 +93,16 @@ exports.reschedule = async (req, res) => {
   const schedule = await DoctorSchedule.findOne({ doctorId: token.doctorId });
   const hours = schedule?.weeklySchedule.find(d => d.day === day);
   if (!hours?.isAvailable || (schedule.closedDates || []).includes(date) || (date === queueDate() && queueClock().time >= hours.endTime)) return res.status(409).json({ message: 'No consultation hours on this date' });
-  const key = `${token.doctorId}:${date}`;
-  const last = await Token.findOne({ doctorId: token.doctorId, date }).sort({ tokenNumber: -1 }).select('tokenNumber').lean();
-  try { await QueueCounter.updateOne({ _id: key }, { $setOnInsert: { sequence: last?.tokenNumber || 0 } }, { upsert: true }); } catch (err) { if (err.code !== 11000) throw err; }
-  const counter = await QueueCounter.findByIdAndUpdate(key, { $inc: { sequence: 1 } }, { new: true });
-  const saved = await require('../services/booking-capacity').writeWithCapacity(token.doctorId, date, schedule.dailyCapacity, capacitySlot => Token.findOneAndUpdate({ _id: token._id, status: token.status, checkedInAt: null, updatedAt: token.updatedAt }, { $set: { date, tokenNumber: counter.sequence, status: 'pending', ...(capacitySlot === undefined ? {} : { capacitySlot }) }, ...(capacitySlot === undefined ? { $unset: { capacitySlot: 1 } } : {}) }, { new: true }));
+  if (Number.isInteger(token.tokenNumber)) await retainNumber(token);
+  const saved = await writeNumbered(token.doctorId, date, schedule.dailyCapacity, ({ tokenNumber, capacitySlot }) =>
+    Token.findOneAndUpdate(
+      { _id: token._id, status: token.status, checkedInAt: null, updatedAt: token.updatedAt },
+      {
+        $set: { date, tokenNumber, status: 'pending', ...(capacitySlot === undefined ? {} : { capacitySlot }) },
+        ...(capacitySlot === undefined ? { $unset: { capacitySlot: 1 } } : {}),
+      },
+      { returnDocument: 'after' }
+    ));
   if (!saved) return res.status(409).json({ message: 'Visit changed. Refresh and retry' });
   res.json(saved);
 };

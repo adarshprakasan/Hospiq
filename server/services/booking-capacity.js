@@ -1,3 +1,4 @@
+const QueueCounter = require('../models/QueueCounter');
 const Token = require('../models/Token');
 const { fail } = require('./record-access');
 const counted = ['pending', 'called', 'skipped', 'completed'];
@@ -21,4 +22,32 @@ async function writeWithCapacity(doctorId, date, capacity, write) {
   }
   throw fail(409, 'The schedule is busy. Refresh availability and retry');
 }
-module.exports = { writeWithCapacity };
+async function writeNumbered(doctorId, date, capacity, write) {
+  return writeWithCapacity(doctorId, date, capacity, async capacitySlot => {
+    for (let attempt = 0; attempt < 20; attempt++) {
+      const last = await Token.findOne({ doctorId, date }).sort({ tokenNumber: -1 }).select('tokenNumber').lean();
+      const counter = await QueueCounter.findById(`${doctorId}:${date}`).select('sequence').lean();
+      const tokenNumber = Math.max(last?.tokenNumber || 0, counter?.sequence || 0) + 1;
+      try {
+        return await write({ tokenNumber, capacitySlot });
+      } catch (err) {
+        if (err.code !== 11000 || !err.keyPattern?.tokenNumber) throw err;
+      }
+    }
+    throw fail(409, 'The queue is busy. Refresh availability and retry');
+  });
+}
+
+async function retainNumber(visit) {
+  // A moved visit must not make its original queue number available for reuse.
+  const key = `${visit.doctorId}:${visit.date}`;
+  const filter = { _id: key };
+  const update = { $max: { sequence: visit.tokenNumber } };
+  try { await QueueCounter.updateOne(filter, update, { upsert: true }); }
+  catch (err) {
+    if (err.code !== 11000) throw err;
+    await QueueCounter.updateOne(filter, update);
+  }
+}
+
+module.exports = { writeNumbered, retainNumber };

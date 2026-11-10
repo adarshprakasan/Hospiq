@@ -23,7 +23,7 @@ This is a reference to implemented Express routes, not a generated OpenAPI contr
 | POST | `/auth/login` | Public, rate-limited | `{email, password}`; returns `{token, user}` |
 | GET | `/auth/me` | Authenticated | Current user without password |
 
-Registration roles: patient (default) and hospital_admin. Employee and platform-admin public signup is rejected; administrators provision employees with temporary credentials. Password validation requires at least 8 characters and at most 72 UTF-8 bytes. The verification proof must match the email and the OTP row can be consumed once. OTP rows expire after five minutes; proof JWT lifetime is ten minutes but row consumption still depends on the row existing.
+Registration roles: patient (default) and hospital_admin. Employee and platform-admin public signup is rejected; administrators provision employees with temporary credentials. Password validation requires at least 15 characters and at most 72 UTF-8 bytes. The verification proof must match the email and the OTP row can be consumed once. OTP rows expire after five minutes; proof JWT lifetime is ten minutes but row consumption still depends on the row existing.
 
 Example login, using your own credentials:
 
@@ -231,7 +231,7 @@ See [Medical records](MEDICAL_RECORDS.md), [Pharmacy](PHARMACY.md) and [Operatio
 
 Common statuses are 400 invalid request/transition, 401 missing/invalid session or credentials, 403 denied ownership/role, 404 missing resource, 409 duplicate/stale change, 413 oversized body/file, 429 auth limit, 503 email unavailable, and 500 unexpected failure. Some legacy controller catch blocks return 500 for malformed IDs or validation failures; clients should not assume every validation failure is 400. Error normalization is a remaining improvement.
 
-Auth requests share a process-local 20-request/IP/15-minute limit. A `Retry-After` header accompanies 429. JSON bodies are limited to 100 KB; normal API requests are not all covered by this auth limiter. Management and medical-history lists now support bounded pagination; other legacy list endpoints retain their array format. Pharmacy handoff is idempotent per appointment and Stripe checkout attempts use provider idempotency keys.
+Authentication uses endpoint-specific IP, normalized email and signed-in account limits. In production the counters are shared in Redis and unavailable protection returns 503. A `Retry-After` header accompanies 429. JSON bodies are limited to 100 KB; normal API requests are not all covered by this auth limiter. Management and medical-history lists now support bounded pagination; other legacy list endpoints retain their array format. Pharmacy handoff is idempotent per appointment and Stripe checkout attempts use provider idempotency keys.
 
 
 ## Administration and credential lifecycle

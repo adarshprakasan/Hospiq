@@ -1,11 +1,12 @@
 const jwt = require("jsonwebtoken");
 const User = require("../models/User");
 const RevokedSession = require('../models/RevokedSession');
+const sessionLifetime = '1h';
 module.exports = async (req, res, next) => {
   const match = /^Bearer (\S+)$/.exec(req.get("Authorization") || "");
   if (!match) return res.status(401).json({ message: "Authentication required" });
   try {
-    const decoded = jwt.verify(match[1], process.env.JWT_SECRET, { algorithms: ['HS256'] });
+    const decoded = jwt.verify(match[1], process.env.JWT_SECRET, { algorithms: ['HS256'], maxAge: sessionLifetime });
     if (decoded.purpose || !decoded.id || !Number.isFinite(decoded.exp)) return res.status(401).json({ message: "A login session is required" });
     const digest = require('node:crypto').createHash('sha256').update(match[1]).digest('hex');
     if (await RevokedSession.exists({ _id: digest })) return res.status(401).json({ message: 'This session has been signed out' });
@@ -13,6 +14,13 @@ module.exports = async (req, res, next) => {
     const user = await User.findById(decoded.id).select("-password");
     if (!user) return res.status(401).json({ message: "Account no longer exists" });
     if (user.deletedAt || user.status === "suspended" || (decoded.sessionVersion || 0) !== (user.sessionVersion || 0)) return res.status(401).json({ message: "Account is inactive or this session has been revoked" });
+    if (user.role === "hospital_admin" && user.hospitalId) {
+      const hospital = await require("../models/Hospital").findById(user.hospitalId).select("approvalStatus");
+      req.hospitalApprovalStatus = hospital?.approvalStatus;
+      if (req.hospitalApprovalStatus === "pending" && !/^\/api\/(?:auth|profile\/me)(?:\/|\?|$)/i.test(req.originalUrl)) {
+        return res.status(403).json({ message: "Your hospital registration is awaiting platform approval", code: "HOSPITAL_APPROVAL_REQUIRED" });
+      }
+    }
     if (["doctor", "staff", "pharmacist"].includes(user.role) && user.hospitalId) {
       const hospital = await require("../models/Hospital").findById(user.hospitalId).select("status deletedAt approvalStatus");
       if (!hospital || hospital.deletedAt || hospital.status === "suspended" || hospital.approvalStatus === "pending") return res.status(403).json({ message: "Your hospital is inactive or awaiting approval" });

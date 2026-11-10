@@ -23,19 +23,19 @@ Include the affected commit, component, sanitized reproduction, impact, and a pr
 - Patient self-access, authored-record restrictions and consent checks. Private clinician drafts stay with the author.
 - Dependent and delegated patient context is reauthorized per request. Clinical access history records actor identity for supported reads.
 - Password recovery uses hashed, expiring tokens and revokes earlier sessions after reset.
-- Hashed passwords/OTPs, bounded OTP attempts, expiry checks, resend cooldown, and process-local auth throttling.
+- Hashed passwords/OTPs, bounded OTP attempts, expiry checks, resend cooldown, and Redis-backed IP, recipient and account throttling in production.
 - Request/file limits and unique booking indexes.
 
 These controls do not establish regulatory compliance or eliminate application risk.
 
 ## Known release blockers and limits
 
-- New medical attachments use encrypted private storage and authorized downloads. Historical Cloudinary URLs may still be public outside the app: responses quarantine them, but existing provider assets must be migrated/removed separately.
-- Browser tokens are stored in localStorage and expire after seven days. Password changes, resets and account actions use session versions to revoke existing tokens.
+- New medical attachments use encrypted private storage and authorized downloads. Historical Cloudinary URLs may still be public outside the app: responses quarantine them, but existing provider assets must be migrated or removed separately. Run `node server/scripts/audit-legacy-attachments.js` against the intended database for a count-only inventory. Check the corresponding Cloudinary account for orphaned assets and custom delivery domains. Preserve required records in private storage before revoking public delivery or deleting assets, invalidate cached copies, and verify anonymous access to old URLs fails. The database count cannot establish provider-side reachability.
+- Browser bearer tokens are stored in localStorage and accepted for up to one hour. The production frontend build restricts scripts to its own origin with CSP. Password changes, resets and account actions use session versions to revoke existing tokens.
 - Staff and doctors are provisioned through authorized administrators. Real-world credentials, facility affiliation and declared guardianship require verification outside the current workflow.
 - Doctor record creation now requires a called/completed token relationship. Other doctors' history needs a five-minute patient-email OTP for a revocable 30-minute read grant. Clinical credential/affiliation verification and richer consent scope still need work.
 - Full clinical access audit trails, retention policies, malware scanning, transaction/recovery behavior, and broad integration coverage remain incomplete. JPEG/PNG/PDF signature checks are not malware scanning. Attachment keys/storage backups and deployment permissions need operational management.
-- IP throttling is local to each process, and trusted-proxy behavior must be configured deliberately for hosting.
+- Production requires a shared Redis store. Configure trusted proxy CIDRs for your ingress before routing traffic. Local development can run with per-process throttling.
 - Demo credentials are generated for fictional testing; remove or isolate demo users before any real deployment.
 
 Track remediation in the [roadmap](docs/ROADMAP.md) and [project review](PROJECT_REVIEW.md). Do not advertise compliance certifications based on this repository.

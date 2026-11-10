@@ -25,6 +25,7 @@ export default function AdministrationPage() {
   useLocale();
   const user = storedUser(),
     platform = user?.role === "admin";
+  const [awaitingApproval, setAwaitingApproval] = useState(false);
   const [entity, setEntity] = useState("overview"),
     [hospitalId, setHospitalId] = useState(platform ? "" : user?.hospitalId || "");
   const [hospitals, setHospitals] = useState([]),
@@ -47,7 +48,7 @@ export default function AdministrationPage() {
     [revision, setRevision] = useState(0);
   const refresh = useCallback(() => setRevision(v => v + 1), []);
   useEffect(() => {
-    if (!platform && !hospitalId) return;
+    if (awaitingApproval || !platform && !hospitalId) return;
     let live = true;
     axios.get("/management/hospitals", {
       params: {
@@ -58,14 +59,16 @@ export default function AdministrationPage() {
     }) => {
       if (live) setHospitals(data.items);
     }).catch(err => {
-      if (live) setError(err.response?.data?.message || "Unable to load facilities");
+      if (!live) return;
+      if (err.response?.data?.code === "HOSPITAL_APPROVAL_REQUIRED") setAwaitingApproval(true);
+      else setError(err.response?.data?.message || "Unable to load facilities");
     });
     return () => {
       live = false;
     };
-  }, [platform, hospitalId, revision]);
+  }, [awaitingApproval, platform, hospitalId, revision]);
   useEffect(() => {
-    if (!platform && !hospitalId) return;
+    if (awaitingApproval || !platform && !hospitalId) return;
     let live = true;
     setLoading(true);
     setError("");
@@ -95,7 +98,7 @@ export default function AdministrationPage() {
     return () => {
       live = false;
     };
-  }, [entity, platform, hospitalId, page, limit, search, archived, revision]);
+  }, [awaitingApproval, entity, platform, hospitalId, page, limit, search, archived, revision]);
   function choose(next) {
     setEntity(next);
     setItems([]);
@@ -147,6 +150,7 @@ export default function AdministrationPage() {
   const canEdit = !["audit", "schedules", "pharmacy"].includes(entity) && !(entity === "patients" && !platform);
   const canCreate = ["users", "doctors", "departments", "medications", "appointments"].includes(entity) || platform && ["hospitals", "patients"].includes(entity);
   const canArchive = !["audit", "schedules"].includes(entity) && !(entity === "patients" && !platform);
+  if (awaitingApproval) return <Container sx={{ py: 4 }}><Alert severity="info" action={<Button onClick={() => window.location.reload()}>Check status</Button>}>Your registration is awaiting platform approval. Facility management opens after approval.</Alert></Container>;
   if (!platform && !hospitalId) return (
     <Container sx={{
       mt: 4

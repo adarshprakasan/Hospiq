@@ -76,7 +76,7 @@ async function createAccount(req, forcedRole) {
   const name = text(body.name, "name"), email = text(body.email, "email").toLowerCase();
   if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) throw fail(400, "Enter a valid email");
   const password = body.password || `Hq!${randomBytes(12).toString("base64url")}`;
-  if (typeof password !== "string" || password.length < 8 || Buffer.byteLength(password) > 72) throw fail(400, "Use a password of 8–72 UTF-8 bytes");
+  if (body.password) await require("../services/password-policy").checkPassword(password);
   let dept;
   if (role === "doctor") {
     dept = await Department.findOne({ _id: id(body.departmentId), hospitalId, deletedAt: null });
@@ -100,7 +100,7 @@ exports.create = async (req, res) => {
   let data;
   if (entity === "hospitals") {
     if (req.user.role !== "admin") throw fail(403, "Use hospital setup for your first hospital");
-    data = { name: text(body.name, "hospital name"), address: text(body.address, "address", 1000), type: body.type, location: body.location, contact: body.contact, email: body.email, website: body.website, approvalStatus: "approved" };
+    data = { name: text(body.name, "hospital name"), address: text(body.address, "address", 1000), type: body.type, location: body.location, ...require("../services/hospital-contact")(body), approvalStatus: "approved" };
   } else if (entity === "departments") {
     if (body.description !== undefined && (typeof body.description !== "string" || body.description.length > 1000)) throw fail(400, "Invalid department description");
     const row = await audit(req.user, entity, "create", null, hospitalId, ["name", "description"], async () => {
@@ -144,8 +144,12 @@ exports.update = async (req, res) => {
     if (data.status === "suspended" && row.role === "admin") throw fail(409, "Archive platform administrators through the protected account action");
     if (data.status === "suspended" && row.role === "doctor") await requireNoActiveVisits(row._id, true);
   } else if (entity === "hospitals") {
-    for (const key of ["name", "address", "type", "location", "contact", "email", "website", "status"]) if (body[key] !== undefined) data[key] = body[key];
-    if (req.user.role === "admin" && body.approvalStatus !== undefined) data.approvalStatus = body.approvalStatus;
+    for (const key of ["name", "address", "type", "location", "status"]) if (body[key] !== undefined) data[key] = body[key];
+    Object.assign(data, require("../services/hospital-contact")(body));
+    if (body.approvalStatus !== undefined) {
+      if (req.user.role !== "admin") throw fail(403, "Platform approval is required");
+      data.approvalStatus = body.approvalStatus;
+    }
   } else if (entity === "doctors") {
     for (const key of ["name", "specialization", "qualifications", "availabilityStatus"]) if (body[key] !== undefined) data[key] = body[key];
     if (body.departmentId) { const dept = await Department.findOne({ _id: id(body.departmentId), hospitalId, deletedAt: null }); if (!dept) throw fail(400, "Department is outside this hospital"); Object.assign(data, { departmentId: dept._id, department: dept.name }); }

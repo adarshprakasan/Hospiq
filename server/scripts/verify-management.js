@@ -107,9 +107,11 @@ async function run() {
   response = await request(root, `/management/users/${patient._id}/reset-password`, "POST"); check(response.status, 403);
   response = await request(manager, "/management/users", "POST", { name: "Forbidden cross-hospital staff", email: "forbidden-staff@example.invalid", role: "staff", hospitalId: String(h2._id) }); check(response.status, 403);
   const newManager = await user("hospital_admin", "new-facility-admin");
-  response = await request(newManager, "/hospitals/create", "POST", { name: "Fictional New Clinic", address: "Fictional", type: "Clinic", location: { lat: 0, lng: 0 }, departments: ["General"] }); check(response.status, 201); const registered = (await response.json()).hospital; check(registered.status, "active");
-  response = await request(null, "/hospitals"); check((await response.json()).some(hospital => hospital._id === registered._id), true);
-  response = await request(root, `/management/hospitals/${registered._id}`, "PATCH", { status: "active" }); check(response.status, 200);
+  response = await request(newManager, "/hospitals/create", "POST", { name: "Fictional New Clinic", address: "Fictional", type: "Clinic", location: { lat: 0, lng: 0 }, departments: ["General"] }); check(response.status, 201); const registered = (await response.json()).hospital; check(registered.status, "active"); check(registered.approvalStatus, "pending");
+  response = await request(null, "/hospitals"); check((await response.json()).some(hospital => hospital._id === registered._id), false);
+  response = await request(newManager, `/management/hospitals/${registered._id}`, "PATCH", { approvalStatus: "approved" }); check(response.status, 403);
+  response = await request(newManager, "/management/users", "POST", { role: "doctor" }); check(response.status, 403);
+  response = await request(root, `/management/hospitals/${registered._id}`, "PATCH", { approvalStatus: "approved" }); check(response.status, 200);
   response = await request(null, "/hospitals"); check((await response.json()).some(hospital => hospital._id === registered._id), true);
   response = await request(root, "/management/users", "POST", { name: "Second Hospiq Admin", email: "second-root@example.invalid", role: "admin" }); check(response.status, 201); const secondRoot = await response.json();
   response = await request(root, `/management/users/${secondRoot.user._id}`, "DELETE"); check(response.status, 200);

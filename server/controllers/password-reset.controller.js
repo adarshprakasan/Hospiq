@@ -1,3 +1,4 @@
+const { checkPassword, validPassword, passwordRule } = require("../services/password-policy");
 const crypto = require('node:crypto');
 const bcrypt = require('bcryptjs');
 const Reset = require('../models/PasswordReset');
@@ -5,7 +6,7 @@ const User = require('../models/User');
 const digest = value => crypto.createHash('sha256').update(value).digest('hex');
 exports.request = async (req, res) => {
   const email = typeof req.body.email === 'string' ? req.body.email.trim().toLowerCase() : '';
-  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return res.status(400).json({ message: 'Enter a valid email' });
+  if (email.length > 254 || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return res.status(400).json({ message: 'Enter a valid email' });
   const user = await User.findOne({ email, deletedAt: null, status: { $ne: 'suspended' } });
   if (user) {
     const recent = await Reset.exists({ userId: user._id, createdAt: { $gt: new Date(Date.now() - 60000) } });
@@ -24,9 +25,13 @@ exports.request = async (req, res) => {
 };
 exports.reset = async (req, res) => {
   const { token, password } = req.body;
-  if (typeof token !== 'string' || !/^[a-f0-9]{64}$/.test(token) || typeof password !== 'string' || password.length < 8 || Buffer.byteLength(password) > 72) return res.status(400).json({ message: 'Use a valid reset link and a password of at least 8 characters (maximum 72 UTF-8 bytes)' });
+  if (typeof token !== 'string' || !/^[a-f0-9]{64}$/.test(token)) return res.status(400).json({ message: 'Use a valid reset link' });
+  if (!validPassword(password)) return res.status(400).json({ message: passwordRule });
+  const filter = () => ({ hash: digest(token), expiresAt: { $gt: new Date() } });
+  if (!await Reset.exists(filter())) return res.status(400).json({ message: "This link has expired or was already used. Request another reset link" });
+  await checkPassword(password);
   const hashedPassword = await bcrypt.hash(password, 10);
-  const reset = await Reset.findOneAndDelete({ hash: digest(token), expiresAt: { $gt: new Date() } });
+  const reset = await Reset.findOneAndDelete(filter());
   if (!reset) return res.status(400).json({ message: 'This link has expired or was already used. Request another reset link' });
   const result = await User.updateOne({ _id: reset.userId, deletedAt: null, status: { $ne: 'suspended' } }, { $set: { password: hashedPassword, mustChangePassword: false }, $inc: { sessionVersion: 1 } });
   if (!result.modifiedCount) return res.status(400).json({ message: 'This account cannot be reset' });

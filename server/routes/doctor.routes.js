@@ -17,6 +17,7 @@ router.post(
   async (req, res) => {
     req.params.entity = "doctors";
     if (!req.body.departmentId && req.body.department && req.body.hospitalId) {
+      if (!require("mongoose").isObjectIdOrHexString(req.body.hospitalId)) return res.status(400).json({ message: "Invalid hospital ID" });
       const department = await require("../models/Department").findOne({ hospitalId: req.body.hospitalId, key: String(req.body.department).trim().toLowerCase(), deletedAt: null });
       req.body.departmentId = department?._id?.toString();
     }

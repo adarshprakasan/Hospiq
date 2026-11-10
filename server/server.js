@@ -4,6 +4,8 @@ require("dotenv").config();
 
 if (!process.env.MONGO_URI || !process.env.JWT_SECRET) throw new Error("MONGO_URI and JWT_SECRET are required");
 
+if (process.env.NODE_ENV === "production" && !process.env.REDIS_URL) throw new Error("REDIS_URL is required in production");
+
 const PORT = process.env.PORT || 5000;
 
 mongoose
@@ -17,7 +19,10 @@ mongoose
       if (stopping) return; stopping = true;
       const deadline = setTimeout(() => { server.closeAllConnections(); mongoose.disconnect().finally(() => { process.exitCode = 1; }); }, 15000);
       deadline.unref();
-      server.close(() => mongoose.disconnect().finally(() => clearTimeout(deadline)));
+      server.close(() => {
+        require("./middlewares/rateLimit").close();
+        mongoose.disconnect().finally(() => clearTimeout(deadline));
+      });
     };
     process.once('SIGTERM', shutdown); process.once('SIGINT', shutdown);
   })

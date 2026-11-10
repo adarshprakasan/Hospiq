@@ -24,7 +24,7 @@ Use **Save facility** in Find care and **Save doctor** on a booking page. **Save
 
 ## Hospital / Clinic Admin
 
-Register through /hospital-register and verify your email, or use a demo facility administrator. An unassigned admin sets up a facility; the Hospiq Admin retains platform-wide oversight and suspension controls. The /hospital-admin console manages the facility's staff, pharmacist and doctor accounts, temporary login credentials, departments, operational data and encrypted banking settings. See [Administration](ADMINISTRATION.md) for the complete guide.
+Register through /hospital-register and verify your email, or use a demo facility administrator. An unassigned facility admin submits a registration. A Hospiq platform admin must approve it before it appears in the directory or can provision employees. The /hospital-admin console manages the facility's staff, pharmacist and doctor accounts, temporary login credentials, departments, operational data and encrypted banking settings. See [Administration](ADMINISTRATION.md) for the complete guide.
 
 ## Hospital staff
 

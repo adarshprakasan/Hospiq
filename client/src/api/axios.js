@@ -9,7 +9,6 @@ const axiosInstance = axios.create({
   headers: {
     'Content-Type': 'application/json',
   },
-  withCredentials: true, // if using cookies — safe to keep on
 });
 
 // ✅ Automatically attach token from localStorage (if available)

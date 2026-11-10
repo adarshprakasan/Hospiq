@@ -40,19 +40,19 @@ export default function CreateHospital() {
         },
         departments: formData.type === "Clinic" && formData.departments ? [formData.departments.trim()] : []
       };
-      await axios.post("/hospitals/create", data, {
+      const { data: registration } = await axios.post("/hospitals/create", data, {
         headers: {
           Authorization: `Bearer ${token}`
         }
       });
       const profile = await axios.get("/auth/me");
       localStorage.setItem("user", JSON.stringify(profile.data));
-      alert("Hospital created successfully.");
+      alert(registration.message);
       setOpen(false);
       navigate("/hospital-admin");
     } catch (error) {
       console.error("Error creating hospital:", error);
-      alert("Failed to create hospital.");
+      alert(error.response?.data?.message || "Failed to create hospital.");
     }
   };
   return (

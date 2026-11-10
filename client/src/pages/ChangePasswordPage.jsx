@@ -42,7 +42,7 @@ export default function ChangePasswordPage() {
       gap: 3
     }}><Typography variant="h4">Choose your own password</Typography><Typography>Temporary credentials must be replaced before accessing your workspace. Changing your password signs out existing sessions.</Typography>{error && <Alert severity="error">{error}</Alert>}<TextField required label="Current / temporary password" type="password" autoComplete="current-password" value={currentPassword} onChange={e => setCurrent(e.target.value)} /><TextField required label={translate("New password")} type="password" autoComplete="new-password" value={password} onChange={e => setPassword(e.target.value)} slotProps={{
           htmlInput: {
-            minLength: 8,
+            minLength: 15,
             maxLength: 72
           }
         }} /><TextField required label="Confirm new password" type="password" autoComplete="new-password" value={confirmation} onChange={e => setConfirmation(e.target.value)} /><Button variant="contained" type="submit" disabled={busy}>Change password and sign out</Button></Stack></Container>

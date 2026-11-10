@@ -1,7 +1,7 @@
 const Hospital = require("../models/Hospital");
 const User = require("../models/User");
 
-exports.createHospital = async (req, res) => {
+exports.createHospital = async (req, res, next) => {
   try {
     const {
       name,
@@ -9,9 +9,6 @@ exports.createHospital = async (req, res) => {
       location,
       departments,
       type,
-      contact,
-      email,
-      website,
     } = req.body;
     if (departments !== undefined && (!Array.isArray(departments) || departments.length > 100 || departments.some(name => typeof name !== "string"))) return res.status(400).json({ message: "Departments must be a list of names" });
 
@@ -22,10 +19,8 @@ exports.createHospital = async (req, res) => {
       location,
       departments,
       type,
-      contact,
-      email,
-      website,
-      approvalStatus: "approved",
+      ...require("../services/hospital-contact")(req.body),
+      approvalStatus: "pending",
     });
 
     const userId = req.user.id;
@@ -37,9 +32,9 @@ exports.createHospital = async (req, res) => {
     });
     res
       .status(201)
-      .json({ message: "Hospital created", hospital: newHospital });
+      .json({ message: "Hospital registration is awaiting platform approval", hospital: newHospital });
   } catch (err) {
-    res.status(500).json({ message: "Service temporarily unavailable. Please try again" });
+    next(err);
   }
 };
 

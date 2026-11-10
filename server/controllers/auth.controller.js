@@ -1,12 +1,14 @@
+const { checkPassword, validPassword, passwordRule } = require("../services/password-policy");
 const User = require("../models/User");
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
+const dummyPasswordHash = bcrypt.hashSync(require("node:crypto").randomBytes(32).toString("hex"), 10);
 const OtpRequest = require("../models/OtpRequest");
 const sendOTPEmail = require("../utils/mailer");
 
 const generateOTP = () => require("node:crypto").randomInt(100000, 1000000).toString();
 const normalizeEmail = value => typeof value === "string" ? value.trim().toLowerCase() : "";
-const validEmail = value => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value);
+const validEmail = value => value.length <= 254 && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value);
 
 exports.sendOtp = async (req, res) => {
   const email = normalizeEmail(req.body.email);
@@ -35,15 +37,17 @@ exports.verifyOtp = async (req, res) => {
   res.json({ success: true, verificationToken });
 };
 
-exports.registerUser = async (req, res) => {
+exports.registerUser = async (req, res, next) => {
   try {
     const { name, password, role = "patient", verificationToken } = req.body;
     const email = normalizeEmail(req.body.email);
-    if (typeof name !== "string" || !name.trim() || !validEmail(email) || typeof password !== "string" || password.length < 8 || Buffer.byteLength(password, "utf8") > 72 || !["patient", "hospital_admin"].includes(role)) return res.status(400).json({ message: "Public signup supports patient and Hospital/Clinic Admin accounts. Employees are created by their hospital administrator" });
+    if (typeof name !== "string" || !name.trim() || !validEmail(email) || !["patient", "hospital_admin"].includes(role)) return res.status(400).json({ message: "Public signup supports patient and Hospital/Clinic Admin accounts. Employees are created by their hospital administrator" });
+    if (!validPassword(password)) return res.status(400).json({ message: passwordRule });
     let verified;
     try { verified = jwt.verify(verificationToken, process.env.JWT_SECRET); } catch { return res.status(400).json({ message: "Verify your email before registering" }); }
     if (verified.purpose !== "registration" || verified.email !== email) return res.status(400).json({ message: "Email verification does not match" });
-    const proof = await OtpRequest.findOneAndDelete({ _id: verified.otpId, email });
+    await checkPassword(password);
+    const proof = await OtpRequest.findOneAndDelete({ _id: verified.otpId, email, expiresAt: { $gt: new Date() } });
     if (!proof) return res.status(400).json({ message: "Verification already used; request another code" });
 
     const existing = await User.findOne({ email });
@@ -57,7 +61,7 @@ exports.registerUser = async (req, res) => {
 
     res.status(201).json({ message: "User registered successfully" });
   } catch (err) {
-    res.status(500).json({ message: "Service temporarily unavailable. Please try again" });
+    next(err);
   }
 };
 
@@ -68,18 +72,14 @@ exports.loginUser = async (req, res) => {
     if (!validEmail(email) || typeof password !== "string" || password.length > 128) return res.status(400).json({ message: "Provide valid credentials" });
 
     const user = await User.findOne({ email });
-    if (!user) return res.status(401).json({ message: "Invalid credentials" });
-    if (user.guardianId) return res.status(401).json({ message: 'Managed dependent profiles do not have a separate login' });
-    if (user.deletedAt || user.status === "suspended") return res.status(401).json({ message: "Account is inactive" });
-
-    const isMatch = await bcrypt.compare(password, user.password);
-    if (!isMatch)
+    const isMatch = await bcrypt.compare(password, user?.password || dummyPasswordHash);
+    if (!isMatch || !user || user.guardianId || user.deletedAt || user.status === "suspended")
       return res.status(401).json({ message: "Invalid credentials" });
 
     const token = jwt.sign(
       { id: user._id, role: user.role, sessionVersion: user.sessionVersion || 0 },
       process.env.JWT_SECRET,
-      { expiresIn: "7d", jwtid: require('node:crypto').randomUUID() }
+      { expiresIn: "1h", jwtid: require('node:crypto').randomUUID() }
     );
 
     res.json({
@@ -104,7 +104,7 @@ exports.getCurrentUser = async (req, res) => {
   try {
     const user = await User.findById(req.user.id).select("-password");
     if (!user) return res.status(404).json({ message: "User not found" });
-    res.json(user);
+    res.json({ ...user.toJSON(), hospitalApprovalStatus: req.hospitalApprovalStatus });
   } catch (err) {
     res.status(500).json({ message: "Server error" });
   }
@@ -112,9 +112,10 @@ exports.getCurrentUser = async (req, res) => {
 
 exports.changePassword = async (req, res) => {
   const { currentPassword, password } = req.body;
-  if (typeof currentPassword !== "string" || typeof password !== "string" || password.length < 8 || Buffer.byteLength(password) > 72 || password === currentPassword) return res.status(400).json({ message: "Choose a different password of at least 8 characters (maximum 72 UTF-8 bytes)" });
+  if (typeof currentPassword !== "string" || !validPassword(password) || password === currentPassword) return res.status(400).json({ message: `Choose a different password. ${passwordRule}` });
   const user = await User.findById(req.user.id);
   if (!await bcrypt.compare(currentPassword, user.password)) return res.status(400).json({ message: "Current password is incorrect" });
+  await checkPassword(password);
   const updated = await User.findOneAndUpdate({ _id: user._id, sessionVersion: user.sessionVersion || { $in: [0, null] } }, { $set: { password: await bcrypt.hash(password, 10), mustChangePassword: false }, $inc: { sessionVersion: 1 } }, { new: true });
   if (!updated) return res.status(409).json({ message: "Account changed. Sign in again" });
   res.json({ message: "Password changed. Sign in with your new password" });

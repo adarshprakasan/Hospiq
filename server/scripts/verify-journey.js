@@ -74,7 +74,10 @@ async function run() {
   check(Number.isInteger((await Token.findById(futureVisit._id)).capacitySlot), true);
   const winner = capped.findIndex(r => r.status === 201);
   check((await request(capacityPatients[winner], `/tokens/${capped[winner].body.token._id}`, 'DELETE')).status, 200);
-  check((await request(capacityPatients[winner], '/tokens/book', 'POST', { doctorId: doctor.id, date: future })).status, 201);
+  const replacement = await request(capacityPatients[winner], '/tokens/book', 'POST', { doctorId: doctor.id, date: future });
+  check(replacement.status, 201);
+  check(replacement.body.token.tokenNumber, capped[winner].body.token.tokenNumber + 1);
+  check((await request(patient, '/tokens/book', 'POST', { doctorId: { $ne: null }, date: future })).status, 400);
   await Schedule.updateOne({ doctorId: doctor._id }, { $set: { dailyCapacity: 0 } });
   const visit = await Token.create({ doctorId: doctor._id, patientId: patient._id, departmentId: 'General', date: today, tokenNumber: 1 });
   const visit2 = await Token.create({ doctorId: doctor._id, patientId: other._id, departmentId: 'General', date: today, tokenNumber: 2 });

@@ -1,9 +1,11 @@
 const path = require("node:path");
 require("dotenv").config({ path: path.resolve(__dirname, "../.env"), quiet: true });
+const { checkPassword } = require("../services/password-policy");
 const mongoose = require("mongoose"), bcrypt = require("bcryptjs");
 async function run() {
   const email = (process.env.HOSPIQ_ADMIN_EMAIL || "").trim().toLowerCase(), password = process.env.HOSPIQ_ADMIN_PASSWORD;
-  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email) || typeof password !== "string" || password.length < 12 || Buffer.byteLength(password) > 72) throw new Error("Provide HOSPIQ_ADMIN_EMAIL and a 12–72 byte HOSPIQ_ADMIN_PASSWORD in the environment");
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) throw new Error("Provide a valid HOSPIQ_ADMIN_EMAIL");
+  await checkPassword(password);
   await mongoose.connect(process.env.MONGO_URI, { serverSelectionTimeoutMS: 15000 });
   const User = require("../models/User");
   if (await User.exists({ role: "admin", deletedAt: null })) throw new Error("A Hospiq Admin already exists. Use its account console");
