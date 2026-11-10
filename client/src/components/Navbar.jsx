@@ -6,25 +6,17 @@ import HomeOutlined from '@mui/icons-material/HomeOutlined';
 import CalendarMonthOutlined from '@mui/icons-material/CalendarMonthOutlined';
 import FolderOutlined from '@mui/icons-material/FolderOutlined';
 import MoreHoriz from '@mui/icons-material/MoreHoriz';
-import { NavLink, useLocation, useNavigate } from 'react-router-dom';
+import { NavLink, useLocation } from 'react-router-dom';
+import SignOutMenuItem from './SignOutMenuItem';
 import { roleHome } from '../utils';
 export default function Navbar({
   user
 }) {
   useLocale();
-  const navigate = useNavigate(),
-    location = useLocation();
+  const location = useLocation();
   const [anchor, setAnchor] = useState(null);
   const patient = user?.role === 'patient';
   const links = patient ? [['/', translate("Home")], ['/my-tokens', translate("Appointments")], ['/medical-records', translate("Records")]] : user?.role === 'pharmacist' ? [['/pharmacy', translate("Pharmacy queue")], ['/medications', translate("Medications")], ['/inventory', translate("Stock & expiry")]] : user?.role === 'admin' ? [['/admin', 'Platform console']] : user?.role === 'hospital_admin' ? [['/hospital-admin', 'Hospital console'], ['/dashboard', translate("Queue")], ['/schedule', translate("Schedules")]] : [['/dashboard', user?.role === 'doctor' ? translate("Clinical workspace") : translate("Queue overview")], ...(user?.role === 'staff' ? [['/schedule', translate("Schedules")]] : [])];
-  const signOut = () => {
-    localStorage.removeItem('token');
-    localStorage.removeItem('user');
-    sessionStorage.removeItem('patientContext');
-    navigate('/login', {
-      replace: true
-    });
-  };
   return <><AppBar position="sticky" color="inherit" elevation={0} sx={{
       borderBottom: '1px solid',
       borderColor: 'divider'
@@ -49,7 +41,7 @@ export default function Navbar({
           }}>{translate(label)}</Button>)}</Box><LanguageSwitcher /><Button sx={{
           ml: 'auto'
         }} aria-controls={anchor ? 'account-menu' : undefined} aria-haspopup="true" aria-expanded={Boolean(anchor)} onClick={e => setAnchor(e.currentTarget)}>More / {user?.name?.split(' ')[0] || 'Account'}</Button></Toolbar></AppBar>
-    <Menu id="account-menu" anchorEl={anchor} open={Boolean(anchor)} onClose={() => setAnchor(null)}>{links.map(([to, label]) => <MenuItem key={to} component={NavLink} to={to} onClick={() => setAnchor(null)}>{translate(label)}</MenuItem>)}{patient && [['/find-care', translate("Find care")], ['/pharmacy', translate("Pharmacy and receipts")], ['/lab-tests', translate("Lab tests")], ['/family', translate("Family access")], ['/health-summary', translate("Health summary")], ['/notifications', translate("Notifications")]].map(([to, label]) => <MenuItem key={to} component={NavLink} to={to} onClick={() => setAnchor(null)}>{translate(label)}</MenuItem>)}<MenuItem component={NavLink} to="/profile" onClick={() => setAnchor(null)}>{translate("Profile")}</MenuItem><MenuItem onClick={signOut}>{translate("Sign out")}</MenuItem></Menu>
+    <Menu id="account-menu" anchorEl={anchor} open={Boolean(anchor)} onClose={() => setAnchor(null)}>{links.map(([to, label]) => <MenuItem key={to} component={NavLink} to={to} onClick={() => setAnchor(null)}>{translate(label)}</MenuItem>)}{patient && [['/find-care', translate("Find care")], ['/pharmacy', translate("Pharmacy and receipts")], ['/lab-tests', translate("Lab tests")], ['/family', translate("Family access")], ['/health-summary', translate("Health summary")], ['/notifications', translate("Notifications")]].map(([to, label]) => <MenuItem key={to} component={NavLink} to={to} onClick={() => setAnchor(null)}>{translate(label)}</MenuItem>)}<MenuItem component={NavLink} to="/profile" onClick={() => setAnchor(null)}>{translate("Profile")}</MenuItem><SignOutMenuItem label={translate("Sign out")} /></Menu>
     {patient && <Paper sx={{
       display: {
         xs: 'block',

@@ -33,7 +33,7 @@ exports.setSchedule = async (req, res) => {
     res.status(201).json({ message: "Schedule created", schedule });
   } catch (err) {
     console.error("Error saving schedule:", err);
-    res.status(500).json({ message: err.message });
+    res.status(500).json({ message: "Service temporarily unavailable. Please try again" });
   }
 };
 
@@ -47,6 +47,6 @@ exports.getSchedule = async (req, res) => {
 
     res.json(schedule);
   } catch (err) {
-    res.status(500).json({ message: err.message });
+    res.status(500).json({ message: "Service temporarily unavailable. Please try again" });
   }
 };

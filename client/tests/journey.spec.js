@@ -10,6 +10,7 @@ async function fixture(page, user = patient) {
   await page.route('http://127.0.0.1:5000/api/**', async route => {
     const pathname = new URL(route.request().url()).pathname.replace('/api', '');
     let data = [];
+    if (pathname === '/profile/me/saved') return route.fulfill({ json: { doctors: [], hospitals: [] } });
     if (pathname === '/family') data = { profiles: [], granted: [] };
     else if (pathname === '/auth/me') data = user;
     else if (pathname === '/hospitals') data = [hospital];
@@ -84,4 +85,26 @@ test('clinician opens patient history while keeping the queue visible', async ({
   await expect(page.getByRole('button', { name: '+ Record this visit' })).toBeVisible();
   await page.getByRole('button', { name: 'Back to queue' }).click();
   await expect(page.getByRole('navigation', { name: 'Clinical queue' })).not.toBeVisible();
+});
+
+test('patient reviews a health export and saves the calculated BMI inputs', async ({ page }) => {
+  await fixture(page);
+  let measurements = null;
+  await page.route('http://127.0.0.1:5000/api/profile/me', route => route.fulfill({
+    json: { ...patient, publicId: 'HQ-PATIENT', phone: '', preferredName: '', measurements },
+  }));
+  await page.route('http://127.0.0.1:5000/api/profile/me/measurements', route => {
+    measurements = route.request().postDataJSON();
+    return route.fulfill({ status: 204 });
+  });
+  await page.goto('/profile?section=health');
+  await page.locator('input[accept=".xml,.csv"]').setInputFiles({
+    name: 'export.xml', mimeType: 'application/xml',
+    buffer: Buffer.from('<HealthData><Record type="HKQuantityTypeIdentifierHeight" value="1.8" unit="m" endDate="2026-11-01 12:00:00 +0400"/><Record type="HKQuantityTypeIdentifierBodyMass" value="72" unit="kg" endDate="2026-11-01 12:00:00 +0400"/></HealthData>'),
+  });
+  await expect(page.getByText('BMI: 22.2 kg/m²')).toBeVisible();
+  expect(measurements).toBeNull();
+  await page.getByRole('button', { name: 'Save measurements' }).click();
+  await expect(page.getByText('Measurements saved.')).toBeVisible();
+  expect(measurements).toEqual({ heightCm: 180, weightKg: 72, source: 'apple-export' });
 });

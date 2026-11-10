@@ -26,7 +26,7 @@ async function run() {
   await new Promise(resolve => server.listen(0, "127.0.0.1", resolve));
   const base = `http://127.0.0.1:${server.address().port}/api`;
   async function request(actor, route, method = "GET", body) {
-    const headers = actor ? { Authorization: `Bearer ${actor.token || jwt.sign({ id: actor._id, sessionVersion: actor.sessionVersion || 0 }, process.env.JWT_SECRET)}` } : {};
+    const headers = actor ? { Authorization: `Bearer ${actor.token || jwt.sign({ id: actor._id, sessionVersion: actor.sessionVersion || 0 }, process.env.JWT_SECRET, { expiresIn: '1h' })}` } : {};
     if (body) headers["Content-Type"] = "application/json";
     const result = await fetch(base + route, { method, headers, body: body ? JSON.stringify(body) : undefined });
     if (result.status >= 500) console.error("Disposable fixture request failed:", method, route);

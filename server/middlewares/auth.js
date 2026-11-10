@@ -1,11 +1,15 @@
 const jwt = require("jsonwebtoken");
 const User = require("../models/User");
+const RevokedSession = require('../models/RevokedSession');
 module.exports = async (req, res, next) => {
   const match = /^Bearer (\S+)$/.exec(req.get("Authorization") || "");
   if (!match) return res.status(401).json({ message: "Authentication required" });
   try {
-    const decoded = jwt.verify(match[1], process.env.JWT_SECRET);
-    if (decoded.purpose || !decoded.id) return res.status(401).json({ message: "A login session is required" });
+    const decoded = jwt.verify(match[1], process.env.JWT_SECRET, { algorithms: ['HS256'] });
+    if (decoded.purpose || !decoded.id || !Number.isFinite(decoded.exp)) return res.status(401).json({ message: "A login session is required" });
+    const digest = require('node:crypto').createHash('sha256').update(match[1]).digest('hex');
+    if (await RevokedSession.exists({ _id: digest })) return res.status(401).json({ message: 'This session has been signed out' });
+    req.session = { digest, expiresAt: new Date(decoded.exp * 1000) };
     const user = await User.findById(decoded.id).select("-password");
     if (!user) return res.status(401).json({ message: "Account no longer exists" });
     if (user.deletedAt || user.status === "suspended" || (decoded.sessionVersion || 0) !== (user.sessionVersion || 0)) return res.status(401).json({ message: "Account is inactive or this session has been revoked" });
@@ -13,11 +17,12 @@ module.exports = async (req, res, next) => {
       const hospital = await require("../models/Hospital").findById(user.hospitalId).select("status deletedAt approvalStatus");
       if (!hospital || hospital.deletedAt || hospital.status === "suspended" || hospital.approvalStatus === "pending") return res.status(403).json({ message: "Your hospital is inactive or awaiting approval" });
     }
-    if (user.mustChangePassword && !["/api/auth/me", "/api/auth/change-password"].includes(req.originalUrl.split("?")[0])) return res.status(403).json({ message: "Change your temporary password before using the app", code: "PASSWORD_CHANGE_REQUIRED" });
+    if (user.mustChangePassword && !["/api/auth/me", "/api/auth/change-password", "/api/auth/sign-out", "/api/auth/sign-out-all"].includes(req.originalUrl.split("?")[0])) return res.status(403).json({ message: "Change your temporary password before using the app", code: "PASSWORD_CHANGE_REQUIRED" });
     req.account = user;
     req.user = user;
     const selected = req.get('X-Patient-Id');
-    if (selected && user.role === 'patient' && !req.originalUrl.startsWith('/api/auth/') && !req.originalUrl.startsWith('/api/family')) {
+    const accountProfile = /^\/api\/profile\/me(?:\/|\?|$)/.test(req.originalUrl);
+    if (selected && user.role === 'patient' && !accountProfile && !req.originalUrl.startsWith('/api/auth/') && !req.originalUrl.startsWith('/api/family')) {
       if (!require('mongoose').isObjectIdOrHexString(selected)) return res.status(400).json({ message: 'Invalid patient context' });
       const patient = await User.findOne({ _id: selected, role: 'patient', deletedAt: null, status: { $ne: 'suspended' } }).select('-password');
       const today = require('../utils/queue').queueDate();

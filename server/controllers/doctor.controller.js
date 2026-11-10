@@ -1,15 +1,19 @@
 const { ownsHospital, ownsDoctor } = require("../middlewares/ownership");
 const Doctor = require("../models/Doctor");
 const Hospital = require("../models/Hospital");
+const validId = require('mongoose').isObjectIdOrHexString;
+const visibleHospital = { deletedAt: null, status: { $ne: 'suspended' }, approvalStatus: { $ne: 'pending' } };
 
 // GET /api/doctors/hospital/:hospitalId
 exports.getDoctorsByHospital = async (req, res) => {
   try {
     const { hospitalId } = req.params;
+    if (!validId(hospitalId)) return res.status(400).json({ message: 'Invalid hospital' });
+    if (!await Hospital.exists({ _id: hospitalId, ...visibleHospital })) return res.status(404).json({ message: 'Hospital not found' });
     const doctors = await Doctor.find({ hospitalId, deletedAt: null });
     res.json(doctors);
   } catch (err) {
-    res.status(500).json({ message: err.message });
+    res.status(500).json({ message: "Service temporarily unavailable. Please try again" });
   }
 };
 
@@ -27,7 +31,7 @@ exports.updateAvailability = async (req, res) => {
     );
     res.json(doctor);
   } catch (err) {
-    res.status(500).json({ message: err.message });
+    res.status(500).json({ message: "Service temporarily unavailable. Please try again" });
   }
 };
 
@@ -36,8 +40,9 @@ exports.getDoctorsByHospitalAndDepartment = async (req, res) => {
   try {
     const { hospitalId, department } = req.query;
 
-    if (!hospitalId || !department)
+    if (!validId(hospitalId) || typeof department !== 'string' || !department.trim() || department.length > 200)
       return res.status(400).json({ message: "Missing query parameters" });
+    if (!await Hospital.exists({ _id: hospitalId, ...visibleHospital })) return res.status(404).json({ message: 'Hospital not found' });
 
     const doctors = await Doctor.find({
       hospitalId,
@@ -46,7 +51,7 @@ exports.getDoctorsByHospitalAndDepartment = async (req, res) => {
     });
     res.json(doctors);
   } catch (err) {
-    res.status(500).json({ message: err.message });
+    res.status(500).json({ message: "Service temporarily unavailable. Please try again" });
   }
 };
 
@@ -54,15 +59,16 @@ exports.getDoctorsByHospitalAndDepartment = async (req, res) => {
 exports.getDoctorById = async (req, res) => {
   try {
     const { id } = req.params;
+    if (!validId(id)) return res.status(400).json({ message: 'Invalid doctor' });
     const doctor = await Doctor.findOne({ _id: id, deletedAt: null });
     
-    if (!doctor) {
+    if (!doctor || !await Hospital.exists({ _id: doctor.hospitalId, ...visibleHospital })) {
       return res.status(404).json({ message: "Doctor not found" });
     }
     
     res.json(doctor);
   } catch (err) {
-    res.status(500).json({ message: err.message });
+    res.status(500).json({ message: "Service temporarily unavailable. Please try again" });
   }
 };
 

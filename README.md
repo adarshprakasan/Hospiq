@@ -38,6 +38,8 @@ Clinical records and lab files remain patient-controlled. Administrators receive
 
 ### Discovery, appointments and family access
 
+- **My profile** brings together editable account details, a private photo, height and weight with calculated BMI, reviewed health data imports, saved providers, privacy controls and support. See the [profile guide](docs/USER_GUIDE.md#my-profile).
+
 - Browse providers before signing in, search by facility, address or department, and keep your doctor selection through login. Book or reschedule a queue visit within 90 days. Schedules support closure dates and daily capacity.
 - Open the visit QR, directions and arrival instructions on the patient home or appointments page. After check-in, eligible visits display people ahead and a wait estimate when sufficient consultation data exists.
 - Manage dependent profiles and temporary adult delegation in **Family access**. Use **Health summary** for patient-reported information and clinical access history.

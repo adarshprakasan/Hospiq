@@ -195,6 +195,20 @@ The `pharmacist` role is provisioned and assigned by Hospital/Clinic Admins; que
 | `GET /notifications/preferences`, `PUT /notifications/preferences` | Read or update `{ emailReminders }` |
 | `GET /notifications/deliveries` | Recent reminder delivery attempts |
 
+## Account profile
+
+These routes require a signed-in account and ignore the selected family context. Measurements and saved care are patient-only.
+
+| Method and path | Use |
+|---|---|
+| `GET /profile/me` | Read account details, private photo, measurements with calculated BMI, and saved provider IDs |
+| `PUT /profile/me` | Update `name`, `preferredName` and `phone` |
+| `PUT /profile/me/photo` | Set `photo` to a small JPEG/PNG data URL or `null` to remove it |
+| `PUT /profile/me/measurements` | Set `heightCm`, `weightKg` and `source` of `manual`, `apple-export` or `csv`. Both values can be `null` to remove saved measurements |
+| `GET /profile/me/saved` | List saved active facilities and doctors |
+| `PUT /profile/me/saved/:kind/:id`, `DELETE /profile/me/saved/:kind/:id` | Save or remove a `hospital` or `doctor` |
+| `POST /auth/sign-out-all` | Revoke existing login tokens for the signed-in account |
+
 ## Clinical drafts, lab orders and inventory
 
 | Method and path | Use |
