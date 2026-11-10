@@ -1,8 +1,8 @@
 blank_issues_enabled: true
 contact_links:
   - name: Setup and troubleshooting
-    url: https://github.com/adarshprakasan/Hospiq/blob/master/docs/SETUP.md
+    url: https://github.com/adarshprakasan/Hospiq/blob/main/docs/SETUP.md
     about: Check setup, configuration, and common errors first.
   - name: Security reporting policy
-    url: https://github.com/adarshprakasan/Hospiq/blob/master/SECURITY.md
+    url: https://github.com/adarshprakasan/Hospiq/blob/main/SECURITY.md
     about: Request a private reporting channel before disclosing vulnerabilities.

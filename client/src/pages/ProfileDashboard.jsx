@@ -15,7 +15,7 @@ import { signOut } from '../utils/session';
 import { roleLabel } from '../utils';
 
 const patientSections = [['health', 'Health & measurements'], ['saved', 'Saved care']];
-const supportUrl = 'https://github.com/adarshprakasan/Hospiq/blob/master/SUPPORT.md';
+const supportUrl = 'https://github.com/adarshprakasan/Hospiq/blob/main/SUPPORT.md';
 
 function ProfileLinks({ title, description, links }) {
   return <Paper variant="outlined" sx={{ p: 3 }}>
@@ -145,7 +145,7 @@ export default function ProfileDashboard() {
             <Typography component="h2" variant="h6">Help</Typography>
             <Typography>Contact your care facility for questions about appointments, care or prescription collection. For app support, follow the support guide and keep health information out of public issues.</Typography>
             <Button href={supportUrl} target="_blank" rel="noreferrer">Support guide</Button>
-            <Button href="https://github.com/adarshprakasan/Hospiq/blob/master/docs/USER_GUIDE.md" target="_blank" rel="noreferrer">User guide</Button>
+            <Button href="https://github.com/adarshprakasan/Hospiq/blob/main/docs/USER_GUIDE.md" target="_blank" rel="noreferrer">User guide</Button>
           </Paper>
           <Paper variant="outlined" sx={{ p: 3 }}>
             <Typography component="h2" variant="h6">About Hospiq</Typography>

@@ -19,6 +19,6 @@ const departmentSchema = new mongoose.Schema(
   { timestamps: true }
 );
 
-departmentSchema.pre("validate", function(next) { this.key = this.name?.trim().toLowerCase(); next(); });
+departmentSchema.pre("validate", function() { this.key = this.name?.trim().toLowerCase(); });
 departmentSchema.index({ hospitalId: 1, key: 1 }, { unique: true, partialFilterExpression: { deletedAt: null, key: { $type: "string" } } });
 module.exports = mongoose.model("Department", departmentSchema);
