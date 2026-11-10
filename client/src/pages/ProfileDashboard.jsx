@@ -6,6 +6,7 @@ import {
 } from '@mui/material';
 import axios from '../api/axios';
 import AccountDetails from '../features/profile/AccountDetails';
+import PersonalDetails from '../features/profile/PersonalDetails';
 import MeasurementsPanel from '../features/profile/MeasurementsPanel';
 import SavedCare from '../features/profile/SavedCare';
 import { LanguageSwitcher } from '../i18n';
@@ -50,14 +51,14 @@ export default function ProfileDashboard() {
     setProfile(data);
   }
 
-  async function signOutEverywhere() {
+  async function confirmSignOut() {
     setBusy(true);
     setLogoutError('');
     try {
-      await axios.post('/auth/sign-out-all');
+      await axios.post(logout === 'all' ? '/auth/sign-out-all' : '/auth/sign-out');
       signOut();
     } catch (err) {
-      setLogoutError(err.response?.data?.message || 'Could not sign out all sessions. Please retry.');
+      setLogoutError(err.response?.data?.message || 'Could not revoke your session. Please retry.');
     } finally {
       setBusy(false);
     }
@@ -104,6 +105,7 @@ export default function ProfileDashboard() {
       <Stack id="profile-panel" role="tabpanel" aria-labelledby={`profile-tab-${section}`} gap={2}>
         {section === 'account' && <>
           <AccountDetails profile={profile} onChange={refresh} />
+          <PersonalDetails profile={profile} onChange={refresh} />
           <Paper variant="outlined" sx={{ p: 3 }}>
             <Typography component="h2" variant="h6">Preferences</Typography>
             <Stack direction="row" flexWrap="wrap" gap={1} alignItems="center">
@@ -161,7 +163,7 @@ export default function ProfileDashboard() {
       </DialogContent>
       <DialogActions>
         <Button disabled={busy} onClick={() => setLogout(null)}>Cancel</Button>
-        <Button color="error" disabled={busy} onClick={logout === 'all' ? signOutEverywhere : signOut}>Sign out</Button>
+        <Button color="error" disabled={busy} onClick={confirmSignOut}>Sign out</Button>
       </DialogActions>
     </Dialog>
   </Container>;

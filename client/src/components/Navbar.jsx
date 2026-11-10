@@ -7,8 +7,8 @@ import CalendarMonthOutlined from '@mui/icons-material/CalendarMonthOutlined';
 import FolderOutlined from '@mui/icons-material/FolderOutlined';
 import MoreHoriz from '@mui/icons-material/MoreHoriz';
 import { NavLink, useLocation } from 'react-router-dom';
+import SignOutMenuItem from './SignOutMenuItem';
 import { roleHome } from '../utils';
-import { signOut } from '../utils/session';
 export default function Navbar({
   user
 }) {
@@ -41,7 +41,7 @@ export default function Navbar({
           }}>{translate(label)}</Button>)}</Box><LanguageSwitcher /><Button sx={{
           ml: 'auto'
         }} aria-controls={anchor ? 'account-menu' : undefined} aria-haspopup="true" aria-expanded={Boolean(anchor)} onClick={e => setAnchor(e.currentTarget)}>More / {user?.name?.split(' ')[0] || 'Account'}</Button></Toolbar></AppBar>
-    <Menu id="account-menu" anchorEl={anchor} open={Boolean(anchor)} onClose={() => setAnchor(null)}>{links.map(([to, label]) => <MenuItem key={to} component={NavLink} to={to} onClick={() => setAnchor(null)}>{translate(label)}</MenuItem>)}{patient && [['/find-care', translate("Find care")], ['/pharmacy', translate("Pharmacy and receipts")], ['/lab-tests', translate("Lab tests")], ['/family', translate("Family access")], ['/health-summary', translate("Health summary")], ['/notifications', translate("Notifications")]].map(([to, label]) => <MenuItem key={to} component={NavLink} to={to} onClick={() => setAnchor(null)}>{translate(label)}</MenuItem>)}<MenuItem component={NavLink} to="/profile" onClick={() => setAnchor(null)}>{translate("Profile")}</MenuItem><MenuItem onClick={signOut}>{translate("Sign out")}</MenuItem></Menu>
+    <Menu id="account-menu" anchorEl={anchor} open={Boolean(anchor)} onClose={() => setAnchor(null)}>{links.map(([to, label]) => <MenuItem key={to} component={NavLink} to={to} onClick={() => setAnchor(null)}>{translate(label)}</MenuItem>)}{patient && [['/find-care', translate("Find care")], ['/pharmacy', translate("Pharmacy and receipts")], ['/lab-tests', translate("Lab tests")], ['/family', translate("Family access")], ['/health-summary', translate("Health summary")], ['/notifications', translate("Notifications")]].map(([to, label]) => <MenuItem key={to} component={NavLink} to={to} onClick={() => setAnchor(null)}>{translate(label)}</MenuItem>)}<MenuItem component={NavLink} to="/profile" onClick={() => setAnchor(null)}>{translate("Profile")}</MenuItem><SignOutMenuItem label={translate("Sign out")} /></Menu>
     {patient && <Paper sx={{
       display: {
         xs: 'block',

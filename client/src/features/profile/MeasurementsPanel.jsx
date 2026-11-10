@@ -53,8 +53,8 @@ export default function MeasurementsPanel({ measurements, onChange }) {
     setBusy(true);
     try {
       const values = await importMeasurements(file);
-      if (values.heightCm !== undefined) setHeight(String(values.heightCm));
-      if (values.weightKg !== undefined) setWeight(String(values.weightKg));
+      setHeight(values.heightCm === undefined ? '' : String(values.heightCm));
+      setWeight(values.weightKg === undefined ? '' : String(values.weightKg));
       setSource(values.source);
       setNotice('Review the imported values, then save to add them to your profile.');
     } catch (err) {
@@ -92,6 +92,7 @@ export default function MeasurementsPanel({ measurements, onChange }) {
     <Paper variant="outlined" sx={{ p: 3 }}>
       <Stack gap={2}>
         <Typography component="h2" variant="h6">Import from health apps</Typography>
+        <Alert severity="info">No health providers are connected. Apple Health and Android Health Connect live sync are not available in this web app. Importing a file does not grant ongoing access.</Alert>
         <Typography>For Apple Health, export your health data, unzip the download and choose <strong>export.xml</strong>. For other providers, copy height and weight into the CSV template. This is a one-time import. The original file stays on your device.</Typography>
         <Stack direction="row" flexWrap="wrap" gap={1}>
           <Button variant="outlined" disabled={busy} onClick={() => fileInput.current.click()}>Choose Apple Health XML or CSV</Button>
@@ -106,6 +107,7 @@ export default function MeasurementsPanel({ measurements, onChange }) {
       <Button component={Link} to="/health-summary">Open health summary</Button>
       <Button component={Link} to="/medical-records">Medical records</Button>
       <Button component={Link} to="/lab-tests">Lab tests</Button>
+      <Button component={Link} to="/pharmacy">Prescriptions and receipts</Button>
     </Paper>
   </Stack>;
 }

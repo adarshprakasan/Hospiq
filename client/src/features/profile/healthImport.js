@@ -22,12 +22,13 @@ function readAppleExport(text) {
 }
 
 export async function importMeasurements(file) {
+  if (!/\.(xml|csv)$/i.test(file.name)) throw new Error('Choose an XML or CSV file.');
   if (file.size > 25 * 1024 * 1024) throw new Error('Choose an export under 25 MB or use the two-column CSV template.');
   const text = await file.text();
   if (file.name.toLowerCase().endsWith('.xml')) {
     const values = readAppleExport(text);
     if (!Object.keys(values).length) throw new Error('No supported height or weight entries were found.');
-    return { ...values, source: 'apple-export' };
+    return validate({ ...values, source: 'apple-export' });
   }
   const [header, row, ...extra] = text.trim().split(/\r?\n/);
   if (header?.trim() !== 'height_cm,weight_kg' || !row || extra.length) throw new Error('Use the CSV template with one measurement row.');
@@ -38,5 +39,13 @@ export async function importMeasurements(file) {
   const values = { source: 'csv' };
   if (fields[0]) values.heightCm = Number(fields[0]);
   if (fields[1]) values.weightKg = Number(fields[1]);
+  return validate(values);
+}
+
+function validate(values) {
+  if ((values.heightCm !== undefined && (!Number.isFinite(values.heightCm) || values.heightCm < 20 || values.heightCm > 300)) ||
+      (values.weightKg !== undefined && (!Number.isFinite(values.weightKg) || values.weightKg < 0.1 || values.weightKg > 700))) {
+    throw new Error('Imported measurements must be 20–300 cm and 0.1–700 kg.');
+  }
   return values;
 }
