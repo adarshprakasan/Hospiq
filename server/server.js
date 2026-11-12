@@ -26,4 +26,15 @@ mongoose
     };
     process.once('SIGTERM', shutdown); process.once('SIGINT', shutdown);
   })
-  .catch((err) => { console.error("Startup failed:", err.name); process.exitCode = 1; mongoose.disconnect(); });
+  .catch((err) => {
+    const diagnostics = { name: err.name };
+    if (err instanceof mongoose.mongo.MongoServerError) {
+      if (Number.isSafeInteger(err.code)) diagnostics.code = err.code;
+      if (typeof err.codeName === "string" && /^[A-Za-z][A-Za-z0-9_]{0,63}$/.test(err.codeName)) {
+        diagnostics.codeName = err.codeName;
+      }
+    }
+    console.error("Startup failed:", diagnostics);
+    process.exitCode = 1;
+    mongoose.disconnect();
+  });
