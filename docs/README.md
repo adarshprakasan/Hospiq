@@ -4,6 +4,7 @@
 
 | Goal | Start here |
 |---|---|
+| Explore or present Hospiq | [Project guide](PROJECT_GUIDE.md) and [LinkedIn draft](LINKEDIN_POST.md) |
 | Use the expanded care workflow | [Care workflows](CARE_WORKFLOWS.md) |
 | Roll out the improvements | [Operations and verification evidence](OPERATIONS.md) |
 | Run the app | [Setup](SETUP.md), then [Configuration](CONFIGURATION.md) |

@@ -44,7 +44,7 @@ Only hospital-assigned pharmacists can write medication catalogues or prepare/se
 
 ## Authentication and access
 
-Login returns a seven-day JWT. The browser stores it in localStorage and sends it as `Authorization: Bearer ...`. Authentication verifies the signature and reloads the User from MongoDB, so role/hospital changes are checked against current account data. Frontend route guards are for navigation; server middleware and controller filters enforce access.
+Login returns a one-hour JWT. The browser stores it in localStorage and sends it as `Authorization: Bearer ...`. Authentication verifies the signature and reloads the User from MongoDB, so role/hospital changes are checked against current account data. Frontend route guards are for navigation; server middleware and controller filters enforce access.
 
 Staff scope derives from `User.hospitalId`. Doctor scope derives from `Doctor.userId`, not equality between a User ID and a Doctor ID. Patients read/cancel their own tokens and records. Doctor record reads include their own associated visits; reading other records additionally requires an unexpired, unrevoked patient-approved grant. Creating a doctor record requires a called/completed token relationship; identity fields derive from the linked clinical profile. Patients may upload external records or explicitly associate an upload with a local treating doctor.
 
@@ -62,7 +62,7 @@ The care directory and clinical history support server-side search and paginatio
 
 Family context is selected per request and checked against current guardianship or delegation. The actual account remains available for clinical access logging and family settings. Private drafts, amendments, health summaries, lab orders, notifications, reminder deliveries and stock batches use separate scoped records or versioned updates.
 
-The API uses one configured timezone and an in-memory rate limiter per process. The next-day email worker runs through an external scheduler, with a delivery lease and retry history. See [Operations](OPERATIONS.md).
+The API uses one configured timezone and shared Redis rate limiting in production, with an in-memory fallback for local development without Redis. The next-day email worker runs through an external scheduler, with a delivery lease and retry history. See [Operations](OPERATIONS.md).
 
 ## Clinical files and consent boundary
 

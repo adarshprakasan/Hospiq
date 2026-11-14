@@ -26,7 +26,7 @@ npm --prefix server ci --omit=dev
 npm --prefix server start
 ```
 
-Use `PORT` supplied by the host. Set `CLIENT_URL` to the exact frontend origin and `HOSPITAL_TIMEZONE` to the intended timezone. Provide database/provider credentials and `MEDICAL_FILE_KEY` through the host's secret manager, not committed files. Mount a private persistent directory at `MEDICAL_STORAGE_DIR`; do not serve it through the frontend or web server. Back up that volume and preserve the encryption key separately. Do not deploy these files on an ephemeral function filesystem. Configure HTTPS at the hosting layer. Configure proxy trust deliberately before relying on IP-based throttling; the application does not currently set `trust proxy`.
+Use `PORT` supplied by the host. Set `CLIENT_URL` to the exact frontend origin and `HOSPITAL_TIMEZONE` to the intended timezone. Provide database/provider credentials and `MEDICAL_FILE_KEY` through the host's secret manager, not committed files. Mount a private persistent directory at `MEDICAL_STORAGE_DIR`; do not serve it through the frontend or web server. Back up that volume and preserve the encryption key separately. Do not deploy these files on an ephemeral function filesystem. Configure HTTPS at the hosting layer. Set `TRUSTED_PROXY_CIDRS` to the verified proxy ranges before relying on IP-based throttling behind a proxy.
 
 The API connects to MongoDB and waits for indexes for registered models before listening. Preflight historical data before deployment. Startup failure may indicate credentials, connectivity, unsupported database capabilities, or duplicate index data.
 
@@ -44,7 +44,7 @@ The preflight is read-only; starting the API may create indexes. Demo seeds are 
 
 Use `GET /api/health` for liveness and `GET /api/ready` for MongoDB readiness. Requests carry `X-Request-Id`. Set `LOG_REQUESTS=true` for structured timing logs. The process handles graceful shutdown. Configure a scheduler for reminders and install Tesseract if local OCR is required. See [Operations](OPERATIONS.md) for setup and alerting targets.
 
-Rate limits are per process. Plan a shared limiter and tested proxy configuration for multiple instances. Some provisioning operations span multiple documents and need recovery plans.
+Production requires `REDIS_URL` for shared rate limits. Local development without Redis uses in-process limits. Test proxy configuration before relying on IP-based limits. Some provisioning operations span multiple documents and need recovery plans.
 
 ## Secret rotation
 

@@ -44,7 +44,7 @@ Keep `localhost` and `127.0.0.1` usage consistent: they are different browser or
 | Login JWT lifetime | 1 hour |
 | OTP | Six digits, expires after 5 minutes, bcrypt stored, at most 5 verification attempts |
 | Registration proof | JWT valid for 10 minutes, also requires the source OTP row to exist when consumed |
-| Auth rate limit | 20 requests per IP per 15 minutes across login/send-OTP/verify/register; one process only |
+| Auth rate limit | Per-route IP limits, with additional email and account limits on selected routes. Login allows 100 requests per IP and 10 per email per 15 minutes. OTP sending allows 20 per IP and 3 per email per 15 minutes, with a one-minute recipient cooldown. |
 | OTP resend cooldown | Approximately one minute per email |
 | JSON request body | 100 KB |
 | Medical upload | Up to 5 JPEG/PNG/PDF files, 10 MB each, signature/header checks, encrypted at rest |

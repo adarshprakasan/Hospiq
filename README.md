@@ -227,6 +227,7 @@ For Creekside testing, use `patient.creekside@example.invalid`, `staff.creekside
 | Document | Contents |
 |---|---|
 | [Documentation index](docs/README.md) | Reading paths by role |
+| [Project guide](docs/PROJECT_GUIDE.md) | Features, architecture, API, testing, and deployment |
 | [Application route map](docs/ROUTES.md) | Screens by role |
 | [Care workflows](docs/CARE_WORKFLOWS.md) | Current features and limits by workflow |
 | [Operations](docs/OPERATIONS.md) | Rollout, readiness, reminders, OCR and verification |
