@@ -295,3 +295,7 @@ Read [CONTRIBUTING.md](CONTRIBUTING.md) and the [Code of Conduct](CODE_OF_CONDUC
 ## License and copyright
 
 Copyright (c) 2026 Adarsh. Licensed under the [ISC License](LICENSE), matching the existing backend package declaration. Third-party dependencies retain their own licenses; see [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md). The license text follows the [SPDX ISC template](https://spdx.org/licenses/ISC.html).
+
+## Hosting status
+
+No public production deployment URL is recorded in the reviewed repository metadata. Follow the existing setup and configuration guides for a local evaluation; do not interpret the development server address as a public demo. Production deployment requirements and the project's current limitations remain documented in [PROJECT_REVIEW.md](PROJECT_REVIEW.md) and [SECURITY.md](SECURITY.md).
