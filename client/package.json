@@ -35,7 +35,7 @@
     "eslint-plugin-react-hooks": "^7.1.1",
     "eslint-plugin-react-refresh": "^0.5.7",
     "globals": "^16.5.0",
-    "vite": "^8.3.6"
+    "vite": "^8.3.8"
   },
   "description": "Hospital discovery, same-day appointment tokens, and care-team queue management.",
   "author": {
